@@ -1,0 +1,59 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import DashboardLayout from './layouts/DashboardLayout';
+import CategoryManager from './pages/CategoryManager';
+
+import { auth } from './firebase/config';
+import { onAuthStateChanged } from 'firebase/auth';
+import DashboardHome from './pages/DashboardHome';
+import ProductManager from './pages/ProductManager';
+import BannerManager from './pages/BannerManager';
+import OrderManager from './pages/OrderManager';
+import StoreManager from './pages/StoreManager';
+import UserManager from './pages/UserManager';
+import AlertManager from './pages/AlertManager';
+import Login from './pages/Login';
+
+const ProtectedRoute = ({ children }) => {
+  const [user, setUser] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, []);
+
+  if (loading) return <div className="loading-screen">جاري التحقق...</div>;
+  if (!user) return <Login />;
+
+  return children;
+};
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<DashboardHome />} />
+          <Route path="categories" element={<CategoryManager />} />
+          <Route path="products" element={<ProductManager />} />
+          <Route path="banner" element={<BannerManager />} />
+          <Route path="orders" element={<OrderManager />} />
+          <Route path="users" element={<UserManager />} />
+          <Route path="alerts" element={<AlertManager />} />
+          <Route path="store" element={<StoreManager />} />
+        </Route>
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;

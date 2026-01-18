@@ -1,0 +1,94 @@
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--background);
+}
+
+.main-content {
+    flex: 1;
+    margin-right: 280px;
+    /* Width of Sidebar */
+    display: flex;
+    flex-direction: column;
+    transition: all 0.2s ease;
+}
+
+.main-header {
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    position: sticky;
+    top: 1rem;
+    margin: 1rem;
+    border-radius: var(--radius);
+    z-index: 40;
+}
+
+.header-info h2 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--foreground);
+}
+
+.header-info p {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    background: white;
+    border-radius: 50px;
+    border: 1px solid var(--border);
+}
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
+.user-name {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--foreground);
+}
+
+.content-area {
+    padding: 1rem 2rem 2rem;
+    flex: 1;
+}
+
+@media (max-width: 1024px) {
+    .main-content {
+        margin-right: 80px;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-header {
+        padding: 0 1rem;
+    }
+
+    .header-info p {
+        display: none;
+    }
+}

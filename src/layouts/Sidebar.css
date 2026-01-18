@@ -1,0 +1,115 @@
+.sidebar {
+    width: 280px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    z-index: 50;
+    box-shadow: -4px 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-header {
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
+}
+
+.logo-text {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--foreground);
+}
+
+.logo-text span {
+    color: var(--primary);
+    font-weight: 500;
+}
+
+.sidebar-nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.875rem 1rem;
+    border-radius: var(--radius);
+    color: var(--muted-foreground);
+    transition: all 0.2s ease;
+}
+
+.nav-item:hover {
+    background: var(--muted);
+    color: var(--foreground);
+}
+
+.nav-item.active {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    box-shadow: 0 4px 12px rgba(217, 70, 239, 0.3);
+}
+
+.nav-item .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-item .title {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.logout-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.875rem 1rem;
+    border-radius: var(--radius);
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.logout-btn:hover {
+    background: #fef2f2;
+}
+
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 80px;
+        padding: 1rem;
+    }
+
+    .sidebar .title,
+    .logo-text span,
+    .sidebar-header h1,
+    .logout-btn span {
+        display: none;
+    }
+
+    .logo-text::after {
+        content: 'CT';
+        display: block;
+        color: var(--primary);
+    }
+
+    .nav-item,
+    .logout-btn {
+        justify-content: center;
+        padding: 1rem;
+    }
+}
