@@ -7,10 +7,9 @@
 .main-content {
     flex: 1;
     margin-right: 280px;
-    /* Width of Sidebar */
     display: flex;
     flex-direction: column;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .main-header {
@@ -35,6 +34,18 @@
 .header-info p {
     font-size: 0.875rem;
     color: var(--muted-foreground);
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.mobile-menu-btn {
+    display: none;
+    padding: 0.5rem;
+    color: var(--foreground);
 }
 
 .header-actions {
@@ -77,6 +88,17 @@
     flex: 1;
 }
 
+.mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 45;
+    backdrop-filter: blur(4px);
+}
+
 @media (max-width: 1024px) {
     .main-content {
         margin-right: 80px;
@@ -84,11 +106,33 @@
 }
 
 @media (max-width: 768px) {
+    .main-content {
+        margin-right: 0;
+    }
+
     .main-header {
         padding: 0 1rem;
+        margin: 0.5rem;
+        height: 70px;
+    }
+
+    .mobile-menu-btn {
+        display: block;
+    }
+
+    .header-info h2 {
+        font-size: 1.1rem;
     }
 
     .header-info p {
         display: none;
+    }
+
+    .user-name {
+        display: none;
+    }
+
+    .content-area {
+        padding: 0.5rem 1rem 1rem;
     }
 }

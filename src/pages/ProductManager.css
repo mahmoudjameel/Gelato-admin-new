@@ -74,7 +74,8 @@
 
 /* Modal Form Specifics */
 .modal-large {
-    width: 680px;
+    width: 95%;
+    max-width: 680px;
     max-height: 90vh;
     display: flex;
     flex-direction: column;
@@ -164,9 +165,34 @@
 }
 
 @media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .header-left,
+    .header-right,
+    .add-btn,
+    .search-bar {
+        width: 100%;
+    }
+
     .form-row {
         flex-direction: column;
         gap: 1.5rem;
+    }
+
+    .data-table th:nth-child(3),
+    .data-table td:nth-child(3),
+    .data-table th:nth-child(4),
+    .data-table td:nth-child(4) {
+        display: none;
+        /* Hide Price and Rating on very small screens or handle differently */
+    }
+
+    .modal-form.scrollable {
+        padding: 0 1rem 1rem 1rem;
     }
 }
 

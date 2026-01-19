@@ -56,34 +56,40 @@ const OrderManager = () => {
         if (!order.userId) return;
 
         let title = "تحديث طلبك";
-        let message = `تغيرت حالة طلبك #${order.id.slice(-6).toUpperCase()}`;
+        let message = `تغيرت حالة طلبك #${order.orderNumber || order.id.slice(-6).toUpperCase()}`;
         let icon = "notifications-outline";
+
+        const isPickup = (order.orderType || order.deliveryType) === 'pickup';
 
         switch (newStatus) {
             case 'processing':
                 title = "جاري التحضير 👨‍🍳";
-                message = `بدأنا في تحضير طلبك #${order.id.slice(-6).toUpperCase()}. استعد للطعم الرائع!`;
+                message = `بدأنا في تحضير طلبك #${order.orderNumber || order.id.slice(-6).toUpperCase()}. استعد للطعم الرائع!`;
                 icon = "pizza-outline";
                 break;
             case 'ready':
-                title = "طلبك جاهز! 🛍️";
-                message = `طلبك #${order.id.slice(-6).toUpperCase()} أصبح جاهزاً الآن.`;
+                title = isPickup ? "طلبك جاهز للاستلام! 🛍️" : "طلبك جاهز! 🛍️";
+                message = isPickup
+                    ? `طلبك #${order.orderNumber || order.id.slice(-6).toUpperCase()} بانتظارك في الفرع.`
+                    : `طلبك #${order.orderNumber || order.id.slice(-6).toUpperCase()} أصبح جاهزاً الآن.`;
                 icon = "cube-outline";
                 break;
             case 'shipped':
             case 'delivering':
                 title = "طلبك في الطريق 🛵";
-                message = `طلبك #${order.id.slice(-6).toUpperCase()} خرج للتوصيل. يرجى الاستعداد للاستلام.`;
-                icon = "bicycle-outline"; // Ionicon name mapping
+                message = `طلبك #${order.orderNumber || order.id.slice(-6).toUpperCase()} خرج للتوصيل. يرجى الاستعداد للاستلام.`;
+                icon = "bicycle-outline";
                 break;
             case 'completed':
-                title = "تم التوصيل 🎉";
-                message = `نتمنى أن تستمتع بطلبك! شكراً لاختيارك جيلاتو هاوس.`;
+                title = isPickup ? "تم الاستلام 🎉" : "تم التوصيل 🎉";
+                message = isPickup
+                    ? `شكراً لزيارتك! نتمنى أن تستمتع بمذاق جيلاتو هاوس.`
+                    : `نتمنى أن تستمتع بطلبك! شكراً لاختيارك جيلاتو هاوس.`;
                 icon = "checkmark-circle-outline";
                 break;
             case 'cancelled':
                 title = "تم إلغاء الطلب ❌";
-                message = `نأسف، تم إلغاء طلبك #${order.id.slice(-6).toUpperCase()}. يرجى التواصل معنا للمساعدة.`;
+                message = `نأسف، تم إلغاء طلبك #${order.orderNumber || order.id.slice(-6).toUpperCase()}. يرجى التواصل معنا للمساعدة.`;
                 icon = "close-circle-outline";
                 break;
             default:
@@ -163,18 +169,19 @@ const OrderManager = () => {
         }
     };
 
-    const getStatusInfo = (status) => {
+    const getStatusInfo = (status, orderType) => {
+        const isPickup = orderType === 'pickup';
         switch (status) {
             case 'pending':
                 return { label: 'قيد الانتظار', icon: <Clock size={14} />, color: '#F59E0B', bg: '#FEF3C7' };
             case 'processing':
                 return { label: 'جاري التحضير', icon: <ShoppingBag size={14} />, color: '#3B82F6', bg: '#DBEAFE' };
             case 'ready':
-                return { label: 'جاهز', icon: <Package size={14} />, color: '#F97316', bg: '#FFEDD5' };
+                return { label: isPickup ? 'جاهز للاستلام' : 'جاهز', icon: <Package size={14} />, color: '#F97316', bg: '#FFEDD5' };
             case 'shipped':
                 return { label: 'جاري التوصيل', icon: <Truck size={14} />, color: '#8B5CF6', bg: '#EDE9FE' };
             case 'completed':
-                return { label: 'مكتمل', icon: <CheckCircle size={14} />, color: '#10B981', bg: '#D1FAE5' };
+                return { label: isPickup ? 'تم الاستلام' : 'مكتمل', icon: <CheckCircle size={14} />, color: '#10B981', bg: '#D1FAE5' };
             case 'cancelled':
                 return { label: 'ملغي', icon: <XCircle size={14} />, color: '#EF4444', bg: '#FEE2E2' };
             default:
@@ -242,10 +249,10 @@ const OrderManager = () => {
                         ) : filteredOrders.length === 0 ? (
                             <tr><td colSpan="6" className="empty">لا يوجد طلبات حالياً</td></tr>
                         ) : filteredOrders.map((order) => {
-                            const statusInfo = getStatusInfo(order.status || 'pending');
+                            const statusInfo = getStatusInfo(order.status || 'pending', order.orderType || order.deliveryType);
                             return (
                                 <tr key={order.id}>
-                                    <td><span className="order-id">#{order.id.slice(-6).toUpperCase()}</span></td>
+                                    <td><span className="order-id">#{order.orderNumber || order.id.slice(-6).toUpperCase()}</span></td>
                                     <td>
                                         <div className="customer-cell">
                                             {order.customerPhoto ? (
@@ -300,7 +307,7 @@ const OrderManager = () => {
                     <div className="modal-content glass modal-xl">
                         <div className="modal-header">
                             <div className="modal-title-box">
-                                <h2>تفاصيل الطلب #{selectedOrder.id.slice(-6).toUpperCase()}</h2>
+                                <h2>تفاصيل الطلب #{selectedOrder.orderNumber || selectedOrder.id.slice(-6).toUpperCase()}</h2>
                                 <span className="modal-date">{formatDate(selectedOrder.createdAt)}</span>
                             </div>
                             <button className="close-btn" onClick={() => setIsModalOpen(false)}><XCircle size={24} /></button>
@@ -450,24 +457,30 @@ const OrderManager = () => {
                                 <div className="status-update-box glass-inner">
                                     <h3>تحديث حالة الطلب</h3>
                                     <div className="status-buttons">
-                                        {['pending', 'processing', 'ready', 'shipped', 'completed', 'cancelled'].map(status => {
-                                            const info = getStatusInfo(status);
-                                            return (
-                                                <button
-                                                    key={status}
-                                                    className={`status-btn-option ${selectedOrder.status === status ? 'active' : ''}`}
-                                                    onClick={() => updateOrderStatus(selectedOrder.id, status)}
-                                                    style={{
-                                                        '--status-color': info.color,
-                                                        '--status-bg': info.bg,
-                                                        borderColor: selectedOrder.status === status ? info.color : 'transparent'
-                                                    }}
-                                                >
-                                                    {info.icon}
-                                                    <span>{info.label}</span>
-                                                </button>
-                                            );
-                                        })}
+                                        {['pending', 'processing', 'ready', 'shipped', 'completed', 'cancelled']
+                                            .filter(status => {
+                                                const isPickup = (selectedOrder.orderType || selectedOrder.deliveryType) === 'pickup';
+                                                if (isPickup && status === 'shipped') return false;
+                                                return true;
+                                            })
+                                            .map(status => {
+                                                const info = getStatusInfo(status, selectedOrder.orderType || selectedOrder.deliveryType);
+                                                return (
+                                                    <button
+                                                        key={status}
+                                                        className={`status-btn-option ${selectedOrder.status === status ? 'active' : ''}`}
+                                                        onClick={() => updateOrderStatus(selectedOrder.id, status)}
+                                                        style={{
+                                                            '--status-color': info.color,
+                                                            '--status-bg': info.bg,
+                                                            borderColor: selectedOrder.status === status ? info.color : 'transparent'
+                                                        }}
+                                                    >
+                                                        {info.icon}
+                                                        <span>{info.label}</span>
+                                                    </button>
+                                                );
+                                            })}
                                     </div>
                                 </div>
                             </div>

@@ -108,6 +108,26 @@
     .banner-overlay h2 {
         font-size: 1.25rem;
     }
+
+    .settings-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .banner-meta {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .banner-actions {
+        width: 100%;
+    }
+
+    .banner-actions button {
+        flex: 1;
+        justify-content: center;
+    }
 }
 
 /* Settings Controls Styles */

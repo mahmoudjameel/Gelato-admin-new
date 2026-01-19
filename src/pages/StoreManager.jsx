@@ -6,7 +6,7 @@ import {
     Phone,
     Globe,
     Instagram,
-    Twitter,
+    Video,
     MessageCircle,
     Upload,
     Save,
@@ -32,12 +32,34 @@ const StoreManager = () => {
         minOrder: '',
         social: {
             instagram: '',
-            twitter: '',
+            tiktok: '',
             whatsapp: ''
         },
         logo: '',
-        cover: ''
+        cover: '',
+        locationUrl: '',
+        workingHoursWeekly: {
+            monday: { open: '10:00', close: '22:00', closed: false },
+            tuesday: { open: '10:00', close: '22:00', closed: false },
+            wednesday: { open: '10:00', close: '22:00', closed: false },
+            thursday: { open: '10:00', close: '22:00', closed: false },
+            friday: { open: '10:00', close: '22:00', closed: false },
+            saturday: { open: '10:00', close: '22:00', closed: false },
+            sunday: { open: '10:00', close: '22:00', closed: false },
+        },
+        location: { lat: 0, lng: 0 },
+        deliveryZones: [] // Array of { name, radiusKm, fee, isActive }
     });
+
+    const dayLabels = {
+        monday: 'الاثنين',
+        tuesday: 'الثلاثاء',
+        wednesday: 'الأربعاء',
+        thursday: 'الخميس',
+        friday: 'الجمعة',
+        saturday: 'السبت',
+        sunday: 'الأحد'
+    };
 
     useEffect(() => {
         fetchStoreData();
@@ -68,6 +90,36 @@ const StoreManager = () => {
         } else {
             setStoreData(prev => ({ ...prev, [name]: value }));
         }
+    };
+
+    const handleWeeklyHoursChange = (day, field, value) => {
+        setStoreData(prev => ({
+            ...prev,
+            workingHoursWeekly: {
+                ...prev.workingHoursWeekly,
+                [day]: { ...prev.workingHoursWeekly[day], [field]: value }
+            }
+        }));
+    };
+
+    const addDeliveryRate = () => {
+        setStoreData(prev => ({
+            ...prev,
+            deliveryRates: [...(prev.deliveryRates || []), { city: '', fee: '', time: '' }]
+        }));
+    };
+
+    const updateDeliveryRate = (index, field, value) => {
+        const newRates = [...(storeData.deliveryRates || [])];
+        newRates[index][field] = value;
+        setStoreData(prev => ({ ...prev, deliveryRates: newRates }));
+    };
+
+    const removeDeliveryRate = (index) => {
+        setStoreData(prev => ({
+            ...prev,
+            deliveryRates: prev.deliveryRates.filter((_, i) => i !== index)
+        }));
     };
 
     const handleImageUpload = async (e, type) => {
@@ -164,6 +216,16 @@ const StoreManager = () => {
                                 placeholder="+966..."
                             />
                         </div>
+                        <div className="form-group">
+                            <label>رابط الموقع الجغرافي (Google Maps URL)</label>
+                            <input
+                                type="text"
+                                name="locationUrl"
+                                value={storeData.locationUrl}
+                                onChange={handleInputChange}
+                                placeholder="https://maps.app.goo.gl/..."
+                            />
+                        </div>
                     </div>
 
                     <div className="form-section glass">
@@ -207,6 +269,183 @@ const StoreManager = () => {
                                     onChange={handleInputChange}
                                 />
                             </div>
+                        </div>
+                    </div>
+
+                    <div className="form-section glass">
+                        <h2><Clock size={20} /> أوقات العمل التفصيلية</h2>
+                        <div className="weekly-hours-grid">
+                            {Object.keys(storeData.workingHoursWeekly || {}).sort((a, b) => {
+                                const order = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+                                return order.indexOf(a) - order.indexOf(b);
+                            }).map(day => (
+                                <div key={day} className="day-row">
+                                    <span className="day-name">{dayLabels[day]}</span>
+                                    <div className="time-inputs">
+                                        <input
+                                            type="time"
+                                            value={storeData.workingHoursWeekly[day].open}
+                                            onChange={(e) => handleWeeklyHoursChange(day, 'open', e.target.value)}
+                                            disabled={storeData.workingHoursWeekly[day].closed}
+                                        />
+                                        <span>إلى</span>
+                                        <input
+                                            type="time"
+                                            value={storeData.workingHoursWeekly[day].close}
+                                            onChange={(e) => handleWeeklyHoursChange(day, 'close', e.target.value)}
+                                            disabled={storeData.workingHoursWeekly[day].closed}
+                                        />
+                                        <label className="closed-toggle">
+                                            <input
+                                                type="checkbox"
+                                                checked={storeData.workingHoursWeekly[day].closed}
+                                                onChange={(e) => handleWeeklyHoursChange(day, 'closed', e.target.checked)}
+                                            />
+                                            مغلق
+                                        </label>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="form-section glass">
+                        <h2><MapPin size={20} /> موقع المتجر (الإحداثيات)</h2>
+                        <p className="section-helper">مطلوب لحساب مسافة التوصيل بدقة.</p>
+                        <div className="grid-2">
+                            <div className="form-group">
+                                <label>خط العرض (Latitude)</label>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    name="lat"
+                                    value={storeData.location?.lat || ''}
+                                    onChange={(e) => setStoreData(prev => ({
+                                        ...prev,
+                                        location: { ...prev.location, lat: parseFloat(e.target.value) }
+                                    }))}
+                                    placeholder="e.g. 31.7683"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>خط الطول (Longitude)</label>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    name="lng"
+                                    value={storeData.location?.lng || ''}
+                                    onChange={(e) => setStoreData(prev => ({
+                                        ...prev,
+                                        location: { ...prev.location, lng: parseFloat(e.target.value) }
+                                    }))}
+                                    placeholder="e.g. 35.2137"
+                                />
+                            </div>
+                        </div>
+                        <a href="https://www.google.com/maps" target="_blank" rel="noreferrer" style={{ color: '#E11D48', fontSize: '0.9rem', display: 'block', marginTop: '0.5rem' }}>
+                            افتح خرائط جوجل للحصول على الإحداثيات ↗
+                        </a>
+                    </div>
+
+                    <div className="form-section glass">
+                        <div className="section-header-box">
+                            <h2><BadgeDollarSign size={20} /> نطاقات التوصيل (Zones)</h2>
+                            <p className="section-helper">حدد المناطق حسب المسافة من المتجر. سيتم تطبيق السعر الخاص بأقرب نطاق يغطي موقع العميل.</p>
+                        </div>
+                        <div className="delivery-rates-list">
+                            {(storeData.deliveryZones || []).map((zone, index) => (
+                                <div key={index} className="rate-row" style={{ alignItems: 'flex-end', paddingBottom: '1rem', borderBottom: '1px solid #eee' }}>
+                                    <div className="rate-field" style={{ flex: 2 }}>
+                                        <label>اسم النطاق</label>
+                                        <input
+                                            placeholder="مثال: المنطقة القريبة"
+                                            value={zone.name}
+                                            onChange={(e) => {
+                                                const newZones = [...(storeData.deliveryZones || [])];
+                                                newZones[index].name = e.target.value;
+                                                setStoreData(prev => ({ ...prev, deliveryZones: newZones }));
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="rate-field">
+                                        <label>المسافة (كم)</label>
+                                        <input
+                                            type="number"
+                                            placeholder="5"
+                                            value={zone.radiusKm}
+                                            onChange={(e) => {
+                                                const newZones = [...(storeData.deliveryZones || [])];
+                                                newZones[index].radiusKm = parseFloat(e.target.value);
+                                                setStoreData(prev => ({ ...prev, deliveryZones: newZones }));
+                                            }}
+                                        />
+                                        <small style={{ color: '#666', fontSize: '0.7em' }}>حتى {zone.radiusKm} كم</small>
+                                    </div>
+                                    <div className="rate-field">
+                                        <label>سعر التوصيل (₪)</label>
+                                        <input
+                                            type="number"
+                                            placeholder="15"
+                                            value={zone.fee}
+                                            onChange={(e) => {
+                                                const newZones = [...(storeData.deliveryZones || [])];
+                                                newZones[index].fee = parseFloat(e.target.value);
+                                                setStoreData(prev => ({ ...prev, deliveryZones: newZones }));
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="rate-field" style={{ flex: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '10px' }}>
+                                        <label className="switch-label" title={zone.isActive ? "نشط" : "غير نشط"}>
+                                            <input
+                                                type="checkbox"
+                                                checked={zone.isActive}
+                                                onChange={(e) => {
+                                                    const newZones = [...(storeData.deliveryZones || [])];
+                                                    newZones[index].isActive = e.target.checked;
+                                                    setStoreData(prev => ({ ...prev, deliveryZones: newZones }));
+                                                }}
+                                            />
+                                        </label>
+                                    </div>
+
+                                    <button
+                                        className="remove-rate-btn"
+                                        title="حذف النطاق"
+                                        onClick={() => {
+                                            const newZones = storeData.deliveryZones.filter((_, i) => i !== index);
+                                            setStoreData(prev => ({ ...prev, deliveryZones: newZones }));
+                                        }}
+                                        style={{ backgroundColor: '#FEE2E2', color: '#EF4444', border: 'none', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                    >
+                                        <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>×</span>
+                                    </button>
+                                </div>
+                            ))}
+
+                            <button
+                                className="add-rate-btn"
+                                onClick={() => setStoreData(prev => ({
+                                    ...prev,
+                                    deliveryZones: [...(prev.deliveryZones || []), { name: '', radiusKm: 0, fee: 0, isActive: true }]
+                                }))}
+                                style={{
+                                    marginTop: '1rem',
+                                    padding: '0.75rem 1.5rem',
+                                    borderRadius: '12px',
+                                    border: '1px dashed #E11D48',
+                                    color: '#E11D48',
+                                    background: '#FFF1F2',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold',
+                                    width: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem'
+                                }}
+                            >
+                                + إضافة نطاق توصيل جديد
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -283,13 +522,13 @@ const StoreManager = () => {
                                 />
                             </div>
                             <div className="social-input-group">
-                                <div className="social-icon"><Twitter size={18} /></div>
+                                <div className="social-icon"><Video size={18} /></div>
                                 <input
                                     type="text"
-                                    name="twitter"
-                                    value={storeData.social?.twitter || ''}
+                                    name="tiktok"
+                                    value={storeData.social?.tiktok || ''}
                                     onChange={(e) => handleInputChange(e, 'social')}
-                                    placeholder="رابط تويتر"
+                                    placeholder="رابط تيك توك"
                                 />
                             </div>
                             <div className="social-input-group">
@@ -317,7 +556,7 @@ const StoreManager = () => {
                     <span>حفظ التغييرات</span>
                 </button>
             </div>
-        </div>
+        </div >
     );
 };
 

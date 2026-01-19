@@ -12,6 +12,7 @@ import OrderManager from './pages/OrderManager';
 import StoreManager from './pages/StoreManager';
 import UserManager from './pages/UserManager';
 import AlertManager from './pages/AlertManager';
+import PromoCodeManager from './pages/PromoCodeManager';
 import Login from './pages/Login';
 
 const ProtectedRoute = ({ children }) => {
@@ -49,6 +50,7 @@ function App() {
           <Route path="orders" element={<OrderManager />} />
           <Route path="users" element={<UserManager />} />
           <Route path="alerts" element={<AlertManager />} />
+          <Route path="promos" element={<PromoCodeManager />} />
           <Route path="store" element={<StoreManager />} />
         </Route>
       </Routes>

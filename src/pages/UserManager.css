@@ -219,7 +219,7 @@
 .modal-content {
     background: white;
     border-radius: 12px;
-    width: 100%;
+    width: 95%;
     max-width: 500px;
     position: relative;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -430,4 +430,26 @@
 
 .delete-user-btn:hover {
     background-color: #dc2626;
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .add-user-btn {
+        justify-content: center;
+    }
+
+    .users-table th:nth-child(3),
+    .users-table td:nth-child(3) {
+        display: none;
+        /* Hide email on small screens */
+    }
+
+    .role-selector {
+        grid-template-columns: 1fr;
+    }
 }

@@ -92,8 +92,9 @@
 
 /* Modal XL */
 .modal-xl {
-    width: 900px;
-    max-width: 95vw;
+    width: 95%;
+    max-width: 900px;
+    max-height: 90vh;
 }
 
 .modal-grid {
@@ -377,6 +378,20 @@
     .modal-grid {
         grid-template-columns: 1fr;
     }
+
+    .data-table th:nth-child(4),
+    .data-table td:nth-child(4),
+    .data-table th:nth-child(5),
+    .data-table td:nth-child(5) {
+        display: none;
+        /* Hide date and payment on mobile */
+    }
+}
+
+@media (max-width: 600px) {
+    .status-buttons {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Order Type Selector - Custom Dropdown Style */
@@ -422,6 +437,7 @@
     justify-content: flex-start;
     padding-top: 4px;
 }
+
 /* Fix for Modal Scrolling */
 .modal-content {
     max-height: 90vh;
