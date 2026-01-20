@@ -1,5 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n/config';
 import {
     LayoutDashboard,
     Tag,
@@ -20,17 +22,24 @@ import './Sidebar.css';
 
 const Sidebar = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
+
     const menuItems = [
-        { title: 'لوحة التحكم', icon: <LayoutDashboard size={20} />, path: '/' },
-        { title: 'الطلبات', icon: <ShoppingBag size={20} />, path: '/orders' },
-        { title: 'التصنيفات', icon: <Tag size={20} />, path: '/categories' },
-        { title: 'المنتجات', icon: <Package size={20} />, path: '/products' },
-        { title: 'المستخدمين', icon: <Users size={20} />, path: '/users' },
-        { title: 'أكواد الخصم', icon: <Ticket size={20} />, path: '/promos' },
-        { title: 'تنبيهات عامة', icon: <Bell size={20} />, path: '/alerts' },
-        { title: 'البانر', icon: <ImageIcon size={20} />, path: '/banner' },
-        { title: 'بروفايل المتجر', icon: <Store size={20} />, path: '/store' },
+        { title: t('sidebar.dashboard'), icon: <LayoutDashboard size={20} />, path: '/' },
+        { title: t('sidebar.orders'), icon: <ShoppingBag size={20} />, path: '/orders' },
+        { title: t('sidebar.categories'), icon: <Tag size={20} />, path: '/categories' },
+        { title: t('sidebar.products'), icon: <Package size={20} />, path: '/products' },
+        { title: t('sidebar.users'), icon: <Users size={20} />, path: '/users' },
+        { title: t('sidebar.promoCodes'), icon: <Ticket size={20} />, path: '/promos' },
+        { title: t('sidebar.notifications'), icon: <Bell size={20} />, path: '/alerts' },
+        { title: t('sidebar.analytics'), icon: <ImageIcon size={20} />, path: '/banner' },
+        { title: t('sidebar.store'), icon: <Store size={20} />, path: '/store' },
     ];
+
+    const toggleLanguage = () => {
+        const newLang = i18n.language === 'ar' ? 'he' : 'ar';
+        i18n.changeLanguage(newLang);
+    };
 
     const handleLogout = async () => {
         try {
@@ -67,9 +76,13 @@ const Sidebar = ({ isOpen, onClose }) => {
             </nav>
 
             <div className="sidebar-footer">
+                <button className="lang-toggle-btn" onClick={toggleLanguage}>
+                    <span className="lang-icon">{i18n.language === 'ar' ? '🇮🇱' : '🇸🇦'}</span>
+                    <span>{i18n.language === 'ar' ? 'עברית' : 'العربية'}</span>
+                </button>
                 <button className="logout-btn" onClick={handleLogout}>
                     <LogOut size={20} />
-                    <span>تسجيل الخروج</span>
+                    <span>{t('common.logout')}</span>
                 </button>
             </div>
         </aside>

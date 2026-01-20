@@ -9,49 +9,51 @@ import {
     RotateCcw,
     Zap
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { seedDatabase, clearDatabase } from '../utils/seedData';
 import './DashboardHome.css';
 
 const DashboardHome = () => {
+    const { t } = useTranslation();
     const [seeding, setSeeding] = React.useState(false);
     const [clearing, setClearing] = React.useState(false);
     const [message, setMessage] = React.useState('');
 
     const handleSeed = async () => {
-        if (!window.confirm('هل تريد إضافة البيانات التجريبية إلى قاعدة البيانات؟')) return;
+        if (!window.confirm(t('dashboard.seedConfirm'))) return;
         setSeeding(true);
         setMessage('');
         try {
             await seedDatabase();
-            setMessage('تم إضافة البيانات بنجاح!');
+            setMessage(t('dashboard.seedSuccess'));
             setTimeout(() => setMessage(''), 3000);
         } catch (error) {
-            setMessage('حدث خطأ أثناء إضافة البيانات.');
+            setMessage(t('dashboard.seedError'));
         } finally {
             setSeeding(false);
         }
     };
 
     const handleClear = async () => {
-        if (!window.confirm('تحذير: سيتم حذف جميع المنتجات والتصنيفات والبانرات. هل أنت متأكد؟')) return;
+        if (!window.confirm(t('dashboard.clearConfirm'))) return;
         setClearing(true);
         setMessage('');
         try {
             await clearDatabase();
-            setMessage('تم مسح البيانات بنجاح!');
+            setMessage(t('dashboard.clearSuccess'));
             setTimeout(() => setMessage(''), 3000);
         } catch (error) {
-            setMessage('حدث خطأ أثناء مسح البيانات.');
+            setMessage(t('dashboard.clearError'));
         } finally {
             setClearing(false);
         }
     };
 
     const stats = [
-        { title: 'إجمالي المنتجات', value: '42', icon: <Package size={24} />, color: '#D946EF' },
-        { title: 'التصنيفات', value: '8', icon: <Tag size={24} />, color: '#3B82F6' },
-        { title: 'طلبات اليوم', value: '12', icon: <ShoppingCart size={24} />, color: '#10B981' },
-        { title: 'إجمالي المبيعات', value: '1,250 שח', icon: <TrendingUp size={24} />, color: '#F59E0B' },
+        { title: t('dashboard.totalProducts'), value: '42', icon: <Package size={24} />, color: '#D946EF' },
+        { title: t('dashboard.totalCategories'), value: '8', icon: <Tag size={24} />, color: '#3B82F6' },
+        { title: t('dashboard.todayOrders'), value: '12', icon: <ShoppingCart size={24} />, color: '#10B981' },
+        { title: t('dashboard.totalSales'), value: '1,250 שח', icon: <TrendingUp size={24} />, color: '#F59E0B' },
     ];
 
     return (
@@ -73,8 +75,8 @@ const DashboardHome = () => {
             <div className="quick-actions-grid">
                 <div className="quick-action-card glass">
                     <div className="action-info">
-                        <h3>بيانات النظام</h3>
-                        <p>استخدم هذه الأدوات لتهيئة قاعدة البيانات بالبيانات التجريبية أو مسحها بالكامل.</p>
+                        <h3>{t('dashboard.systemData')}</h3>
+                        <p>{t('dashboard.systemDataDesc')}</p>
                     </div>
                     <div className="action-buttons">
                         <button
@@ -83,7 +85,7 @@ const DashboardHome = () => {
                             disabled={seeding || clearing}
                         >
                             <Zap size={18} />
-                            <span>{seeding ? 'جاري الإضافة...' : 'إضافة بيانات تجريبية'}</span>
+                            <span>{seeding ? t('dashboard.seeding') : t('dashboard.seedData')}</span>
                         </button>
                         <button
                             className="clear-btn"
@@ -91,7 +93,7 @@ const DashboardHome = () => {
                             disabled={seeding || clearing}
                         >
                             <RotateCcw size={18} />
-                            <span>{clearing ? 'جاري المسح...' : 'مسح قاعدة البيانات'}</span>
+                            <span>{clearing ? t('dashboard.clearing') : t('dashboard.clearDatabase')}</span>
                         </button>
                     </div>
                     {message && <div className="action-message">{message}</div>}
@@ -100,21 +102,21 @@ const DashboardHome = () => {
                 <div className="recent-activity glass">
                     <div className="section-header">
                         <Clock size={20} />
-                        <h2>آخر النشاطات</h2>
+                        <h2>{t('dashboard.recentActivity')}</h2>
                     </div>
                     <div className="activity-list">
                         <div className="activity-item">
                             <div className="activity-dot"></div>
                             <div className="activity-info">
-                                <p>تم إضافة منتج جديد <strong>آيس كريم شوكولاتة بلجيكية</strong></p>
-                                <span>منذ ساعتين</span>
+                                <p>{t('dashboard.newProductAdded')} <strong>آيس كريم شوكولاتة بلجيكية</strong></p>
+                                <span>{t('dashboard.hoursAgo', { count: 2 })}</span>
                             </div>
                         </div>
                         <div className="activity-item">
                             <div className="activity-dot"></div>
                             <div className="activity-info">
-                                <p>تم تحديث بانر الصفحة الرئيسية</p>
-                                <span>منذ 5 ساعات</span>
+                                <p>{t('dashboard.bannerUpdated')}</p>
+                                <span>{t('dashboard.hoursAgo', { count: 5 })}</span>
                             </div>
                         </div>
                     </div>

@@ -23,9 +23,11 @@ import {
     serverTimestamp,
     Timestamp
 } from 'firebase/firestore';
+import { useTranslation } from 'react-i18next';
 import './PromoCodeManager.css';
 
 const PromoCodeManager = () => {
+    const { t, i18n } = useTranslation();
     const [promos, setPromos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState(null);
@@ -95,12 +97,12 @@ const PromoCodeManager = () => {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('هل أنت متأكد من حذف هذا الكود؟')) {
+        if (window.confirm(t('promos.deleteConfirm'))) {
             try {
                 await deleteDoc(doc(db, 'promo_codes', id));
             } catch (error) {
                 console.error("Error deleting promo:", error);
-                alert("حدث خطأ أثناء الحذف");
+                alert(t('promos.deleteError'));
             }
         }
     };
@@ -126,7 +128,7 @@ const PromoCodeManager = () => {
         e.preventDefault();
 
         if (!formData.code) {
-            alert("الرجاء إدخال الكود");
+            alert(t('promos.enterCodeError'));
             return;
         }
 
@@ -155,19 +157,19 @@ const PromoCodeManager = () => {
 
             if (editingId) {
                 await updateDoc(doc(db, 'promo_codes', editingId), promoData);
-                alert("تم تحديث الكود بنجاح");
+                alert(t('promos.updateSuccess'));
             } else {
                 // Check if code exists
                 // In a real app, you'd check for duplicates here using a query
                 await addDoc(collection(db, 'promo_codes'), promoData);
-                alert("تم إنشاء الكود بنجاح");
+                alert(t('promos.createSuccess'));
             }
 
             resetForm();
 
         } catch (error) {
             console.error("Error saving promo:", error);
-            alert("حدث خطأ أثناء الحفظ: " + error.message);
+            alert(t('promos.saveError', { error: error.message }));
         }
     };
 
@@ -175,8 +177,8 @@ const PromoCodeManager = () => {
         <div className="promo-manager">
             <div className="page-header">
                 <div className="header-left">
-                    <h1>إدارة أكواد الخصم</h1>
-                    <p>قم بإنشاء وتعديل كوبونات الخصم والعروض</p>
+                    <h1>{t('promos.title')}</h1>
+                    <p>{t('promos.subtitle')}</p>
                 </div>
             </div>
 
@@ -190,7 +192,7 @@ const PromoCodeManager = () => {
                                     <h3>
                                         <span className="font-mono font-bold text-lg">{promo.code}</span>
                                         <span className="promo-type">
-                                            {promo.type === 'tiered' ? 'متدرج' : promo.type === 'fixed' ? 'ثابت' : 'نسبة'}
+                                            {promo.type === 'tiered' ? t('promos.promoType.tiered') : promo.type === 'fixed' ? t('promos.promoType.fixed') : t('promos.promoType.percentage')}
                                         </span>
                                     </h3>
                                     <div className="promo-meta">
@@ -202,24 +204,24 @@ const PromoCodeManager = () => {
                                             <span>
                                                 {promo.type === 'fixed' ? <DollarSign size={14} /> : <Percent size={14} />}
                                                 {promo.value}
-                                                {promo.type === 'percentage' ? '%' : ' SAR'}
+                                                {promo.type === 'percentage' ? '%' : ' ₪'}
                                             </span>
                                         )}
                                         {promo.expiryDate && (
                                             <span>
-                                                <Calendar size={14} /> {promo.expiryDate.toDate().toLocaleDateString('en-GB')}
+                                                <Calendar size={14} /> {promo.expiryDate.toDate().toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'he-IL')}
                                             </span>
                                         )}
                                     </div>
                                 </div>
                                 <div className="promo-actions">
                                     <span className={`status-badge ${promo.isActive ? 'active' : 'expired'}`}>
-                                        {promo.isActive ? 'نشط' : 'متوقف'}
+                                        {promo.isActive ? t('promos.status.active') : t('promos.status.expired')}
                                     </span>
-                                    <button onClick={() => handleEdit(promo)} className="action-btn" title="تعديل">
+                                    <button onClick={() => handleEdit(promo)} className="action-btn" title={t('common.edit')}>
                                         <Edit2 size={16} />
                                     </button>
-                                    <button onClick={() => handleDelete(promo.id)} className="action-btn delete" title="حذف">
+                                    <button onClick={() => handleDelete(promo.id)} className="action-btn delete" title={t('common.delete')}>
                                         <Trash2 size={16} />
                                     </button>
                                 </div>
@@ -228,7 +230,7 @@ const PromoCodeManager = () => {
 
                         {promos.length === 0 && !loading && (
                             <div className="text-center p-8 text-gray-500">
-                                لا توجد أكواد خصم حالياً
+                                {t('promos.noPromos')}
                             </div>
                         )}
                     </div>
@@ -240,10 +242,10 @@ const PromoCodeManager = () => {
                         <div className="panel-header">
                             <h2>
                                 {editingId ? <Edit2 size={20} /> : <Plus size={20} />}
-                                {editingId ? 'تعديل الكود' : 'كود جديد'}
+                                {editingId ? t('promos.editPromo') : t('promos.newPromo')}
                             </h2>
                             {editingId && (
-                                <button onClick={resetForm} className="action-btn" title="إلغاء">
+                                <button onClick={resetForm} className="action-btn" title={t('promos.cancel')}>
                                     <X size={16} />
                                 </button>
                             )}
@@ -251,38 +253,38 @@ const PromoCodeManager = () => {
 
                         <form onSubmit={handleSubmit}>
                             <div className="form-group">
-                                <label>رمز الكوبون (Code)</label>
+                                <label>{t('promos.promoCodeLabel')}</label>
                                 <input
                                     type="text"
                                     value={formData.code}
                                     onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
-                                    placeholder="مثال: SUMMER2024"
+                                    placeholder={t('promos.promoCodePlaceholder')}
                                     className="font-mono text-lg uppercase"
                                     required
                                 />
                             </div>
 
                             <div className="form-group">
-                                <label>نوع الخصم</label>
+                                <label>{t('promos.discountType')}</label>
                                 <select
                                     value={formData.type}
                                     onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
                                 >
-                                    <option value="percentage">نسبة مئوية (%)</option>
-                                    <option value="fixed">مبلغ ثابت (SAR)</option>
-                                    <option value="tiered">متدرج (حسب عدد مرات الاستخدام)</option>
+                                    <option value="percentage">{t('promos.types.percentage')}</option>
+                                    <option value="fixed">{t('promos.types.fixed')}</option>
+                                    <option value="tiered">{t('promos.types.tiered')}</option>
                                 </select>
                             </div>
 
                             {formData.type === 'tiered' ? (
                                 <div className="form-group">
-                                    <label>تدرج الخصم (نسبة %)</label>
+                                    <label>{t('promos.tieredDiscountLabel')}</label>
                                     <div className="tiers-container">
                                         {formData.tiers.map((tier, index) => (
                                             <div key={index} className="tier-row">
                                                 <div className="tier-number">{index + 1}</div>
                                                 <div className="tier-input-group">
-                                                    <span>الخصم:</span>
+                                                    <span>{t('promos.discount')}</span>
                                                     <input
                                                         type="number"
                                                         value={tier}
@@ -299,13 +301,13 @@ const PromoCodeManager = () => {
                                             </div>
                                         ))}
                                         <button type="button" className="add-tier-btn" onClick={addTier}>
-                                            <Plus size={16} /> إضافة مستوى
+                                            <Plus size={16} /> {t('promos.addLevel')}
                                         </button>
 
                                         <div className="tier-row mt-3 bg-gray-50">
                                             <div className="tier-number text-gray-500">∞</div>
                                             <div className="tier-input-group">
-                                                <span className="text-sm">بعد ذلك:</span>
+                                                <span className="text-sm">{t('promos.afterThat')}</span>
                                                 <input
                                                     type="number"
                                                     value={formData.subsequentValue}
@@ -317,22 +319,22 @@ const PromoCodeManager = () => {
                                         </div>
                                     </div>
                                     <p className="text-xs text-gray-500 mt-2">
-                                        مثال: المرة الأولى 50%، المرة الثانية 30%، المرة الثالثة وما بعدها 10%
+                                        {t('promos.tieredExample')}
                                     </p>
                                 </div>
                             ) : (
                                 <div className="form-group">
-                                    <label>قيمة الخصم</label>
+                                    <label>{t('promos.discountValue')}</label>
                                     <div className="relative">
                                         <input
                                             type="number"
                                             value={formData.value}
                                             onChange={(e) => setFormData(prev => ({ ...prev, value: e.target.value }))}
-                                            placeholder="مثال: 15"
+                                            placeholder={t('promos.discountValuePlaceholder')}
                                             required
                                         />
                                         <span className="absolute left-3 top-3 text-gray-400">
-                                            {formData.type === 'percentage' ? '%' : 'SAR'}
+                                            {formData.type === 'percentage' ? '%' : '₪'}
                                         </span>
                                     </div>
                                 </div>
@@ -340,7 +342,7 @@ const PromoCodeManager = () => {
 
                             <div className="form-row">
                                 <div className="form-group">
-                                    <label>عدد مرات الاستخدام (للشخص)</label>
+                                    <label>{t('promos.usesPerPerson')}</label>
                                     <input
                                         type="number"
                                         value={formData.maxUsesPerUser}
@@ -349,7 +351,7 @@ const PromoCodeManager = () => {
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label>تاريخ الانتهاء</label>
+                                    <label>{t('promos.expiryDate')}</label>
                                     <input
                                         type="date"
                                         value={formData.expiryDate}
@@ -366,13 +368,13 @@ const PromoCodeManager = () => {
                                         onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
                                         className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                     />
-                                    <span>تفعيل الكود</span>
+                                    <span>{t('promos.enableCode')}</span>
                                 </label>
                             </div>
 
                             <button type="submit" className="save-btn" disabled={loading}>
                                 <Save size={20} />
-                                {editingId ? 'حفظ التعديلات' : 'إنشاء الكود'}
+                                {editingId ? t('promos.saveChanges') : t('promos.createCode')}
                             </button>
                         </form>
                     </div>

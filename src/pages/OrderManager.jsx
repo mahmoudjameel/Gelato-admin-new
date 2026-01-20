@@ -17,6 +17,7 @@ import {
     ExternalLink,
     Package
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { db } from '../firebase/config';
 import {
     collection,
@@ -31,6 +32,7 @@ import {
 import './OrderManager.css';
 
 const OrderManager = () => {
+    const { t, i18n } = useTranslation();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -55,41 +57,41 @@ const OrderManager = () => {
     const sendNotification = async (order, newStatus) => {
         if (!order.userId) return;
 
-        let title = "تحديث طلبك";
-        let message = `تغيرت حالة طلبك #${order.orderNumber || order.id.slice(-6).toUpperCase()}`;
+        let title = t('orders.notificationTitle');
+        let message = t('orders.notificationMessage', { orderId: order.orderNumber || order.id.slice(-6).toUpperCase() });
         let icon = "notifications-outline";
 
         const isPickup = (order.orderType || order.deliveryType) === 'pickup';
 
         switch (newStatus) {
             case 'processing':
-                title = "جاري التحضير 👨‍🍳";
-                message = `بدأنا في تحضير طلبك #${order.orderNumber || order.id.slice(-6).toUpperCase()}. استعد للطعم الرائع!`;
+                title = t('orders.notifProcessingTitle');
+                message = t('orders.notifProcessingMsg', { orderId: order.orderNumber || order.id.slice(-6).toUpperCase() });
                 icon = "pizza-outline";
                 break;
             case 'ready':
-                title = isPickup ? "طلبك جاهز للاستلام! 🛍️" : "طلبك جاهز! 🛍️";
+                title = isPickup ? t('orders.notifReadyPickupTitle') : t('orders.notifReadyTitle');
                 message = isPickup
-                    ? `طلبك #${order.orderNumber || order.id.slice(-6).toUpperCase()} بانتظارك في الفرع.`
-                    : `طلبك #${order.orderNumber || order.id.slice(-6).toUpperCase()} أصبح جاهزاً الآن.`;
+                    ? t('orders.notifReadyPickupMsg', { orderId: order.orderNumber || order.id.slice(-6).toUpperCase() })
+                    : t('orders.notifReadyMsg', { orderId: order.orderNumber || order.id.slice(-6).toUpperCase() });
                 icon = "cube-outline";
                 break;
             case 'shipped':
             case 'delivering':
-                title = "طلبك في الطريق 🛵";
-                message = `طلبك #${order.orderNumber || order.id.slice(-6).toUpperCase()} خرج للتوصيل. يرجى الاستعداد للاستلام.`;
+                title = t('orders.notifShippedTitle');
+                message = t('orders.notifShippedMsg', { orderId: order.orderNumber || order.id.slice(-6).toUpperCase() });
                 icon = "bicycle-outline";
                 break;
             case 'completed':
-                title = isPickup ? "تم الاستلام 🎉" : "تم التوصيل 🎉";
+                title = isPickup ? t('orders.notifCompletedPickupTitle') : t('orders.notifCompletedTitle');
                 message = isPickup
-                    ? `شكراً لزيارتك! نتمنى أن تستمتع بمذاق جيلاتو هاوس.`
-                    : `نتمنى أن تستمتع بطلبك! شكراً لاختيارك جيلاتو هاوس.`;
+                    ? t('orders.notifCompletedPickupMsg')
+                    : t('orders.notifCompletedMsg');
                 icon = "checkmark-circle-outline";
                 break;
             case 'cancelled':
-                title = "تم إلغاء الطلب ❌";
-                message = `نأسف، تم إلغاء طلبك #${order.orderNumber || order.id.slice(-6).toUpperCase()}. يرجى التواصل معنا للمساعدة.`;
+                title = t('orders.notifCancelledTitle');
+                message = t('orders.notifCancelledMsg', { orderId: order.orderNumber || order.id.slice(-6).toUpperCase() });
                 icon = "close-circle-outline";
                 break;
             default:
@@ -142,7 +144,7 @@ const OrderManager = () => {
             // Rollback on error
             setOrders(previousOrders);
             if (previousSelectedOrder) setSelectedOrder(previousSelectedOrder);
-            alert("حدث خطأ أثناء تحديث حالة الطلب. تم استعادة الحالة السابقة.");
+            alert(t('orders.errorUpdate'));
         }
     };
 
@@ -165,7 +167,7 @@ const OrderManager = () => {
             console.error("Error updating order type: ", error);
             setOrders(previousOrders);
             if (previousSelectedOrder) setSelectedOrder(previousSelectedOrder);
-            alert("حدث خطأ أثناء تحديث نوع الطلب.");
+            alert(t('orders.errorType'));
         }
     };
 
@@ -173,17 +175,17 @@ const OrderManager = () => {
         const isPickup = orderType === 'pickup';
         switch (status) {
             case 'pending':
-                return { label: 'قيد الانتظار', icon: <Clock size={14} />, color: '#F59E0B', bg: '#FEF3C7' };
+                return { label: t('orders.statusPending'), icon: <Clock size={14} />, color: '#F59E0B', bg: '#FEF3C7' };
             case 'processing':
-                return { label: 'جاري التحضير', icon: <ShoppingBag size={14} />, color: '#3B82F6', bg: '#DBEAFE' };
+                return { label: t('orders.statusProcessing'), icon: <ShoppingBag size={14} />, color: '#3B82F6', bg: '#DBEAFE' };
             case 'ready':
-                return { label: isPickup ? 'جاهز للاستلام' : 'جاهز', icon: <Package size={14} />, color: '#F97316', bg: '#FFEDD5' };
+                return { label: isPickup ? t('orders.statusReadyPickup') : t('orders.statusReady'), icon: <Package size={14} />, color: '#F97316', bg: '#FFEDD5' };
             case 'shipped':
-                return { label: 'جاري التوصيل', icon: <Truck size={14} />, color: '#8B5CF6', bg: '#EDE9FE' };
+                return { label: t('orders.statusShipped'), icon: <Truck size={14} />, color: '#8B5CF6', bg: '#EDE9FE' };
             case 'completed':
-                return { label: isPickup ? 'تم الاستلام' : 'مكتمل', icon: <CheckCircle size={14} />, color: '#10B981', bg: '#D1FAE5' };
+                return { label: isPickup ? t('orders.statusReceived') : t('orders.statusCompleted'), icon: <CheckCircle size={14} />, color: '#10B981', bg: '#D1FAE5' };
             case 'cancelled':
-                return { label: 'ملغي', icon: <XCircle size={14} />, color: '#EF4444', bg: '#FEE2E2' };
+                return { label: t('orders.statusCancelled'), icon: <XCircle size={14} />, color: '#EF4444', bg: '#FEE2E2' };
             default:
                 return { label: status, icon: <Clock size={14} />, color: '#6B7280', bg: '#F3F4F6' };
         }
@@ -200,9 +202,9 @@ const OrderManager = () => {
     );
 
     const formatDate = (timestamp) => {
-        if (!timestamp) return 'غير متوفر';
+        if (!timestamp) return t('orders.notAvailable');
         const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-        return date.toLocaleString('ar-EG', {
+        return date.toLocaleString(i18n.language === 'ar' ? 'ar-EG' : 'he-IL', {
             year: 'numeric',
             month: 'short',
             day: 'numeric',
@@ -215,15 +217,15 @@ const OrderManager = () => {
         <div className="order-manager">
             <div className="page-header">
                 <div className="header-left">
-                    <h1>إدارة الطلبات</h1>
-                    <p>تتبع وإدارة طلبات العملاء في الوقت الفعلي</p>
+                    <h1>{t('orders.title')}</h1>
+                    <p>{t('orders.subtitle')}</p>
                 </div>
                 <div className="header-right">
                     <div className="search-bar glass">
                         <Search size={18} color="#9CA3AF" />
                         <input
                             type="text"
-                            placeholder="البحث عن طريق رقم الطلب أو اسم العميل..."
+                            placeholder={t('orders.searchOrders')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -235,19 +237,19 @@ const OrderManager = () => {
                 <table className="data-table">
                     <thead>
                         <tr>
-                            <th>رقم الطلب</th>
-                            <th>العميل</th>
-                            <th>التاريخ</th>
-                            <th>المبلغ الإجمالي</th>
-                            <th>الحالة</th>
-                            <th>الإجراءات</th>
+                            <th>{t('orders.orderNumber')}</th>
+                            <th>{t('orders.customer')}</th>
+                            <th>{t('orders.date')}</th>
+                            <th>{t('orders.total')}</th>
+                            <th>{t('orders.status')}</th>
+                            <th>{t('orders.actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan="6" className="loading">جاري التحميل...</td></tr>
+                            <tr><td colSpan="6" className="loading">{t('common.loading')}</td></tr>
                         ) : filteredOrders.length === 0 ? (
-                            <tr><td colSpan="6" className="empty">لا يوجد طلبات حالياً</td></tr>
+                            <tr><td colSpan="6" className="empty">{t('common.noData')}</td></tr>
                         ) : filteredOrders.map((order) => {
                             const statusInfo = getStatusInfo(order.status || 'pending', order.orderType || order.deliveryType);
                             return (
@@ -258,13 +260,13 @@ const OrderManager = () => {
                                             {order.customerPhoto ? (
                                                 <img src={order.customerPhoto} alt="" className="customer-avatar-img" />
                                             ) : (
-                                                <div className="customer-avatar">{order.customerName?.charAt(0) || 'ع'}</div>
+                                                <div className="customer-avatar">{order.customerName?.charAt(0) || 'C'}</div>
                                             )}
-                                            <span>{order.customerName || 'عميل مجهول'}</span>
+                                            <span>{order.customerName || t('orders.anonymous')}</span>
                                         </div>
                                     </td>
                                     <td><span className="date-cell">{formatDate(order.createdAt)}</span></td>
-                                    <td><span className="price-tag">{order.totalAmount || 0} שח</span></td>
+                                    <td><span className="price-tag">{order.totalAmount || 0} ₪</span></td>
                                     <td>
                                         <span className="status-badge" style={{ backgroundColor: statusInfo.bg, color: statusInfo.color }}>
                                             {statusInfo.icon}
@@ -273,7 +275,7 @@ const OrderManager = () => {
                                     </td>
                                     <td>
                                         <div className="table-actions">
-                                            <button className="view-btn" onClick={() => openModal(order)} title="عرض التفاصيل">
+                                            <button className="view-btn" onClick={() => openModal(order)} title={t('orders.viewDetails')}>
                                                 <Eye size={18} />
                                             </button>
                                             <div className="status-dropdown">
@@ -282,14 +284,14 @@ const OrderManager = () => {
                                                     onChange={(e) => updateOrderStatus(order.id, e.target.value)}
                                                     className="status-select-hidden"
                                                 >
-                                                    <option value="pending">قيد الانتظار</option>
-                                                    <option value="processing">جاري التحضير</option>
-                                                    <option value="ready">جاهز</option>
-                                                    <option value="shipped">جاري التوصيل</option>
-                                                    <option value="completed">مكتمل</option>
-                                                    <option value="cancelled">ملغي</option>
+                                                    <option value="pending">{t('orders.statusPending')}</option>
+                                                    <option value="processing">{t('orders.statusProcessing')}</option>
+                                                    <option value="ready">{t('orders.statusReady')}</option>
+                                                    <option value="shipped">{t('orders.statusShipped')}</option>
+                                                    <option value="completed">{t('common.confirm')}</option>
+                                                    <option value="cancelled">{t('orders.statusCancelled')}</option>
                                                 </select>
-                                                <button className="action-btn-circle" title="تغيير الحالة">
+                                                <button className="action-btn-circle" title={t('orders.changeStatus')}>
                                                     <MoreVertical size={18} />
                                                 </button>
                                             </div>
@@ -307,7 +309,7 @@ const OrderManager = () => {
                     <div className="modal-content glass modal-xl">
                         <div className="modal-header">
                             <div className="modal-title-box">
-                                <h2>تفاصيل الطلب #{selectedOrder.orderNumber || selectedOrder.id.slice(-6).toUpperCase()}</h2>
+                                <h2>{t('orders.orderDetails')} #{selectedOrder.orderNumber || selectedOrder.id.slice(-6).toUpperCase()}</h2>
                                 <span className="modal-date">{formatDate(selectedOrder.createdAt)}</span>
                             </div>
                             <button className="close-btn" onClick={() => setIsModalOpen(false)}><XCircle size={24} /></button>
@@ -316,7 +318,7 @@ const OrderManager = () => {
                         <div className="modal-grid">
                             <div className="modal-col-main">
                                 <div className="order-items-section glass-inner">
-                                    <h3><ShoppingBag size={18} /> العناصر المطلوبة</h3>
+                                    <h3><ShoppingBag size={18} /> {t('orders.requestedItems')}</h3>
                                     <div className="items-list">
                                         {selectedOrder.items?.map((item, idx) => (
                                             <div key={idx} className="order-item-card">
@@ -328,7 +330,7 @@ const OrderManager = () => {
                                                     <div className="item-details-list">
                                                         {item.selectedSize && (
                                                             <div className="detail-tag size">
-                                                                <span className="detail-label">الحجم:</span>
+                                                                <span className="detail-label">{t('orders.size')}:</span>
                                                                 <span className="detail-value">
                                                                     {typeof item.selectedSize === 'object'
                                                                         ? (item.selectedSize.label || item.selectedSize.name)
@@ -338,13 +340,13 @@ const OrderManager = () => {
                                                         )}
                                                         {item.selectedFlavors && item.selectedFlavors.length > 0 && (
                                                             <div className="detail-tag flavors">
-                                                                <span className="detail-label">النكهات:</span>
+                                                                <span className="detail-label">{t('orders.flavors')}:</span>
                                                                 <span className="detail-value">{item.selectedFlavors.join('، ')}</span>
                                                             </div>
                                                         )}
                                                         {item.selectedExtras && item.selectedExtras.length > 0 && (
                                                             <div className="detail-tag extras-list">
-                                                                <span className="detail-label">الإضافات:</span>
+                                                                <span className="detail-label">{t('orders.extras')}:</span>
                                                                 <div className="extras-chips">
                                                                     {item.selectedExtras.map((extra, eIdx) => {
                                                                         const isObj = typeof extra === 'object' && extra !== null;
@@ -361,29 +363,29 @@ const OrderManager = () => {
                                                             </div>
                                                         )}
                                                         {(!item.selectedExtras || item.selectedExtras.length === 0) && !item.selectedFlavors && (
-                                                            <span className="no-extras-text">بدون إضافات أو نكهات خاصة</span>
+                                                            <span className="no-extras-text">{t('orders.noExtras')}</span>
                                                         )}
                                                     </div>
                                                 </div>
                                                 <div className="item-pricing">
                                                     <span className="item-qty">x{item.quantity}</span>
-                                                    <span className="item-price">{item.price * item.quantity} שח</span>
+                                                    <span className="item-price">{item.price * item.quantity} ₪</span>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                     <div className="order-summary">
                                         <div className="summary-row">
-                                            <span>المجموع الفرعي:</span>
-                                            <span>{selectedOrder.subtotal || selectedOrder.totalAmount} שח</span>
+                                            <span>{t('orders.subtotal')}:</span>
+                                            <span>{selectedOrder.subtotal || selectedOrder.totalAmount} ₪</span>
                                         </div>
                                         <div className="summary-row">
-                                            <span>رسوم التوصيل:</span>
-                                            <span>{selectedOrder.deliveryFee || 0} שח</span>
+                                            <span>{t('orders.deliveryFee')}:</span>
+                                            <span>{selectedOrder.deliveryFee || 0} ₪</span>
                                         </div>
                                         <div className="summary-row total">
-                                            <span>الإجمالي الكلي:</span>
-                                            <span>{selectedOrder.totalAmount} שח</span>
+                                            <span>{t('orders.totalAmount')}:</span>
+                                            <span>{selectedOrder.totalAmount} ₪</span>
                                         </div>
                                     </div>
                                 </div>
@@ -391,23 +393,23 @@ const OrderManager = () => {
 
                             <div className="modal-col-side">
                                 <div className="info-section glass-inner">
-                                    <h3><User size={18} /> العميل</h3>
+                                    <h3><User size={18} /> {t('orders.customerInfo')}</h3>
                                     <div className="customer-detail-header">
                                         {selectedOrder.customerPhoto && <img src={selectedOrder.customerPhoto} alt="" className="detail-avatar" />}
                                         <div className="info-content">
-                                            <p><strong>الاسم:</strong> {selectedOrder.customerName || 'غير متوفر'}</p>
-                                            <p><strong>الهاتف:</strong> {selectedOrder.address?.phone || selectedOrder.customerEmail || 'غير متوفر'}</p>
+                                            <p><strong>{t('orders.name')}:</strong> {selectedOrder.customerName || t('orders.anonymous')}</p>
+                                            <p><strong>{t('orders.phone')}:</strong> {selectedOrder.address?.phone || selectedOrder.customerEmail || t('common.noData')}</p>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="info-section glass-inner">
-                                    <h3><Truck size={18} /> نوع الطلب</h3>
+                                    <h3><Truck size={18} /> {t('orders.orderType')}</h3>
                                     <div className="order-type-selector">
                                         <div className="type-select-wrapper">
                                             <div className="type-display">
                                                 {selectedOrder.orderType === 'pickup' ? <ShoppingBag size={18} /> : <Truck size={18} />}
-                                                <span>{selectedOrder.orderType === 'pickup' ? 'استلام' : 'توصيل'}</span>
+                                                <span>{selectedOrder.orderType === 'pickup' ? t('orders.pickup') : t('orders.delivery')}</span>
                                                 <ChevronDown size={16} style={{ marginRight: 'auto', opacity: 0.5 }} />
                                             </div>
                                             <select
@@ -415,20 +417,20 @@ const OrderManager = () => {
                                                 onChange={(e) => updateOrderType(selectedOrder.id, e.target.value)}
                                                 className="type-select-input"
                                             >
-                                                <option value="delivery">توصيل</option>
-                                                <option value="pickup">استلام</option>
+                                                <option value="delivery">{t('orders.delivery')}</option>
+                                                <option value="pickup">{t('orders.pickup')}</option>
                                             </select>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="info-section glass-inner">
-                                    <h3><MapPin size={18} /> عنوان التوصيل</h3>
+                                    <h3><MapPin size={18} /> {t('orders.deliveryAddress')}</h3>
                                     <div className="info-content">
                                         {selectedOrder.address ? (
                                             <>
                                                 <p><strong>{selectedOrder.address.title}:</strong> {selectedOrder.address.details}</p>
-                                                <p><strong>الهاتف:</strong> {selectedOrder.address.phone}</p>
+                                                <p><strong>{t('orders.phone')}:</strong> {selectedOrder.address.phone}</p>
                                                 {selectedOrder.address.latitude && (
                                                     <a
                                                         href={`https://www.google.com/maps/search/?api=1&query=${selectedOrder.address.latitude},${selectedOrder.address.longitude}`}
@@ -436,26 +438,26 @@ const OrderManager = () => {
                                                         rel="noopener noreferrer"
                                                         className="map-link-btn"
                                                     >
-                                                        <ExternalLink size={14} /> عرض على الخريطة
+                                                        <ExternalLink size={14} /> {t('orders.viewOnMap')}
                                                     </a>
                                                 )}
                                             </>
                                         ) : (
-                                            <p>استلام من المتجر</p>
+                                            <p>{t('orders.storePickup')}</p>
                                         )}
                                     </div>
                                 </div>
 
                                 <div className="info-section glass-inner">
-                                    <h3><CreditCard size={18} /> الدفع</h3>
+                                    <h3><CreditCard size={18} /> {t('orders.payment')}</h3>
                                     <div className="info-content">
-                                        <p><strong>الطريقة:</strong> {selectedOrder.paymentMethod === 'cash' ? 'نقداً' : 'بطاقة ائتمان'}</p>
-                                        <p><strong>الحالة:</strong> {selectedOrder.paymentStatus === 'paid' ? 'مدفوع' : 'غير مدفوع'}</p>
+                                        <p><strong>{t('orders.method')}:</strong> {selectedOrder.paymentMethod === 'cash' ? t('orders.cash') : t('orders.card')}</p>
+                                        <p><strong>{t('orders.status')}:</strong> {selectedOrder.paymentStatus === 'paid' ? t('orders.paid') : t('orders.unpaid')}</p>
                                     </div>
                                 </div>
 
                                 <div className="status-update-box glass-inner">
-                                    <h3>تحديث حالة الطلب</h3>
+                                    <h3>{t('orders.updateStatus')}</h3>
                                     <div className="status-buttons">
                                         {['pending', 'processing', 'ready', 'shipped', 'completed', 'cancelled']
                                             .filter(status => {

@@ -9,6 +9,7 @@ import {
     Save,
     Image as ImageIcon
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { db } from '../firebase/config';
 import {
     collection,
@@ -23,6 +24,7 @@ import {
 import './CategoryManager.css';
 
 const CategoryManager = () => {
+    const { t } = useTranslation();
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -72,7 +74,7 @@ const CategoryManager = () => {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('هل أنت متأكد من حذف هذا التصنيف؟')) {
+        if (window.confirm(t('categories.deleteConfirm'))) {
             try {
                 await deleteDoc(doc(db, 'categories', id));
                 fetchCategories();
@@ -107,7 +109,7 @@ const CategoryManager = () => {
                 <div className="header-left">
                     <button className="add-btn" onClick={() => openModal()}>
                         <Plus size={20} />
-                        <span>إضافة تصنيف جديد</span>
+                        <span>{t('categories.addNew')}</span>
                     </button>
                 </div>
                 <div className="header-right">
@@ -115,7 +117,7 @@ const CategoryManager = () => {
                         <Search size={18} color="#9CA3AF" />
                         <input
                             type="text"
-                            placeholder="البحث عن تصنيف..."
+                            placeholder={t('categories.searchCategories')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -125,7 +127,7 @@ const CategoryManager = () => {
 
             <div className="category-grid">
                 {loading ? (
-                    <div className="loading">جاري التحميل...</div>
+                    <div className="loading">{t('common.loading')}</div>
                 ) : filteredCategories.map((category) => (
                     <div key={category.id} className="category-card glass">
                         <div className="category-icon-box">
@@ -133,7 +135,7 @@ const CategoryManager = () => {
                         </div>
                         <div className="category-info">
                             <h3>{category.nameAr || category.name}</h3>
-                            <p>تصفح المنتجات في هذا القسم</p>
+                            <p>{t('categories.browseProducts')}</p>
                         </div>
                         <div className="category-actions">
                             <button className="edit-btn" onClick={() => openModal(category)}>
@@ -151,43 +153,43 @@ const CategoryManager = () => {
                 <div className="modal-overlay">
                     <div className="modal-content glass">
                         <div className="modal-header">
-                            <h2>{editingCategory ? 'تعديل التصنيف' : 'إضافة تصنيف جديد'}</h2>
+                            <h2>{editingCategory ? t('categories.editCategory') : t('categories.addNew')}</h2>
                             <button onClick={() => setIsModalOpen(false)}><X size={20} /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="modal-form">
                             <div className="form-group">
-                                <label>اسم التصنيف (العربية)</label>
+                                <label>{t('categories.nameAr')}</label>
                                 <input
                                     type="text"
                                     value={formData.nameAr}
                                     onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
                                     required
-                                    placeholder="مثال: آيس كريم"
+                                    placeholder={t('categories.placeholderAr')}
                                 />
                             </div>
                             <div className="form-group">
-                                <label>اسم التصنيف (العبرية)</label>
+                                <label>{t('categories.nameHe')}</label>
                                 <input
                                     type="text"
                                     value={formData.nameHe}
                                     onChange={(e) => setFormData({ ...formData, nameHe: e.target.value })}
                                     dir="rtl"
-                                    placeholder="לדוגמה: גלידה"
+                                    placeholder={t('categories.placeholderHe')}
                                 />
                             </div>
                             <div className="form-group">
-                                <label>الأيقونة (إيموجي)</label>
+                                <label>{t('categories.icon')}</label>
                                 <input
                                     type="text"
                                     value={formData.icon}
                                     onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                                    placeholder="مثال: 🍦"
+                                    placeholder={t('categories.placeholderIcon')}
                                 />
                             </div>
                             <div className="modal-footer">
                                 <button type="submit" className="save-btn">
                                     <Save size={18} />
-                                    <span>{editingCategory ? 'حفظ التعديلات' : 'إضافة'}</span>
+                                    <span>{editingCategory ? t('common.save') : t('common.add')}</span>
                                 </button>
                             </div>
                         </form>

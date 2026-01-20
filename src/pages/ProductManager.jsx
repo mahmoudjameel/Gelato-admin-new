@@ -13,6 +13,7 @@ import {
     Check,
     Image as ImageIcon
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { db, storage } from '../firebase/config';
 import {
     collection,
@@ -28,6 +29,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import './ProductManager.css';
 
 const ProductManager = () => {
+    const { t } = useTranslation();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -46,6 +48,7 @@ const ProductManager = () => {
         descriptionHe: '',
         price: '',
         category: '',
+        classification: '',
         image: '',
         rating: '4.5',
         sizes: [],
@@ -214,6 +217,7 @@ const ProductManager = () => {
             descriptionHe: '',
             price: '',
             category: '',
+            classification: '',
             image: '',
             rating: '4.5',
             sizes: [],
@@ -232,6 +236,7 @@ const ProductManager = () => {
                 descriptionAr: product.descriptionAr || product.description || '',
                 descriptionHe: product.descriptionHe || '',
                 price: product.price.toString(),
+                classification: product.classification || '',
                 sizes: product.sizes || [],
                 flavors: product.flavors || [],
                 extras: product.extras || []
@@ -244,7 +249,7 @@ const ProductManager = () => {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
+        if (window.confirm(t('products.deleteConfirm'))) {
             try {
                 await deleteDoc(doc(db, 'products', id));
                 fetchData();
@@ -265,7 +270,7 @@ const ProductManager = () => {
                 <div className="header-left">
                     <button className="add-btn" onClick={() => openModal()}>
                         <Plus size={20} />
-                        <span>إضافة منتج جديد</span>
+                        <span>{t('products.addNew')}</span>
                     </button>
                 </div>
                 <div className="header-right">
@@ -273,7 +278,7 @@ const ProductManager = () => {
                         <Search size={18} color="#9CA3AF" />
                         <input
                             type="text"
-                            placeholder="البحث عن منتج أو قسم..."
+                            placeholder={t('products.searchProducts')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -285,18 +290,19 @@ const ProductManager = () => {
                 <table className="data-table">
                     <thead>
                         <tr>
-                            <th>المنتج</th>
-                            <th>التصنيف</th>
-                            <th>السعر</th>
-                            <th>التقييم</th>
-                            <th>الإجراءات</th>
+                            <th>{t('products.product')}</th>
+                            <th>{t('products.classification')}</th>
+                            <th>{t('products.category')}</th>
+                            <th>{t('products.price')}</th>
+                            <th>{t('products.rating')}</th>
+                            <th>{t('common.actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan="5" className="loading">جاري التحميل...</td></tr>
+                            <tr><td colSpan="6" className="loading">{t('common.loading')}</td></tr>
                         ) : filteredProducts.length === 0 ? (
-                            <tr><td colSpan="5" className="empty">لا يوجد منتجات حالياً</td></tr>
+                            <tr><td colSpan="6" className="empty">{t('common.noData')}</td></tr>
                         ) : filteredProducts.map((product) => (
                             <tr key={product.id}>
                                 <td>
@@ -305,8 +311,9 @@ const ProductManager = () => {
                                         <span>{product.nameAr || product.name}</span>
                                     </div>
                                 </td>
+                                <td>{product.classification && <span className={`badge-classification badge-${product.classification.toLowerCase()}`}>{product.classification}</span>}</td>
                                 <td><span className="badge-category">{product.category}</span></td>
-                                <td><span className="price-tag">{product.price} שח</span></td>
+                                <td><span className="price-tag">{product.price} ₪</span></td>
                                 <td>⭐ {product.rating}</td>
                                 <td>
                                     <div className="table-actions">
@@ -324,13 +331,13 @@ const ProductManager = () => {
                 <div className="modal-overlay">
                     <div className="modal-content glass modal-large">
                         <div className="modal-header">
-                            <h2>{editingProduct ? 'تعديل المنتج' : 'إضافة منتج جديد'}</h2>
+                            <h2>{editingProduct ? t('products.editProduct') : t('products.addNew')}</h2>
                             <button onClick={() => setIsModalOpen(false)}><X size={20} /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="modal-form scrollable">
                             <div className="form-row">
                                 <div className="form-group flex-2">
-                                    <label>اسم المنتج (العربية)</label>
+                                    <label>{t('products.nameAr')}</label>
                                     <input
                                         type="text"
                                         value={formData.nameAr}
@@ -339,7 +346,7 @@ const ProductManager = () => {
                                     />
                                 </div>
                                 <div className="form-group flex-2">
-                                    <label>اسم المنتج (العبرية)</label>
+                                    <label>{t('products.nameHe')}</label>
                                     <input
                                         type="text"
                                         value={formData.nameHe}
@@ -350,7 +357,7 @@ const ProductManager = () => {
                             </div>
                             <div className="form-row">
                                 <div className="form-group flex-1">
-                                    <label>السعر (שח)</label>
+                                    <label>{t('products.price')} (₪)</label>
                                     <input
                                         type="number"
                                         step="0.01"
@@ -363,14 +370,14 @@ const ProductManager = () => {
 
                             <div className="form-row">
                                 <div className="form-group flex-1">
-                                    <label>التصنيف</label>
+                                    <label>{t('products.category')}</label>
                                     <div className="select-container">
                                         <select
                                             value={formData.category}
                                             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                                             required
                                         >
-                                            <option value="">اختر التصنيف</option>
+                                            <option value="">{t('products.category')}</option>
                                             {categories.map(cat => (
                                                 <option key={cat.id} value={cat.name}>{cat.name}</option>
                                             ))}
@@ -379,7 +386,27 @@ const ProductManager = () => {
                                     </div>
                                 </div>
                                 <div className="form-group flex-1">
-                                    <label>التقييم الافتراضي</label>
+                                    <label>{t('products.classification')}</label>
+                                    <div className="select-container">
+                                        <select
+                                            value={formData.classification}
+                                            onChange={(e) => setFormData({ ...formData, classification: e.target.value })}
+                                        >
+                                            <option value="">{t('products.selectClassification')}</option>
+                                            <option value="A">{t('products.classificationA')}</option>
+                                            <option value="B">{t('products.classificationB')}</option>
+                                            <option value="C">{t('products.classificationC')}</option>
+                                            <option value="D">{t('products.classificationD')}</option>
+                                            <option value="E">{t('products.classificationE')}</option>
+                                            <option value="F">{t('products.classificationF')}</option>
+                                        </select>
+                                        <ChevronDown size={16} className="select-icon" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group flex-1">
+                                    <label>{t('products.rating')}</label>
                                     <input
                                         type="text"
                                         value={formData.rating}
@@ -389,7 +416,7 @@ const ProductManager = () => {
                             </div>
 
                             <div className="form-group">
-                                <label>الوصف (العربية)</label>
+                                <label>{t('products.descriptionAr')}</label>
                                 <textarea
                                     rows="2"
                                     value={formData.descriptionAr}
@@ -397,7 +424,7 @@ const ProductManager = () => {
                                 ></textarea>
                             </div>
                             <div className="form-group">
-                                <label>الوصف (العبرية)</label>
+                                <label>{t('products.descriptionHe')}</label>
                                 <textarea
                                     rows="2"
                                     value={formData.descriptionHe}
@@ -407,14 +434,14 @@ const ProductManager = () => {
                             </div>
 
                             <div className="form-group">
-                                <label>صورة المنتج</label>
+                                <label>{t('products.image')}</label>
                                 <div className="image-upload-box" onClick={() => document.getElementById('imageInput').click()}>
                                     {imagePreview ? (
                                         <img src={imagePreview} alt="Preview" className="preview-img" />
                                     ) : (
                                         <div className="upload-placeholder">
                                             <Upload size={32} />
-                                            <p>اضغط لرفع صورة المنتج</p>
+                                            <p>{t('products.uploadImage')}</p>
                                         </div>
                                     )}
                                     <input
@@ -432,25 +459,25 @@ const ProductManager = () => {
                             {/* Dynamic Options Sections */}
                             <div className="dynamic-section">
                                 <div className="section-header-modal">
-                                    <h3>الأحجام</h3>
+                                    <h3>{t('products.sizes')}</h3>
                                     <button type="button" className="btn-icon-add" onClick={addSize}><Plus size={16} /></button>
                                 </div>
                                 {(formData.sizes || []).map((size, index) => (
                                     <div key={index} className="dynamic-row">
                                         <input
-                                            placeholder="الحجم (عربي)"
+                                            placeholder={t('products.sizeNameAr')}
                                             value={size.nameAr || size.name}
                                             onChange={(e) => updateSize(index, 'nameAr', e.target.value)}
                                         />
                                         <input
-                                            placeholder="الحجم (عبري)"
+                                            placeholder={t('products.sizeNameHe')}
                                             value={size.nameHe || ''}
                                             onChange={(e) => updateSize(index, 'nameHe', e.target.value)}
                                             dir="rtl"
                                         />
                                         <input
                                             type="number"
-                                            placeholder="السعر الإضافي"
+                                            placeholder={t('products.additionalPrice')}
                                             value={size.price}
                                             onChange={(e) => updateSize(index, 'price', parseFloat(e.target.value))}
                                         />
@@ -460,7 +487,7 @@ const ProductManager = () => {
                                                 checked={size.isDefault}
                                                 onChange={(e) => updateSize(index, 'isDefault', e.target.checked)}
                                             />
-                                            <span>افتراضي</span>
+                                            <span>{t('products.default')}</span>
                                         </label>
                                         <button type="button" className="btn-remove" onClick={() => removeSize(index)}><Trash size={16} /></button>
                                     </div>
@@ -469,19 +496,19 @@ const ProductManager = () => {
 
                             <div className="dynamic-section">
                                 <div className="section-header-modal">
-                                    <h3>النكهات</h3>
+                                    <h3>{t('products.flavors')}</h3>
                                     <button type="button" className="btn-icon-add" onClick={addFlavor}><Plus size={16} /></button>
                                 </div>
                                 <div className="flavors-grid-modal">
                                     {(formData.flavors || []).map((flavor, index) => (
                                         <div key={index} className="dynamic-row">
                                             <input
-                                                placeholder="النكهة (عربي)"
+                                                placeholder={t('products.flavorNameAr')}
                                                 value={typeof flavor === 'string' ? flavor : flavor.nameAr}
                                                 onChange={(e) => updateFlavor(index, 'nameAr', e.target.value)}
                                             />
                                             <input
-                                                placeholder="النكهة (عبري)"
+                                                placeholder={t('products.flavorNameHe')}
                                                 value={typeof flavor === 'string' ? '' : flavor.nameHe}
                                                 onChange={(e) => updateFlavor(index, 'nameHe', e.target.value)}
                                                 dir="rtl"
@@ -494,7 +521,7 @@ const ProductManager = () => {
 
                             <div className="dynamic-section">
                                 <div className="section-header-modal">
-                                    <h3>الإضافات</h3>
+                                    <h3>{t('products.extras')}</h3>
                                     <button type="button" className="btn-icon-add" onClick={addExtra}><Plus size={16} /></button>
                                 </div>
                                 {(formData.extras || []).map((extra, index) => (
@@ -518,19 +545,19 @@ const ProductManager = () => {
                                             />
                                         </div>
                                         <input
-                                            placeholder="الإضافة (عربي)"
+                                            placeholder={t('products.extraNameAr')}
                                             value={extra.nameAr || extra.name}
                                             onChange={(e) => updateExtra(index, 'nameAr', e.target.value)}
                                         />
                                         <input
-                                            placeholder="الإضافة (عبري)"
+                                            placeholder={t('products.extraNameHe')}
                                             value={extra.nameHe || ''}
                                             onChange={(e) => updateExtra(index, 'nameHe', e.target.value)}
                                             dir="rtl"
                                         />
                                         <input
                                             type="number"
-                                            placeholder="السعر"
+                                            placeholder={t('products.price')}
                                             value={extra.price}
                                             onChange={(e) => updateExtra(index, 'price', parseFloat(e.target.value))}
                                         />
@@ -540,7 +567,7 @@ const ProductManager = () => {
                                                 checked={extra.isDefault}
                                                 onChange={(e) => updateExtra(index, 'isDefault', e.target.checked)}
                                             />
-                                            <span>افتراضي</span>
+                                            <span>{t('products.default')}</span>
                                         </label>
                                         <button type="button" className="btn-remove" onClick={() => removeExtra(index)}><Trash size={16} /></button>
                                     </div>
@@ -549,10 +576,10 @@ const ProductManager = () => {
 
                             <div className="modal-footer">
                                 <button type="submit" className="save-btn" disabled={uploading}>
-                                    {uploading ? 'جاري الحفظ...' : (
+                                    {uploading ? t('common.loading') : (
                                         <>
                                             <Save size={18} />
-                                            <span>{editingProduct ? 'حفظ التعديلات' : 'إضافة المنتج'}</span>
+                                            <span>{editingProduct ? t('common.save') : t('common.add')}</span>
                                         </>
                                     )}
                                 </button>

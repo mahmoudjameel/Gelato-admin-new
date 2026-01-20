@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebase/config';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { LogIn, Lock, Mail, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import './Login.css';
 
 const Login = () => {
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -20,7 +22,7 @@ const Login = () => {
             await signInWithEmailAndPassword(auth, email, password);
             navigate('/');
         } catch (err) {
-            setError('خطأ في البريد الإلكتروني أو كلمة المرور. يرجى التأكد من البيانات والمحاولة مرة أخرى.');
+            setError(t('login.error'));
             console.error(err);
         } finally {
             setLoading(false);
@@ -34,8 +36,8 @@ const Login = () => {
                     <div className="login-logo">
                         <LogIn size={32} color="var(--primary)" />
                     </div>
-                    <h1>تسجيل دخول المسؤول</h1>
-                    <p>أدخل بياناتك للوصول إلى لوحة التحكم</p>
+                    <h1>{t('login.title')}</h1>
+                    <p>{t('login.subtitle')}</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="login-form">
@@ -47,7 +49,7 @@ const Login = () => {
                     )}
 
                     <div className="form-group">
-                        <label>البريد الإلكتروني</label>
+                        <label>{t('login.email')}</label>
                         <div className="input-wrapper">
                             <Mail size={18} className="input-icon" />
                             <input
@@ -61,7 +63,7 @@ const Login = () => {
                     </div>
 
                     <div className="form-group">
-                        <label>كلمة المرور</label>
+                        <label>{t('login.password')}</label>
                         <div className="input-wrapper">
                             <Lock size={18} className="input-icon" />
                             <input
@@ -75,9 +77,9 @@ const Login = () => {
                     </div>
 
                     <button type="submit" className="login-btn" disabled={loading}>
-                        {loading ? 'جاري التحقق...' : (
+                        {loading ? t('login.verifying') : (
                             <>
-                                <span>دخول</span>
+                                <span>{t('login.login')}</span>
                                 <LogIn size={20} />
                             </>
                         )}
@@ -85,7 +87,7 @@ const Login = () => {
                 </form>
 
                 <div className="login-footer">
-                    <p>&copy; 2026 Gelato Houset Hub. جميع الحقوق محفوظة.</p>
+                    <p>{t('login.footer')}</p>
                 </div>
             </div>
         </div>

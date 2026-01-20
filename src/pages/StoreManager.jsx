@@ -16,17 +16,23 @@ import {
 import { db, storage } from '../firebase/config';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useTranslation } from 'react-i18next';
 import './StoreManager.css';
 
 const StoreManager = () => {
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [storeData, setStoreData] = useState({
-        name: '',
-        description: '',
-        address: '',
+        nameAr: '',
+        nameHe: '',
+        descriptionAr: '',
+        descriptionHe: '',
+        addressAr: '',
+        addressHe: '',
         phone: '',
-        workingHours: '',
+        workingHoursAr: '',
+        workingHoursHe: '',
         deliveryTime: '',
         deliveryFee: '',
         minOrder: '',
@@ -52,13 +58,13 @@ const StoreManager = () => {
     });
 
     const dayLabels = {
-        monday: 'الاثنين',
-        tuesday: 'الثلاثاء',
-        wednesday: 'الأربعاء',
-        thursday: 'الخميس',
-        friday: 'الجمعة',
-        saturday: 'السبت',
-        sunday: 'الأحد'
+        monday: t('store.days.monday'),
+        tuesday: t('store.days.tuesday'),
+        wednesday: t('store.days.wednesday'),
+        thursday: t('store.days.thursday'),
+        friday: t('store.days.friday'),
+        saturday: t('store.days.saturday'),
+        sunday: t('store.days.sunday')
     };
 
     useEffect(() => {
@@ -71,7 +77,16 @@ const StoreManager = () => {
             const docSnap = await getDoc(docRef);
 
             if (docSnap.exists()) {
-                setStoreData(prev => ({ ...prev, ...docSnap.data() }));
+                const data = docSnap.data();
+                setStoreData(prev => ({
+                    ...prev,
+                    ...data,
+                    // Migrate old fields if they exist and new ones don't
+                    nameAr: data.nameAr || data.name || '',
+                    descriptionAr: data.descriptionAr || data.description || '',
+                    addressAr: data.addressAr || data.address || '',
+                    workingHoursAr: data.workingHoursAr || data.workingHours || ''
+                }));
             }
             setLoading(false);
         } catch (error) {
@@ -137,7 +152,7 @@ const StoreManager = () => {
         } catch (error) {
             console.error(`Error uploading ${type}:`, error);
             setSaving(false);
-            alert("فشل رفع الصورة");
+            alert(t('store.errorUpload'));
         }
     };
 
@@ -149,22 +164,22 @@ const StoreManager = () => {
                 updatedAt: new Date()
             }, { merge: true });
             setSaving(false);
-            alert("تم حفظ البيانات بنجاح ✅");
+            alert(t('store.successSave'));
         } catch (error) {
             console.error("Error saving profile:", error);
             setSaving(false);
-            alert("حدث خطأ أثناء الحفظ");
+            alert(t('store.errorSave'));
         }
     };
 
-    if (loading) return <div className="loading-screen">جاري التحميل...</div>;
+    if (loading) return <div className="loading-screen">{t('store.loading')}</div>;
 
     return (
         <div className="store-manager">
             <div className="page-header">
                 <div className="header-left">
-                    <h1>إدارة بروفايل المتجر</h1>
-                    <p>تحكم في بيانات المطعم، الصور، وساعات العمل</p>
+                    <h1>{t('store.title')}</h1>
+                    <p>{t('store.subtitle')}</p>
                 </div>
             </div>
 
@@ -172,87 +187,134 @@ const StoreManager = () => {
                 {/* Left Column: Basic Info */}
                 <div className="form-column">
                     <div className="form-section glass">
-                        <h2><Store size={20} /> المعلومات الأساسية</h2>
-                        <div className="form-group">
-                            <label>اسم المتجر</label>
-                            <input
-                                type="text"
-                                name="name"
-                                value={storeData.name}
-                                onChange={handleInputChange}
-                                placeholder="مثال: جيلاتو هاوس"
-                            />
+                        <h2><Store size={20} /> {t('store.basicInfo')}</h2>
+                        <div className="grid-2">
+                            <div className="form-group">
+                                <label>{t('store.nameAr')}</label>
+                                <input
+                                    type="text"
+                                    name="nameAr"
+                                    value={storeData.nameAr}
+                                    onChange={handleInputChange}
+                                    placeholder={t('store.storeNamePlaceholder')}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>{t('store.nameHe')}</label>
+                                <input
+                                    type="text"
+                                    name="nameHe"
+                                    value={storeData.nameHe}
+                                    onChange={handleInputChange}
+                                    placeholder={t('store.storeNamePlaceholder')}
+                                />
+                            </div>
                         </div>
-                        <div className="form-group">
-                            <label>وصف المتجر</label>
-                            <textarea
-                                name="description"
-                                value={storeData.description}
-                                onChange={handleInputChange}
-                                placeholder="وصف قصير يظهر تحت الاسم..."
-                            />
+                        <div className="grid-2">
+                            <div className="form-group">
+                                <label>{t('store.descriptionAr')}</label>
+                                <textarea
+                                    name="descriptionAr"
+                                    value={storeData.descriptionAr}
+                                    onChange={handleInputChange}
+                                    placeholder={t('store.storeDescPlaceholder')}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>{t('store.descriptionHe')}</label>
+                                <textarea
+                                    name="descriptionHe"
+                                    value={storeData.descriptionHe}
+                                    onChange={handleInputChange}
+                                    placeholder={t('store.storeDescPlaceholder')}
+                                />
+                            </div>
                         </div>
                     </div>
 
                     <div className="form-section glass">
-                        <h2><MapPin size={20} /> العنوان والتواصل</h2>
-                        <div className="form-group">
-                            <label>العنوان الكامل</label>
-                            <input
-                                type="text"
-                                name="address"
-                                value={storeData.address}
-                                onChange={handleInputChange}
-                                placeholder="الرياض، حي..."
-                            />
+                        <h2><MapPin size={20} /> {t('store.contact')}</h2>
+                        <div className="grid-2">
+                            <div className="form-group">
+                                <label>{t('store.addressAr')}</label>
+                                <input
+                                    type="text"
+                                    name="addressAr"
+                                    value={storeData.addressAr}
+                                    onChange={handleInputChange}
+                                    placeholder={t('store.addressPlaceholder')}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>{t('store.addressHe')}</label>
+                                <input
+                                    type="text"
+                                    name="addressHe"
+                                    value={storeData.addressHe}
+                                    onChange={handleInputChange}
+                                    placeholder={t('store.addressPlaceholder')}
+                                />
+                            </div>
                         </div>
                         <div className="form-group">
-                            <label>رقم الهاتف</label>
+                            <label>{t('store.phoneNumber')}</label>
                             <input
                                 type="text"
                                 name="phone"
                                 value={storeData.phone}
                                 onChange={handleInputChange}
-                                placeholder="+966..."
+                                placeholder={t('store.phonePlaceholder')}
                             />
                         </div>
                         <div className="form-group">
-                            <label>رابط الموقع الجغرافي (Google Maps URL)</label>
+                            <label>{t('store.locationUrl')}</label>
                             <input
                                 type="text"
                                 name="locationUrl"
                                 value={storeData.locationUrl}
                                 onChange={handleInputChange}
-                                placeholder="https://maps.app.goo.gl/..."
+                                placeholder={t('store.locationUrlPlaceholder')}
                             />
                         </div>
                     </div>
 
                     <div className="form-section glass">
-                        <h2><Clock size={20} /> أوقات العمل والتوصيل</h2>
-                        <div className="form-group">
-                            <label>ساعات العمل</label>
-                            <input
-                                type="text"
-                                name="workingHours"
-                                value={storeData.workingHours}
-                                onChange={handleInputChange}
-                                placeholder="10:00 ص - 12:00 م"
-                            />
+                        <h2><Clock size={20} /> {t('store.workingAndDelivery')}</h2>
+                        <div className="grid-2">
+                            <div className="form-group">
+                                <label>{t('store.workingHoursAr')}</label>
+                                <input
+                                    type="text"
+                                    name="workingHoursAr"
+                                    value={storeData.workingHoursAr}
+                                    onChange={handleInputChange}
+                                    placeholder={t('store.workingHoursPlaceholder')}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>{t('store.workingHoursHe')}</label>
+                                <input
+                                    type="text"
+                                    name="workingHoursHe"
+                                    value={storeData.workingHoursHe}
+                                    onChange={handleInputChange}
+                                    placeholder={t('store.workingHoursPlaceholder')}
+                                />
+                            </div>
                         </div>
                         <div className="grid-2">
                             <div className="form-group">
-                                <label>وقت التوصيل التقديري</label>
+                                <label>{t('store.deliveryTime')}</label>
                                 <input
                                     type="text"
                                     name="deliveryTime"
                                     value={storeData.deliveryTime}
                                     onChange={handleInputChange}
-                                    placeholder="30-45 دقيقة"
+                                    placeholder={t('store.deliveryTimePlaceholder')}
                                 />
                             </div>
                             <div className="form-group">
-                                <label>رسوم التوصيل (שח)</label>
+                                <label>{t('store.deliveryFeeLabel')}</label>
                                 <input
                                     type="number"
                                     name="deliveryFee"
@@ -261,7 +323,7 @@ const StoreManager = () => {
                                 />
                             </div>
                             <div className="form-group">
-                                <label>الحد الأدنى للطلب (שח)</label>
+                                <label>{t('store.minOrderLabel')}</label>
                                 <input
                                     type="number"
                                     name="minOrder"
@@ -273,7 +335,7 @@ const StoreManager = () => {
                     </div>
 
                     <div className="form-section glass">
-                        <h2><Clock size={20} /> أوقات العمل التفصيلية</h2>
+                        <h2><Clock size={20} /> {t('store.detailedWorkingHours')}</h2>
                         <div className="weekly-hours-grid">
                             {Object.keys(storeData.workingHoursWeekly || {}).sort((a, b) => {
                                 const order = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -288,7 +350,7 @@ const StoreManager = () => {
                                             onChange={(e) => handleWeeklyHoursChange(day, 'open', e.target.value)}
                                             disabled={storeData.workingHoursWeekly[day].closed}
                                         />
-                                        <span>إلى</span>
+                                        <span>{t('store.to')}</span>
                                         <input
                                             type="time"
                                             value={storeData.workingHoursWeekly[day].close}
@@ -301,7 +363,7 @@ const StoreManager = () => {
                                                 checked={storeData.workingHoursWeekly[day].closed}
                                                 onChange={(e) => handleWeeklyHoursChange(day, 'closed', e.target.checked)}
                                             />
-                                            مغلق
+                                            {t('store.closed')}
                                         </label>
                                     </div>
                                 </div>
@@ -310,11 +372,11 @@ const StoreManager = () => {
                     </div>
 
                     <div className="form-section glass">
-                        <h2><MapPin size={20} /> موقع المتجر (الإحداثيات)</h2>
-                        <p className="section-helper">مطلوب لحساب مسافة التوصيل بدقة.</p>
+                        <h2><MapPin size={20} /> {t('store.storeCoords')}</h2>
+                        <p className="section-helper">{t('store.coordsHelper')}</p>
                         <div className="grid-2">
                             <div className="form-group">
-                                <label>خط العرض (Latitude)</label>
+                                <label>{t('store.latitude')}</label>
                                 <input
                                     type="number"
                                     step="any"
@@ -328,7 +390,7 @@ const StoreManager = () => {
                                 />
                             </div>
                             <div className="form-group">
-                                <label>خط الطول (Longitude)</label>
+                                <label>{t('store.longitude')}</label>
                                 <input
                                     type="number"
                                     step="any"
@@ -343,22 +405,22 @@ const StoreManager = () => {
                             </div>
                         </div>
                         <a href="https://www.google.com/maps" target="_blank" rel="noreferrer" style={{ color: '#E11D48', fontSize: '0.9rem', display: 'block', marginTop: '0.5rem' }}>
-                            افتح خرائط جوجل للحصول على الإحداثيات ↗
+                            {t('store.openMaps')}
                         </a>
                     </div>
 
                     <div className="form-section glass">
                         <div className="section-header-box">
-                            <h2><BadgeDollarSign size={20} /> نطاقات التوصيل (Zones)</h2>
-                            <p className="section-helper">حدد المناطق حسب المسافة من المتجر. سيتم تطبيق السعر الخاص بأقرب نطاق يغطي موقع العميل.</p>
+                            <h2><BadgeDollarSign size={20} /> {t('store.deliveryZones')}</h2>
+                            <p className="section-helper">{t('store.zonesHelper')}</p>
                         </div>
                         <div className="delivery-rates-list">
                             {(storeData.deliveryZones || []).map((zone, index) => (
                                 <div key={index} className="rate-row" style={{ alignItems: 'flex-end', paddingBottom: '1rem', borderBottom: '1px solid #eee' }}>
                                     <div className="rate-field" style={{ flex: 2 }}>
-                                        <label>اسم النطاق</label>
+                                        <label>{t('store.zoneName')}</label>
                                         <input
-                                            placeholder="مثال: المنطقة القريبة"
+                                            placeholder={t('store.zoneNamePlaceholder')}
                                             value={zone.name}
                                             onChange={(e) => {
                                                 const newZones = [...(storeData.deliveryZones || [])];
@@ -368,7 +430,7 @@ const StoreManager = () => {
                                         />
                                     </div>
                                     <div className="rate-field">
-                                        <label>المسافة (كم)</label>
+                                        <label>{t('store.distanceKm')}</label>
                                         <input
                                             type="number"
                                             placeholder="5"
@@ -379,10 +441,10 @@ const StoreManager = () => {
                                                 setStoreData(prev => ({ ...prev, deliveryZones: newZones }));
                                             }}
                                         />
-                                        <small style={{ color: '#666', fontSize: '0.7em' }}>حتى {zone.radiusKm} كم</small>
+                                        <small style={{ color: '#666', fontSize: '0.7em' }}>{t('store.upTo', { distance: zone.radiusKm })}</small>
                                     </div>
                                     <div className="rate-field">
-                                        <label>سعر التوصيل (₪)</label>
+                                        <label>{t('store.zoneFee')}</label>
                                         <input
                                             type="number"
                                             placeholder="15"
@@ -395,7 +457,7 @@ const StoreManager = () => {
                                         />
                                     </div>
                                     <div className="rate-field" style={{ flex: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '10px' }}>
-                                        <label className="switch-label" title={zone.isActive ? "نشط" : "غير نشط"}>
+                                        <label className="switch-label" title={zone.isActive ? t('store.active') : t('store.inactive')}>
                                             <input
                                                 type="checkbox"
                                                 checked={zone.isActive}
@@ -410,7 +472,7 @@ const StoreManager = () => {
 
                                     <button
                                         className="remove-rate-btn"
-                                        title="حذف النطاق"
+                                        title={t('store.deleteZone')}
                                         onClick={() => {
                                             const newZones = storeData.deliveryZones.filter((_, i) => i !== index);
                                             setStoreData(prev => ({ ...prev, deliveryZones: newZones }));
@@ -444,7 +506,7 @@ const StoreManager = () => {
                                     gap: '0.5rem'
                                 }}
                             >
-                                + إضافة نطاق توصيل جديد
+                                {t('store.addZone')}
                             </button>
                         </div>
                     </div>
@@ -453,22 +515,22 @@ const StoreManager = () => {
                 {/* Right Column: Images & Socials */}
                 <div className="form-column">
                     <div className="form-section glass">
-                        <h2><Upload size={20} /> الصور</h2>
+                        <h2><Upload size={20} /> {t('store.images')}</h2>
 
                         <div className="form-group logo-uploader">
-                            <label>شعار المتجر (Logo)</label>
+                            <label>{t('store.logo')}</label>
                             <div className="image-upload-area" onClick={() => document.getElementById('logo-input').click()}>
                                 {storeData.logo ? (
                                     <>
                                         <img src={storeData.logo} alt="Logo" />
                                         <div className="upload-overlay">
-                                            <span className="upload-btn-mini"><Upload size={14} /> تغيير</span>
+                                            <span className="upload-btn-mini"><Upload size={14} /> {t('store.change')}</span>
                                         </div>
                                     </>
                                 ) : (
                                     <div className="upload-placeholder">
                                         <Upload size={24} />
-                                        <span>رفع الشعار</span>
+                                        <span>{t('store.uploadLogo')}</span>
                                     </div>
                                 )}
                                 <input
@@ -482,19 +544,19 @@ const StoreManager = () => {
                         </div>
 
                         <div className="form-group">
-                            <label>صورة الغلاف (Cover)</label>
+                            <label>{t('store.cover')}</label>
                             <div className="image-upload-area cover-uploader" onClick={() => document.getElementById('cover-input').click()}>
                                 {storeData.cover ? (
                                     <>
                                         <img src={storeData.cover} alt="Cover" />
                                         <div className="upload-overlay">
-                                            <span className="upload-btn-mini"><Upload size={14} /> تغيير</span>
+                                            <span className="upload-btn-mini"><Upload size={14} /> {t('store.change')}</span>
                                         </div>
                                     </>
                                 ) : (
                                     <div className="upload-placeholder">
                                         <Upload size={24} />
-                                        <span>رفع الغلاف</span>
+                                        <span>{t('store.uploadCover')}</span>
                                     </div>
                                 )}
                                 <input
@@ -509,36 +571,48 @@ const StoreManager = () => {
                     </div>
 
                     <div className="form-section glass">
-                        <h2><Globe size={20} /> روابط التواصل</h2>
+                        <h2><Globe size={20} /> {t('store.socialLinks')}</h2>
                         <div className="social-inputs">
                             <div className="social-input-group">
-                                <div className="social-icon"><Instagram size={18} /></div>
+                                <div className="social-icon" style={{ color: '#E1306C' }}>
+                                    <Instagram size={20} />
+                                </div>
                                 <input
                                     type="text"
                                     name="instagram"
                                     value={storeData.social?.instagram || ''}
                                     onChange={(e) => handleInputChange(e, 'social')}
-                                    placeholder="رابط انستجرام"
+                                    placeholder={t('store.instagramPlaceholder')}
                                 />
                             </div>
                             <div className="social-input-group">
-                                <div className="social-icon"><Video size={18} /></div>
+                                <div className="social-icon" style={{ color: '#000000' }}>
+                                    {/* Custom TikTok Icon */}
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                                        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
+                                    </svg>
+                                </div>
                                 <input
                                     type="text"
                                     name="tiktok"
                                     value={storeData.social?.tiktok || ''}
                                     onChange={(e) => handleInputChange(e, 'social')}
-                                    placeholder="رابط تيك توك"
+                                    placeholder={t('store.tiktokPlaceholder')}
                                 />
                             </div>
                             <div className="social-input-group">
-                                <div className="social-icon"><MessageCircle size={18} /></div>
+                                <div className="social-icon" style={{ color: '#25D366' }}>
+                                    {/* Custom WhatsApp Icon */}
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z" />
+                                    </svg>
+                                </div>
                                 <input
                                     type="text"
                                     name="whatsapp"
                                     value={storeData.social?.whatsapp || ''}
                                     onChange={(e) => handleInputChange(e, 'social')}
-                                    placeholder="رابط واتساب"
+                                    placeholder={t('store.whatsappPlaceholder')}
                                 />
                             </div>
                         </div>
@@ -553,7 +627,7 @@ const StoreManager = () => {
                     disabled={saving}
                 >
                     {saving ? <Loader className="spin" size={20} /> : <Save size={20} />}
-                    <span>حفظ التغييرات</span>
+                    <span>{t('store.saveChanges')}</span>
                 </button>
             </div>
         </div >

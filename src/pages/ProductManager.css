@@ -62,6 +62,44 @@
     font-weight: 700;
 }
 
+.badge-classification {
+    padding: 0.375rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: white;
+}
+
+.badge-a {
+    background: #3B82F6;
+    /* Blue */
+}
+
+.badge-b {
+    background: #10B981;
+    /* Green */
+}
+
+.badge-c {
+    background: #F59E0B;
+    /* Yellow/Orange */
+}
+
+.badge-d {
+    background: #F97316;
+    /* Orange */
+}
+
+.badge-e {
+    background: #EF4444;
+    /* Red */
+}
+
+.badge-f {
+    background: #8B5CF6;
+    /* Purple */
+}
+
 .price-tag {
     font-weight: 800;
     color: var(--foreground);

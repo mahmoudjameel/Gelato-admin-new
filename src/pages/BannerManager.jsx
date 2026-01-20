@@ -10,6 +10,7 @@ import {
     Upload,
     Layers
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { db, storage } from '../firebase/config';
 import {
     collection,
@@ -26,6 +27,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import './BannerManager.css';
 
 const BannerManager = () => {
+    const { t } = useTranslation();
     const [banners, setBanners] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,7 +41,7 @@ const BannerManager = () => {
         titleHe: '',
         subtitleAr: '',
         subtitleHe: '',
-        badge: 'عرض حصري',
+        badge: t('banners.defaultBadge'),
         image: ''
     });
 
@@ -150,7 +152,7 @@ const BannerManager = () => {
             titleHe: '',
             subtitleAr: '',
             subtitleHe: '',
-            badge: 'عرض حصري',
+            badge: t('banners.defaultBadge'),
             image: ''
         });
     };
@@ -173,7 +175,7 @@ const BannerManager = () => {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('هل أنت متأكد من حذف هذا البانر؟')) {
+        if (window.confirm(t('banners.deleteConfirm'))) {
             try {
                 await deleteDoc(doc(db, 'banner', id));
                 fetchBanners();
@@ -189,14 +191,14 @@ const BannerManager = () => {
                 <div className="header-left">
                     <button className="add-btn" onClick={() => openModal()}>
                         <Plus size={20} />
-                        <span>إضافة بانر جديد</span>
+                        <span>{t('banners.addNew')}</span>
                     </button>
                 </div>
 
                 {/* Global Settings Controls */}
                 <div className="header-right settings-controls glass">
                     <div className="setting-item">
-                        <label>تشغيل تلقائي</label>
+                        <label>{t('banners.autoPlay')}</label>
                         <label className="switch">
                             <input
                                 type="checkbox"
@@ -207,7 +209,7 @@ const BannerManager = () => {
                         </label>
                     </div>
                     <div className="setting-item">
-                        <label>سرعة التبديل (ثواني)</label>
+                        <label>{t('banners.switchSpeed')}</label>
                         <div className="range-wrapper">
                             <input
                                 type="range"
@@ -216,7 +218,7 @@ const BannerManager = () => {
                                 value={bannerSettings.interval / 1000}
                                 onChange={(e) => updateSettings('interval', Number(e.target.value) * 1000)}
                             />
-                            <span>{bannerSettings.interval / 1000}s</span>
+                            <span>{bannerSettings.interval / 1000} {t('banners.seconds')}</span>
                         </div>
                     </div>
                 </div>
@@ -224,11 +226,11 @@ const BannerManager = () => {
 
             <div className="banner-list">
                 {loading ? (
-                    <div className="loading">جاري التحميل...</div>
+                    <div className="loading">{t('banners.loading')}</div>
                 ) : banners.length === 0 ? (
                     <div className="empty-state glass">
                         <Layers size={48} color="#D946EF" />
-                        <p>لا يوجد بانرات حالياً، ابدأ بإضافة بانرك الأول!</p>
+                        <p>{t('banners.noBanners')}</p>
                     </div>
                 ) : banners.map((banner) => (
                     <div key={banner.id} className="banner-preview-card glass">
@@ -244,11 +246,11 @@ const BannerManager = () => {
                             <div className="banner-actions">
                                 <button className="edit-btn" onClick={() => openModal(banner)}>
                                     <Edit2 size={18} />
-                                    <span>تعديل</span>
+                                    <span>{t('banners.edit')}</span>
                                 </button>
                                 <button className="delete-btn" onClick={() => handleDelete(banner.id)}>
                                     <Trash2 size={18} />
-                                    <span>حذف</span>
+                                    <span>{t('banners.delete')}</span>
                                 </button>
                             </div>
                         </div>
@@ -260,56 +262,56 @@ const BannerManager = () => {
                 <div className="modal-overlay">
                     <div className="modal-content glass">
                         <div className="modal-header">
-                            <h2>{editingBanner ? 'تعديل البانر' : 'إضافة بانر جديد'}</h2>
+                            <h2>{editingBanner ? t('banners.editBanner') : t('banners.newBanner')}</h2>
                             <button onClick={() => setIsModalOpen(false)}><X size={20} /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="modal-form">
                             <div className="form-row two-col">
                                 <div className="form-group">
-                                    <label>العنوان الرئيسي (العربية)</label>
+                                    <label>{t('banners.mainTitleAr')}</label>
                                     <input
                                         type="text"
                                         value={formData.titleAr}
                                         onChange={(e) => setFormData({ ...formData, titleAr: e.target.value })}
                                         required
-                                        placeholder="مثال: خصم 20%"
+                                        placeholder={t('banners.titlePlaceholder')}
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label>العنوان الرئيسي (العبرية)</label>
+                                    <label>{t('banners.mainTitleHe')}</label>
                                     <input
                                         type="text"
                                         value={formData.titleHe}
                                         onChange={(e) => setFormData({ ...formData, titleHe: e.target.value })}
                                         dir="rtl"
-                                        placeholder="לדוגמה: 20% הנחה"
+                                        placeholder={t('banners.titleHePlaceholder')}
                                     />
                                 </div>
                             </div>
                             <div className="form-row two-col">
                                 <div className="form-group">
-                                    <label>العنوان الفرعي (العربية)</label>
+                                    <label>{t('banners.subtitleAr')}</label>
                                     <input
                                         type="text"
                                         value={formData.subtitleAr}
                                         onChange={(e) => setFormData({ ...formData, subtitleAr: e.target.value })}
                                         required
-                                        placeholder="وصف قصير للعرض"
+                                        placeholder={t('banners.subtitlePlaceholder')}
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label>العنوان الفرعي (العبرية)</label>
+                                    <label>{t('banners.subtitleHe')}</label>
                                     <input
                                         type="text"
                                         value={formData.subtitleHe}
                                         onChange={(e) => setFormData({ ...formData, subtitleHe: e.target.value })}
                                         dir="rtl"
-                                        placeholder="תיאור קצר"
+                                        placeholder={t('banners.subtitleHePlaceholder')}
                                     />
                                 </div>
                             </div>
                             <div className="form-group">
-                                <label>الملصق (Badge)</label>
+                                <label>{t('banners.badge')}</label>
                                 <input
                                     type="text"
                                     value={formData.badge}
@@ -317,14 +319,14 @@ const BannerManager = () => {
                                 />
                             </div>
                             <div className="form-group">
-                                <label>صورة البانر</label>
+                                <label>{t('banners.bannerImage')}</label>
                                 <div className="image-upload-box" onClick={() => document.getElementById('bannerImageInput').click()}>
                                     {imagePreview ? (
                                         <img src={imagePreview} alt="Preview" className="preview-img" />
                                     ) : (
                                         <div className="upload-placeholder">
                                             <Upload size={32} />
-                                            <p>اضغط لرفع صورة البانر</p>
+                                            <p>{t('banners.clickToUpload')}</p>
                                         </div>
                                     )}
                                     <input
@@ -338,10 +340,10 @@ const BannerManager = () => {
                             </div>
                             <div className="modal-footer">
                                 <button type="submit" className="save-btn" disabled={uploading}>
-                                    {uploading ? 'جاري الحفظ...' : (
+                                    {uploading ? t('banners.saving') : (
                                         <>
                                             <Save size={18} />
-                                            <span>{editingBanner ? 'حفظ التعديلات' : 'إضافة'}</span>
+                                            <span>{editingBanner ? t('banners.saveChanges') : t('banners.add')}</span>
                                         </>
                                     )}
                                 </button>

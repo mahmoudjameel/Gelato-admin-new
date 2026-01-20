@@ -5,9 +5,11 @@ import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth'
 import { db } from '../firebase/config';
 import app from '../firebase/config'; // Import the default app to get config
 import { Trash2, Eye, X, Phone, Mail, Calendar, User, Clock, Plus, Shield, Briefcase, Calculator } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import './UserManager.css';
 
 const UserManager = () => {
+    const { t, i18n } = useTranslation();
     const [users, setUsers] = useState([]);
     const [filteredUsers, setFilteredUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -94,14 +96,14 @@ const UserManager = () => {
             // Sign out from secondary app
             await signOut(secondaryAuth);
 
-            alert('تم إضافة المستخدم بنجاح! ✅');
+            alert(t('users.successAdd'));
             setIsAddModalOpen(false);
             setNewUser({ email: '', password: '', displayName: '', phoneNumber: '', role: 'customer' });
             fetchUsers(); // Refresh list
 
         } catch (error) {
             console.error('Error creating user:', error);
-            alert(`حدث خطأ: ${error.message}`);
+            alert(t('users.errorAdd', { error: error.message }));
         } finally {
             setIsAddingUser(false);
             if (secondaryApp) {
@@ -115,7 +117,7 @@ const UserManager = () => {
     };
 
     const handleDeleteUser = async (userId) => {
-        if (!window.confirm('هل أنت متأكد من حذف هذا المستخدم؟ لا يمكن تراجع هذا الإجراء.')) return;
+        if (!window.confirm(t('users.deleteConfirm'))) return;
 
         setIsDeleteLoading(true);
         try {
@@ -125,7 +127,7 @@ const UserManager = () => {
             if (selectedUser?.id === userId) setSelectedUser(null);
         } catch (error) {
             console.error('Error deleting user:', error);
-            alert('حدث خطأ أثناء حذف المستخدم');
+            alert(t('users.errorDelete'));
         } finally {
             setIsDeleteLoading(false);
         }
@@ -133,43 +135,45 @@ const UserManager = () => {
 
     const formatDate = (timestamp) => {
         if (!timestamp) return '-';
+        const locale = i18n.language === 'ar' ? 'ar-EG' : 'he-IL';
         if (timestamp.toDate) {
-            return timestamp.toDate().toLocaleDateString('ar-EG');
+            return timestamp.toDate().toLocaleDateString(locale);
         }
-        return new Date(timestamp).toLocaleDateString('ar-EG');
+        return new Date(timestamp).toLocaleDateString(locale);
     };
 
     const formatTime = (timestamp) => {
         if (!timestamp) return '';
+        const locale = i18n.language === 'ar' ? 'ar-EG' : 'he-IL';
         if (timestamp.toDate) {
-            return timestamp.toDate().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+            return timestamp.toDate().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
         }
-        return new Date(timestamp).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        return new Date(timestamp).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
     };
 
     const getRoleBadge = (role) => {
         const r = role || 'customer';
         switch (r) {
-            case 'admin': return <span className="role-badge admin"><Shield size={12} /> مدير</span>;
-            case 'cashier': return <span className="role-badge cashier"><Briefcase size={12} /> كاشير</span>;
-            case 'accountant': return <span className="role-badge accountant"><Calculator size={12} /> محاسب</span>;
-            default: return <span className="role-badge customer"><User size={12} /> عميل</span>;
+            case 'admin': return <span className="role-badge admin"><Shield size={12} /> {t('users.roles.admin')}</span>;
+            case 'cashier': return <span className="role-badge cashier"><Briefcase size={12} /> {t('users.roles.cashier')}</span>;
+            case 'accountant': return <span className="role-badge accountant"><Calculator size={12} /> {t('users.roles.accountant')}</span>;
+            default: return <span className="role-badge customer"><User size={12} /> {t('users.roleCustomer')}</span>;
         }
     };
 
     if (loading) {
-        return <div className="loading-container">جاري تحميل المستخدمين...</div>;
+        return <div className="loading-container">{t('users.loadingUsers')}</div>;
     }
 
     return (
         <div className="user-manager-container">
             <div className="page-header">
                 <div className="header-title">
-                    <h1>إدارة الموظفين والمستخدمين ({users.length})</h1>
+                    <h1>{t('users.title', { count: users.length })}</h1>
                 </div>
                 <button className="add-user-btn" onClick={() => setIsAddModalOpen(true)}>
                     <Plus size={20} />
-                    <span>إضافة مستخدم / موظف</span>
+                    <span>{t('users.addUserBtn')}</span>
                 </button>
             </div>
 
@@ -179,31 +183,31 @@ const UserManager = () => {
                     className={`filter-tab ${roleFilter === 'all' ? 'active' : ''}`}
                     onClick={() => setRoleFilter('all')}
                 >
-                    الكل
+                    {t('users.allTab')}
                 </button>
                 <button
                     className={`filter-tab ${roleFilter === 'admin' ? 'active' : ''}`}
                     onClick={() => setRoleFilter('admin')}
                 >
-                    <Shield size={16} /> المدراء
+                    <Shield size={16} /> {t('users.adminsTab')}
                 </button>
                 <button
                     className={`filter-tab ${roleFilter === 'cashier' ? 'active' : ''}`}
                     onClick={() => setRoleFilter('cashier')}
                 >
-                    <Briefcase size={16} /> الكاشير
+                    <Briefcase size={16} /> {t('users.cashiersTab')}
                 </button>
                 <button
                     className={`filter-tab ${roleFilter === 'accountant' ? 'active' : ''}`}
                     onClick={() => setRoleFilter('accountant')}
                 >
-                    <Calculator size={16} /> المحاسبين
+                    <Calculator size={16} /> {t('users.accountantsTab')}
                 </button>
                 <button
                     className={`filter-tab ${roleFilter === 'customer' ? 'active' : ''}`}
                     onClick={() => setRoleFilter('customer')}
                 >
-                    <User size={16} /> العملاء
+                    <User size={16} /> {t('users.customersTab')}
                 </button>
             </div>
 
@@ -211,12 +215,12 @@ const UserManager = () => {
                 <table className="users-table">
                     <thead>
                         <tr>
-                            <th>المستخدم</th>
-                            <th>الصلاحية</th>
-                            <th>البريد الإلكتروني</th>
-                            <th>رقم الهاتف</th>
-                            <th>تاريخ التسجيل</th>
-                            <th>إجراءات</th>
+                            <th>{t('users.tableUser')}</th>
+                            <th>{t('users.tableRole')}</th>
+                            <th>{t('users.tableEmail')}</th>
+                            <th>{t('users.tablePhone')}</th>
+                            <th>{t('users.tableDate')}</th>
+                            <th>{t('users.tableActions')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -231,7 +235,7 @@ const UserManager = () => {
                                                 <User size={16} />
                                             </div>
                                         )}
-                                        {user.displayName || 'مستخدم بدون اسم'}
+                                        {user.displayName || t('users.noName')}
                                     </td>
                                     <td>{getRoleBadge(user.role)}</td>
                                     <td>{user.email || '-'}</td>
@@ -242,7 +246,7 @@ const UserManager = () => {
                                             <button
                                                 className="icon-btn view-btn"
                                                 onClick={() => setSelectedUser(user)}
-                                                title="عرض التفاصيل"
+                                                title={t('common.actions')}
                                             >
                                                 <Eye size={18} />
                                             </button>
@@ -250,7 +254,7 @@ const UserManager = () => {
                                                 className="icon-btn delete-btn"
                                                 onClick={() => handleDeleteUser(user.id)}
                                                 disabled={isDeleteLoading}
-                                                title="حذف المستخدم"
+                                                title={t('common.delete')}
                                             >
                                                 <Trash2 size={18} />
                                             </button>
@@ -260,7 +264,7 @@ const UserManager = () => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="6" className="no-users">لا يوجد مستخدمين مسجلين بهذا التصنيف</td>
+                                <td colSpan="6" className="no-users">{t('users.noUsers')}</td>
                             </tr>
                         )}
                     </tbody>
@@ -276,37 +280,37 @@ const UserManager = () => {
                         </button>
 
                         <div className="modal-header">
-                            <h2>إضافة مستخدم / موظف جديد</h2>
+                            <h2>{t('users.addModalTitle')}</h2>
                         </div>
 
                         <form onSubmit={handleAddUser}>
                             <div className="modal-body">
                                 <div className="form-group">
-                                    <label>الاسم الكامل</label>
+                                    <label>{t('users.fullName')}</label>
                                     <input
                                         type="text"
                                         className="form-input"
                                         value={newUser.displayName}
                                         onChange={(e) => setNewUser({ ...newUser, displayName: e.target.value })}
                                         required
-                                        placeholder="مثال: أحمد محمد"
+                                        placeholder={t('users.fullNamePlaceholder')}
                                     />
                                 </div>
 
                                 <div className="form-group">
-                                    <label>البريد الإلكتروني (لتسجيل الدخول)</label>
+                                    <label>{t('users.emailLogin')}</label>
                                     <input
                                         type="email"
                                         className="form-input"
                                         value={newUser.email}
                                         onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                                         required
-                                        placeholder="user@example.com"
+                                        placeholder={t('users.emailPlaceholder')}
                                     />
                                 </div>
 
                                 <div className="form-group">
-                                    <label>كلمة المرور</label>
+                                    <label>{t('users.password')}</label>
                                     <input
                                         type="password"
                                         className="form-input"
@@ -319,7 +323,7 @@ const UserManager = () => {
                                 </div>
 
                                 <div className="form-group">
-                                    <label>رقم الهاتف (اختياري)</label>
+                                    <label>{t('users.phoneOptional')}</label>
                                     <input
                                         type="tel"
                                         className="form-input"
@@ -330,7 +334,7 @@ const UserManager = () => {
                                 </div>
 
                                 <div className="form-group">
-                                    <label>الصلاحية (الدور الوظيفي)</label>
+                                    <label>{t('users.roleSelection')}</label>
                                     <div className="role-selector">
                                         <label className={`role-option ${newUser.role === 'customer' ? 'selected' : ''}`}>
                                             <input
@@ -341,7 +345,7 @@ const UserManager = () => {
                                                 onChange={() => setNewUser({ ...newUser, role: 'customer' })}
                                             />
                                             <User size={18} />
-                                            <span>عميل</span>
+                                            <span>{t('users.roleCustomer')}</span>
                                         </label>
                                         <label className={`role-option ${newUser.role === 'cashier' ? 'selected' : ''}`}>
                                             <input
@@ -352,7 +356,7 @@ const UserManager = () => {
                                                 onChange={() => setNewUser({ ...newUser, role: 'cashier' })}
                                             />
                                             <Briefcase size={18} />
-                                            <span>كاشير (طلبات)</span>
+                                            <span>{t('users.roleCashier')}</span>
                                         </label>
                                         <label className={`role-option ${newUser.role === 'accountant' ? 'selected' : ''}`}>
                                             <input
@@ -363,7 +367,7 @@ const UserManager = () => {
                                                 onChange={() => setNewUser({ ...newUser, role: 'accountant' })}
                                             />
                                             <Calculator size={18} />
-                                            <span>محاسب</span>
+                                            <span>{t('users.roleAccountant')}</span>
                                         </label>
                                         <label className={`role-option ${newUser.role === 'admin' ? 'selected' : ''}`}>
                                             <input
@@ -374,7 +378,7 @@ const UserManager = () => {
                                                 onChange={() => setNewUser({ ...newUser, role: 'admin' })}
                                             />
                                             <Shield size={18} />
-                                            <span>مدير عام (Admin)</span>
+                                            <span>{t('users.roleAdminTitle')}</span>
                                         </label>
                                     </div>
                                 </div>
@@ -386,7 +390,7 @@ const UserManager = () => {
                                     className="add-user-submit-btn"
                                     disabled={isAddingUser}
                                 >
-                                    {isAddingUser ? 'جاري الإضافة...' : 'حفظ وإضافة'}
+                                    {isAddingUser ? t('users.adding') : t('users.saveAndAdd')}
                                 </button>
                             </div>
                         </form>
@@ -412,8 +416,8 @@ const UserManager = () => {
                                     </div>
                                 )}
                             </div>
-                            <h2>{selectedUser.displayName || 'مستخدم بدون اسم'}</h2>
-                            <span className="user-id">ID: {selectedUser.id}</span>
+                            <h2>{selectedUser.displayName || t('users.noName')}</h2>
+                            <span className="user-id">{t('users.userId')}: {selectedUser.id}</span>
                             <div style={{ marginTop: '10px' }}>
                                 {getRoleBadge(selectedUser.role)}
                             </div>
@@ -421,22 +425,22 @@ const UserManager = () => {
 
                         <div className="modal-body">
                             <div className="info-group">
-                                <label><Mail size={16} /> البريد الإلكتروني</label>
+                                <label><Mail size={16} /> {t('users.email')}</label>
                                 <p>{selectedUser.email || '-'}</p>
                             </div>
 
                             <div className="info-group">
-                                <label><Phone size={16} /> رقم الهاتف</label>
+                                <label><Phone size={16} /> {t('users.phone')}</label>
                                 <p style={{ direction: 'ltr', textAlign: 'right' }}>{selectedUser.phoneNumber || '-'}</p>
                             </div>
 
                             <div className="info-group">
-                                <label><Calendar size={16} /> تاريخ التسجيل</label>
+                                <label><Calendar size={16} /> {t('users.tableDate')}</label>
                                 <p>{formatDate(selectedUser.createdAt)} {formatTime(selectedUser.createdAt)}</p>
                             </div>
 
                             <div className="info-group">
-                                <label><Clock size={16} /> آخر ظهور</label>
+                                <label><Clock size={16} /> {t('users.lastSeen')}</label>
                                 <p>{selectedUser.lastLoginAt ? `${formatDate(selectedUser.lastLoginAt)} ${formatTime(selectedUser.lastLoginAt)}` : '-'}</p>
                             </div>
                         </div>
@@ -447,7 +451,7 @@ const UserManager = () => {
                                 onClick={() => handleDeleteUser(selectedUser.id)}
                             >
                                 <Trash2 size={16} />
-                                حذف المستخدم
+                                {t('users.deleteBtn')}
                             </button>
                         </div>
                     </div>

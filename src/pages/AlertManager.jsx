@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, updateDoc, doc, query, where, orderBy, limit, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { AlertTriangle, Send, StopCircle, CheckCircle, Bell } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import './AlertManager.css';
 
 const AlertManager = () => {
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [activeAlert, setActiveAlert] = useState(null);
     const [formData, setFormData] = useState({
@@ -44,11 +46,11 @@ const AlertManager = () => {
     const handlePublish = async (e) => {
         e.preventDefault();
         if (!formData.titleAr || !formData.bodyAr) {
-            alert('يرجى تعبئة الحقول العربية على الأقل');
+            alert(t('alerts.fillFieldsError'));
             return;
         }
 
-        if (confirm('هل أنت متأكد من نشر هذا التنبيه لجميع المستخدمين؟')) {
+        if (confirm(t('alerts.publishConfirm'))) {
             setLoading(true);
             try {
                 // 1. Deactivate current active alerts
@@ -75,11 +77,11 @@ const AlertManager = () => {
 
                 setActiveAlert({ id: docRef.id, ...newAlert });
                 setFormData({ titleAr: '', bodyAr: '', titleHe: '', bodyHe: '' });
-                alert('تم نشر التنبيه بنجاح! سيظهر لجميع المستخدمين.');
+                alert(t('alerts.publishSuccess'));
 
             } catch (error) {
                 console.error("Error publishing alert:", error);
-                alert('فشل النشر: ' + error.message);
+                alert(t('alerts.publishError', { error: error.message }));
             } finally {
                 setLoading(false);
             }
@@ -88,7 +90,7 @@ const AlertManager = () => {
 
     const handleStopAlert = async () => {
         if (!activeAlert) return;
-        if (confirm('هل تريد إيقاف هذا التنبيه؟ لن يظهر للمستخدمين الجدد.')) {
+        if (confirm(t('alerts.stopConfirm'))) {
             setLoading(true);
             try {
                 await updateDoc(doc(db, 'system_alerts', activeAlert.id), { isActive: false });
@@ -105,37 +107,37 @@ const AlertManager = () => {
         <div className="alert-manager-container">
             <div className="page-header">
                 <div className="header-title">
-                    <h1>إدارة التنبيهات العامة (Pop-ups) 📢</h1>
+                    <h1>{t('alerts.title')}</h1>
                     <p style={{ color: '#6b7280', marginTop: '4px' }}>
-                        إرسال تنبيهات عاجلة تظهر لجميع مستخدمي التطبيق كنافذة منبثقة.
+                        {t('alerts.subtitle')}
                     </p>
                 </div>
             </div>
 
             {/* Creation Form */}
             <div className="alert-creation-card">
-                <h2>إنشاء تنبيه جديد</h2>
+                <h2>{t('alerts.newAlert')}</h2>
                 <form onSubmit={handlePublish}>
                     <div className="alert-form-grid">
                         {/* Arabic Section */}
                         <div className="language-section">
-                            <h3>🇸🇦 العربية (أساسي)</h3>
+                            <h3>🇸🇦 {t('alerts.arabic')}</h3>
                             <div className="form-group">
-                                <label>عنوان التنبيه</label>
+                                <label>{t('alerts.alertTitle')}</label>
                                 <input
                                     type="text"
                                     className="form-input rtl-input"
-                                    placeholder="مثال: تنبيه هام، تأخير طلبات..."
+                                    placeholder={t('alerts.titlePlaceholder')}
                                     value={formData.titleAr}
                                     onChange={e => setFormData({ ...formData, titleAr: e.target.value })}
                                     required
                                 />
                             </div>
                             <div className="form-group">
-                                <label>نص الرسالة</label>
+                                <label>{t('alerts.alertBody')}</label>
                                 <textarea
                                     className="form-textarea rtl-input"
-                                    placeholder="اكتب تفاصيل التنبيه هنا..."
+                                    placeholder={t('alerts.bodyPlaceholder')}
                                     value={formData.bodyAr}
                                     onChange={e => setFormData({ ...formData, bodyAr: e.target.value })}
                                     required
@@ -145,13 +147,13 @@ const AlertManager = () => {
 
                         {/* Hebrew Section */}
                         <div className="language-section">
-                            <h3>🇮🇱 العبرية (اختياري)</h3>
+                            <h3>🇮🇱 {t('alerts.hebrew')}</h3>
                             <div className="form-group">
                                 <label>כותרת (عنوان)</label>
                                 <input
                                     type="text"
                                     className="form-input rtl-input"
-                                    placeholder="כותרת ההודעה..."
+                                    placeholder={t('alerts.titleHePlaceholder')}
                                     value={formData.titleHe}
                                     onChange={e => setFormData({ ...formData, titleHe: e.target.value })}
                                 />
@@ -160,7 +162,7 @@ const AlertManager = () => {
                                 <label>תוכן ההודעה (نص)</label>
                                 <textarea
                                     className="form-textarea rtl-input"
-                                    placeholder="תוכן ההודעה כאן..."
+                                    placeholder={t('alerts.bodyHePlaceholder')}
                                     value={formData.bodyHe}
                                     onChange={e => setFormData({ ...formData, bodyHe: e.target.value })}
                                 />
@@ -173,10 +175,10 @@ const AlertManager = () => {
                         className="submit-alert-btn"
                         disabled={loading}
                     >
-                        {loading ? 'جاري النشر...' : (
+                        {loading ? t('alerts.publishing') : (
                             <>
                                 <Send size={18} />
-                                نشر التنبيه للجميع
+                                {t('alerts.publish')}
                             </>
                         )}
                     </button>
@@ -185,25 +187,25 @@ const AlertManager = () => {
 
             {/* Active Alert Status */}
             <div className="alerts-history">
-                <h2>التنبيه النشط حالياً</h2>
+                <h2>{t('alerts.activeAlert')}</h2>
                 {activeAlert ? (
                     <div className="active-alert-banner">
                         <div className="alert-content">
-                            <span className="alert-badge">نشط الآن 🔥</span>
+                            <span className="alert-badge">{t('alerts.activeNow')}</span>
                             <h3 style={{ margin: '8px 0' }}>{activeAlert.title.ar} / {activeAlert.title.he}</h3>
                             <p style={{ margin: 0, color: '#4b5563' }}>{activeAlert.body.ar}</p>
                             <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: '0.9rem' }}>{activeAlert.body.he}</p>
                         </div>
                         <button className="stop-alert-btn" onClick={handleStopAlert} disabled={loading}>
                             <StopCircle size={18} style={{ verticalAlign: 'middle', marginLeft: '4px' }} />
-                            إيقاف التنبيه
+                            {t('alerts.stopAlert')}
                         </button>
                     </div>
                 ) : (
                     <div className="no-active-alert">
                         <CheckCircle size={48} style={{ marginBottom: '16px', color: '#10b981' }} />
-                        <h3>لا يوجد تنبيه نشط حالياً</h3>
-                        <p>التطبيق يعمل بشكل طبيعي دون نوافذ منبثقة.</p>
+                        <h3>{t('alerts.noActiveAlert')}</h3>
+                        <p>{t('alerts.noActiveAlertDesc')}</p>
                     </div>
                 )}
             </div>

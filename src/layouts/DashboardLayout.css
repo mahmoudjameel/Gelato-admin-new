@@ -6,10 +6,17 @@
 
 .main-content {
     flex: 1;
-    margin-right: 280px;
     display: flex;
     flex-direction: column;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[dir="rtl"] .main-content {
+    margin-right: 280px;
+}
+
+[dir="ltr"] .main-content {
+    margin-left: 280px;
 }
 
 .main-header {

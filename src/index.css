@@ -30,7 +30,27 @@ body {
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  direction: rtl; /* Admin panel for Arabic market */
+}
+
+[dir="rtl"] body {
+  direction: rtl;
+}
+
+[dir="ltr"] body {
+  direction: ltr;
+}
+
+/* RTL specific fixes */
+[dir="rtl"] .lucide-chevron-right {
+  transform: rotate(180deg);
+}
+
+[dir="rtl"] .lucide-chevron-left {
+  transform: rotate(180deg);
+}
+
+[dir="rtl"] .lucide-send {
+  transform: scaleX(-1);
 }
 
 button {
@@ -46,7 +66,9 @@ a {
   color: inherit;
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
   font-family: inherit;
   outline: none;
 }
