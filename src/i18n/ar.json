@@ -101,7 +101,8 @@
         "extraNameHe": "الإضافة (عبري)",
         "searchProducts": "البحث عن منتج أو قسم...",
         "product": "المنتج",
-        "deleteConfirm": "هل أنت متأكد من حذف هذا المنتج؟"
+        "deleteConfirm": "هل أنت متأكد من حذف هذا المنتج؟",
+        "loyaltyPointsPrice": "السعر بالنقاط (للمكافآت)"
     },
     "categories": {
         "title": "إدارة الأقسام",
@@ -167,7 +168,12 @@
             "cashier": "كاشير",
             "accountant": "محاسب",
             "user": "مستخدم"
-        }
+        },
+        "totalOrders": "إجمالي الطلبات",
+        "loyaltyPoints": "نقاط الولاء",
+        "editPoints": "تعديل النقاط",
+        "adjustPoints": "تعديل رصيد النقاط",
+        "savePoints": "حفظ النقاط"
     },
     "store": {
         "title": "إدارة بروفايل المتجر",
@@ -234,13 +240,24 @@
         "errorSave": "حدث خطأ أثناء الحفظ",
         "errorUpload": "فشل رفع الصورة",
         "days": {
-            "monday": "الاثنين",
-            "tuesday": "الثلاثاء",
-            "wednesday": "الأربعاء",
-            "thursday": "الخميس",
-            "friday": "الجمعة",
-            "saturday": "السبت",
             "sunday": "الأحد"
+        },
+        "loyalty": {
+            "title": "نظام الولاء والمكافآت",
+            "subtitle": "إدارة النقاط، المكافآت، ومستويات العضوية",
+            "settings": "إعدادات النقاط",
+            "pointsPerCurrency": "النقاط المكتسبة لكل 1 ₪",
+            "currencyPerPoint": "مقابل كل (₪) يربح نقطة واحدة",
+            "rewardValue": "قيمة الخصم (₪)",
+            "rewardPoints": "النقاط المطلوبة للخصم",
+            "membershipLevels": "مستويات العضوية",
+            "silverThreshold": "نقاط عضوية فضية",
+            "silverDiscount": "خصم العضوية الفضية (%)",
+            "goldThreshold": "نقاط عضوية ذهبية",
+            "goldFreeDelivery": "توصيل مجاني للعضو الذهبي",
+            "ratios": "نسب التحويل",
+            "thresholds": "الحدود الأدنى للترقية",
+            "perks": "المميزات"
         }
     },
     "orders": {
@@ -265,6 +282,8 @@
         "deliveryFee": "رسوم التوصيل",
         "totalAmount": "الإجمالي الكلي",
         "customerInfo": "العميل",
+        "totalOrders": "إجمالي الطلبات",
+        "loyaltyPoints": "نقاط الولاء",
         "name": "الاسم",
         "phone": "الهاتف",
         "orderType": "نوع الطلب",

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy, deleteDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, deleteDoc, doc, setDoc, serverTimestamp, where, updateDoc } from 'firebase/firestore';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { db } from '../firebase/config';
@@ -15,6 +15,11 @@ const UserManager = () => {
     const [loading, setLoading] = useState(true);
     const [selectedUser, setSelectedUser] = useState(null);
     const [isDeleteLoading, setIsDeleteLoading] = useState(false);
+    const [isEditingPoints, setIsEditingPoints] = useState(false);
+    const [newPoints, setNewPoints] = useState(0);
+    const [userOrderCount, setUserOrderCount] = useState(0);
+    const [isSavingPoints, setIsSavingPoints] = useState(false);
+    const [loyaltySettings, setLoyaltySettings] = useState(null);
 
     // Add User State
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -32,7 +37,19 @@ const UserManager = () => {
 
     useEffect(() => {
         fetchUsers();
+        fetchLoyaltySettings();
     }, []);
+
+    const fetchLoyaltySettings = async () => {
+        try {
+            const docSnap = await getDocs(query(collection(db, 'settings'), where('__name__', '==', 'loyalty')));
+            if (!docSnap.empty) {
+                setLoyaltySettings(docSnap.docs[0].data());
+            }
+        } catch (error) {
+            console.error("Error fetching loyalty settings:", error);
+        }
+    };
 
     useEffect(() => {
         if (roleFilter === 'all') {
@@ -125,11 +142,68 @@ const UserManager = () => {
             const updatedUsers = users.filter(user => user.id !== userId);
             setUsers(updatedUsers);
             if (selectedUser?.id === userId) setSelectedUser(null);
-        } catch (error) {
-            console.error('Error deleting user:', error);
-            alert(t('users.errorDelete'));
         } finally {
             setIsDeleteLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (selectedUser) {
+            fetchUserOrderCount(selectedUser.id);
+            setNewPoints(selectedUser.points || 0);
+            setIsEditingPoints(false);
+        }
+    }, [selectedUser]);
+
+    const fetchUserOrderCount = async (userId) => {
+        try {
+            const q = query(collection(db, 'orders'), where('userId', '==', userId));
+            const snapshot = await getDocs(q);
+            setUserOrderCount(snapshot.size);
+        } catch (error) {
+            console.error('Error fetching user order count:', error);
+            setUserOrderCount(0);
+        }
+    };
+
+    const handleSavePoints = async () => {
+        if (!selectedUser) return;
+        setIsSavingPoints(true);
+        try {
+            const userRef = doc(db, 'users', selectedUser.id);
+            const updates = { points: Number(newPoints) };
+
+            // Permanent Level logic for manual adjustment
+            if (loyaltySettings) {
+                let currentLevel = selectedUser.membershipLevel || 'Bronze';
+                let newLevel = currentLevel;
+                const pointsValue = Number(newPoints);
+
+                if (pointsValue >= (loyaltySettings.goldThreshold || 3000)) {
+                    newLevel = 'Gold';
+                } else if (pointsValue >= (loyaltySettings.silverThreshold || 1000)) {
+                    if (currentLevel !== 'Gold') newLevel = 'Silver';
+                }
+
+                if (newLevel !== currentLevel) {
+                    updates.membershipLevel = newLevel;
+                }
+            }
+
+            await updateDoc(userRef, updates);
+
+            // Update local state
+            setUsers(current => current.map(u =>
+                u.id === selectedUser.id ? { ...u, ...updates } : u
+            ));
+            setSelectedUser(prev => ({ ...prev, ...updates }));
+            setIsEditingPoints(false);
+            alert(t('common.save'));
+        } catch (error) {
+            console.error('Error saving points:', error);
+            alert(t('common.error'));
+        } finally {
+            setIsSavingPoints(false);
         }
     };
 
@@ -442,6 +516,41 @@ const UserManager = () => {
                             <div className="info-group">
                                 <label><Clock size={16} /> {t('users.lastSeen')}</label>
                                 <p>{selectedUser.lastLoginAt ? `${formatDate(selectedUser.lastLoginAt)} ${formatTime(selectedUser.lastLoginAt)}` : '-'}</p>
+                            </div>
+
+                            <div className="loyalty-stats-section">
+                                <div className="stat-box">
+                                    <label>{t('users.totalOrders')}</label>
+                                    <div className="stat-value">{userOrderCount}</div>
+                                </div>
+                                <div className="stat-box">
+                                    <label>{t('users.loyaltyPoints')}</label>
+                                    {isEditingPoints ? (
+                                        <div className="edit-points-form">
+                                            <input
+                                                type="number"
+                                                value={newPoints}
+                                                onChange={(e) => setNewPoints(e.target.value)}
+                                                className="points-input"
+                                            />
+                                            <div className="edit-actions">
+                                                <button onClick={handleSavePoints} disabled={isSavingPoints} className="save-points-btn">
+                                                    {isSavingPoints ? t('common.loading') : t('users.savePoints')}
+                                                </button>
+                                                <button onClick={() => setIsEditingPoints(false)} className="cancel-points-btn">
+                                                    {t('common.cancel')}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="points-display">
+                                            <div className="stat-value points">{selectedUser.points || 0}</div>
+                                            <button onClick={() => setIsEditingPoints(true)} className="edit-points-link">
+                                                {t('users.editPoints')}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 

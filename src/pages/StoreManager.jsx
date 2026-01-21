@@ -11,7 +11,8 @@ import {
     Upload,
     Save,
     Loader,
-    BadgeDollarSign
+    BadgeDollarSign,
+    Trophy
 } from 'lucide-react';
 import { db, storage } from '../firebase/config';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -57,6 +58,17 @@ const StoreManager = () => {
         deliveryZones: [] // Array of { name, radiusKm, fee, isActive }
     });
 
+    const [loyaltyData, setLoyaltyData] = useState({
+        pointsPerCurrency: 1,
+        currencyPerPoint: 1,
+        rewardValue: 5,
+        rewardPoints: 100,
+        silverThreshold: 1000,
+        silverDiscount: 5,
+        goldThreshold: 3000,
+        goldFreeDelivery: true
+    });
+
     const dayLabels = {
         monday: t('store.days.monday'),
         tuesday: t('store.days.tuesday'),
@@ -88,6 +100,13 @@ const StoreManager = () => {
                     workingHoursAr: data.workingHoursAr || data.workingHours || ''
                 }));
             }
+
+            // Fetch Loyalty Data
+            const loyaltyDoc = await getDoc(doc(db, 'settings', 'loyalty'));
+            if (loyaltyDoc.exists()) {
+                setLoyaltyData(prev => ({ ...prev, ...loyaltyDoc.data() }));
+            }
+
             setLoading(false);
         } catch (error) {
             console.error("Error fetching store profile:", error);
@@ -159,10 +178,19 @@ const StoreManager = () => {
     const handleSave = async () => {
         try {
             setSaving(true);
+
+            // Save Store Profile
             await setDoc(doc(db, 'store', 'profile'), {
                 ...storeData,
                 updatedAt: new Date()
             }, { merge: true });
+
+            // Save Loyalty Settings
+            await setDoc(doc(db, 'settings', 'loyalty'), {
+                ...loyaltyData,
+                updatedAt: new Date()
+            }, { merge: true });
+
             setSaving(false);
             alert(t('store.successSave'));
         } catch (error) {
@@ -508,6 +536,99 @@ const StoreManager = () => {
                             >
                                 {t('store.addZone')}
                             </button>
+                        </div>
+                    </div>
+
+                    {/* Loyalty System Section */}
+                    <div className="form-section glass">
+                        <h2><Trophy size={20} /> {t('store.loyalty.title')}</h2>
+                        <p className="section-helper">{t('store.loyalty.subtitle')}</p>
+
+                        <div className="loyalty-group">
+                            <h3>{t('store.loyalty.ratios')}</h3>
+                            <div className="grid-2">
+                                <div className="form-group">
+                                    <label>{t('store.loyalty.currencyPerPoint')}</label>
+                                    <div className="input-with-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <input
+                                            type="number"
+                                            value={loyaltyData.currencyPerPoint || 1}
+                                            onChange={(e) => {
+                                                const val = parseFloat(e.target.value) || 1;
+                                                setLoyaltyData(prev => ({
+                                                    ...prev,
+                                                    currencyPerPoint: val,
+                                                    pointsPerCurrency: 1 / val
+                                                }));
+                                            }}
+                                            min="0.1"
+                                            step="0.1"
+                                        />
+                                        <span style={{ fontSize: '0.8rem', color: '#666' }}>({t('common.points')})</span>
+                                    </div>
+                                    <small style={{ color: '#666', fontSize: '0.75rem', marginTop: '4px', display: 'block' }}>
+                                        {t('store.loyalty.pointsPerCurrency')}: {loyaltyData.pointsPerCurrency?.toFixed(2)}
+                                    </small>
+                                </div>
+                                <div className="form-group">
+                                    <label>{t('store.loyalty.rewardPoints')}</label>
+                                    <input
+                                        type="number"
+                                        value={loyaltyData.rewardPoints}
+                                        onChange={(e) => setLoyaltyData(prev => ({ ...prev, rewardPoints: parseFloat(e.target.value) }))}
+                                    />
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                <label>{t('store.loyalty.rewardValue')}</label>
+                                <input
+                                    type="number"
+                                    value={loyaltyData.rewardValue}
+                                    onChange={(e) => setLoyaltyData(prev => ({ ...prev, rewardValue: parseFloat(e.target.value) }))}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="loyalty-group" style={{ marginTop: '2rem' }}>
+                            <h3>{t('store.loyalty.membershipLevels')}</h3>
+                            <div className="grid-2">
+                                <div className="form-group">
+                                    <label>{t('store.loyalty.silverThreshold')}</label>
+                                    <input
+                                        type="number"
+                                        value={loyaltyData.silverThreshold}
+                                        onChange={(e) => setLoyaltyData(prev => ({ ...prev, silverThreshold: parseFloat(e.target.value) }))}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>{t('store.loyalty.silverDiscount')}</label>
+                                    <input
+                                        type="number"
+                                        value={loyaltyData.silverDiscount}
+                                        onChange={(e) => setLoyaltyData(prev => ({ ...prev, silverDiscount: parseFloat(e.target.value) }))}
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid-2" style={{ marginTop: '1rem' }}>
+                                <div className="form-group">
+                                    <label>{t('store.loyalty.goldThreshold')}</label>
+                                    <input
+                                        type="number"
+                                        value={loyaltyData.goldThreshold}
+                                        onChange={(e) => setLoyaltyData(prev => ({ ...prev, goldThreshold: parseFloat(e.target.value) }))}
+                                    />
+                                </div>
+                                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '1rem', height: '100%' }}>
+                                    <label className="checkbox-container" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={loyaltyData.goldFreeDelivery}
+                                            onChange={(e) => setLoyaltyData(prev => ({ ...prev, goldFreeDelivery: e.target.checked }))}
+                                        />
+                                        <span>{t('store.loyalty.goldFreeDelivery')}</span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -11,7 +11,8 @@ import {
     ChevronDown,
     Trash,
     Check,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Database
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { db, storage } from '../firebase/config';
@@ -26,6 +27,7 @@ import {
     orderBy
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { seedRewards } from '../utils/seedData';
 import './ProductManager.css';
 
 const ProductManager = () => {
@@ -40,6 +42,7 @@ const ProductManager = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [extraImageFiles, setExtraImageFiles] = useState({}); // { index: File }
     const [uploading, setUploading] = useState(false);
+    const [seeding, setSeeding] = useState(false);
 
     const [formData, setFormData] = useState({
         nameAr: '',
@@ -53,7 +56,8 @@ const ProductManager = () => {
         rating: '4.5',
         sizes: [],
         flavors: [],
-        extras: []
+        extras: [],
+        loyaltyPointsPrice: ''
     });
 
     useEffect(() => {
@@ -115,6 +119,7 @@ const ProductManager = () => {
                 description: formData.descriptionAr, // Compat
                 image: imageUrl,
                 price: parseFloat(formData.price),
+                loyaltyPointsPrice: formData.loyaltyPointsPrice ? parseInt(formData.loyaltyPointsPrice) : null,
                 extras: updatedExtras
             };
 
@@ -222,7 +227,8 @@ const ProductManager = () => {
             rating: '4.5',
             sizes: [],
             flavors: [],
-            extras: []
+            extras: [],
+            loyaltyPointsPrice: ''
         });
     };
 
@@ -239,7 +245,8 @@ const ProductManager = () => {
                 classification: product.classification || '',
                 sizes: product.sizes || [],
                 flavors: product.flavors || [],
-                extras: product.extras || []
+                extras: product.extras || [],
+                loyaltyPointsPrice: product.loyaltyPointsPrice ? product.loyaltyPointsPrice.toString() : ''
             });
             setImagePreview(product.image);
         } else {
@@ -271,6 +278,42 @@ const ProductManager = () => {
                     <button className="add-btn" onClick={() => openModal()}>
                         <Plus size={20} />
                         <span>{t('products.addNew')}</span>
+                    </button>
+                    <button
+                        className="seed-btn glass"
+                        onClick={async () => {
+                            if (window.confirm('هل تريد إضافة منتجات متجر المكافآت المميزة؟')) {
+                                setSeeding(true);
+                                try {
+                                    const result = await seedRewards();
+                                    alert(`تمت الإضافة بنجاح! تم إضافة ${result.addedCount} منتجات جديدة.`);
+                                    fetchData();
+                                } catch (error) {
+                                    console.error(error);
+                                    alert('حدث خطأ أثناء استخراج البيانات');
+                                } finally {
+                                    setSeeding(false);
+                                }
+                            }
+                        }}
+                        disabled={seeding}
+                        style={{
+                            marginLeft: '1rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: 'rgba(162, 28, 175, 0.1)',
+                            border: '1px solid rgba(162, 28, 175, 0.2)',
+                            color: '#A21CAF',
+                            padding: '10px 16px',
+                            borderRadius: '12px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            cursor: seeding ? 'not-allowed' : 'pointer'
+                        }}
+                    >
+                        <Database size={18} />
+                        <span>{seeding ? t('common.loading') : 'استخراج منتجات المكافآت'}</span>
                     </button>
                 </div>
                 <div className="header-right">
@@ -364,6 +407,15 @@ const ProductManager = () => {
                                         value={formData.price}
                                         onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                                         required
+                                    />
+                                </div>
+                                <div className="form-group flex-1">
+                                    <label>{t('products.loyaltyPointsPrice')}</label>
+                                    <input
+                                        type="number"
+                                        value={formData.loyaltyPointsPrice}
+                                        onChange={(e) => setFormData({ ...formData, loyaltyPointsPrice: e.target.value })}
+                                        placeholder="0"
                                     />
                                 </div>
                             </div>
@@ -585,10 +637,10 @@ const ProductManager = () => {
                                 </button>
                             </div>
                         </form>
-                    </div>
-                </div>
+                    </div >
+                </div >
             )}
-        </div>
+        </div >
     );
 };
 

@@ -101,7 +101,8 @@
         "extraNameHe": "שם תוספת (עברית)",
         "searchProducts": "חפש מוצר או קטגוריה...",
         "product": "מוצר",
-        "deleteConfirm": "האם אתה בטוח שברצונך למחוק מוצר זה?"
+        "deleteConfirm": "האם אתה בטוח שברצונך למחוק מוצר זה?",
+        "loyaltyPointsPrice": "מחיר בנקודות (לתגמולים)"
     },
     "categories": {
         "title": "ניהול קטגוריות",
@@ -167,7 +168,12 @@
             "cashier": "קופאי",
             "accountant": "רואה חשבון",
             "user": "משתמש"
-        }
+        },
+        "totalOrders": "סה\"כ הזמנות",
+        "loyaltyPoints": "נקודות נאמנות",
+        "editPoints": "עריכת נקודות",
+        "adjustPoints": "עדכון יתרת נקודות",
+        "savePoints": "שמור נקודות"
     },
     "store": {
         "title": "ניהול פרופיל החנות",
@@ -234,13 +240,24 @@
         "errorSave": "אירעה שגיאה בעת השמירה",
         "errorUpload": "העלאת התמונה נכשלה",
         "days": {
-            "monday": "שני",
-            "tuesday": "שלישי",
-            "wednesday": "רביעי",
-            "thursday": "חמישי",
-            "friday": "שישי",
-            "saturday": "שבת",
             "sunday": "ראשון"
+        },
+        "loyalty": {
+            "title": "מערכת נאמנות ותגמולים",
+            "subtitle": "ניהול נקודות, תגמולים ורמות חברות",
+            "settings": "הגדרות נקודות",
+            "pointsPerCurrency": "נקודות שנצברו עבור כל 1 ₪",
+            "currencyPerPoint": "עבור כל (₪) מרויחים נקודה אחת",
+            "rewardValue": "ערך הנחה (₪)",
+            "rewardPoints": "נקודות נדרשות להנחה",
+            "membershipLevels": "רמות חברות",
+            "silverThreshold": "נקודות לחברות כסף",
+            "silverDiscount": "הנחת חברות כסף (%)",
+            "goldThreshold": "נקודות לחברות זהב",
+            "goldFreeDelivery": "משלוח חינם לחבר זהב",
+            "ratios": "יחסי המרה",
+            "thresholds": "ספי שדרוג",
+            "perks": "הטבות"
         }
     },
     "orders": {
@@ -265,6 +282,8 @@
         "deliveryFee": "דמי משלוח",
         "totalAmount": "סה\"כ לתשלום",
         "customerInfo": "לקוח",
+        "totalOrders": "סה\"כ הזמנות",
+        "loyaltyPoints": "נקודות נאמנות",
         "name": "שם",
         "phone": "טלפון",
         "orderType": "סוג הזמנה",

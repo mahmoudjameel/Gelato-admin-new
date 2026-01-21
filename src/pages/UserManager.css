@@ -453,3 +453,99 @@
         grid-template-columns: 1fr;
     }
 }
+/* Loyalty Stats Section */
+.loyalty-stats-section {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 2px solid #f3f4f6;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.stat-box {
+    background: #f8f9fa;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+.stat-box label {
+    display: block;
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #111827;
+}
+
+.stat-value.points {
+    color: #A21CAF;
+}
+
+.points-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.edit-points-link {
+    background: none;
+    border: none;
+    color: #3b82f6;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+}
+
+.edit-points-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.points-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.edit-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.save-points-btn {
+    flex: 1;
+    background: #A21CAF;
+    color: white;
+    border: none;
+    padding: 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.cancel-points-btn {
+    background: #e5e7eb;
+    color: #4b5563;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+}

@@ -24,10 +24,12 @@ import {
     getDocs,
     updateDoc,
     doc,
+    getDoc,
     query,
     orderBy,
     onSnapshot,
-    addDoc
+    addDoc,
+    where
 } from 'firebase/firestore';
 import './OrderManager.css';
 
@@ -38,6 +40,7 @@ const OrderManager = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [customerDetails, setCustomerDetails] = useState({ totalOrders: 0, points: 0 });
 
     useEffect(() => {
         // Set up real-time listener for orders
@@ -130,12 +133,48 @@ const OrderManager = () => {
         }
 
         try {
-            await updateDoc(doc(db, 'orders', orderId), { status: newStatus });
+            const updates = { status: newStatus };
+
+            // AWARD POINTS ON COMPLETION
+            if (newStatus === 'completed' && orderToUpdate && orderToUpdate.userId && !orderToUpdate.pointsAwarded) {
+                const userRef = doc(db, 'users', orderToUpdate.userId);
+                const userSnap = await getDoc(userRef);
+
+                const settingsRef = doc(db, 'settings', 'loyalty');
+                const settingsSnap = await getDoc(settingsRef);
+
+                if (userSnap.exists() && settingsSnap.exists()) {
+                    const userData = userSnap.data();
+                    const settings = settingsSnap.data();
+
+                    const totalAmount = parseFloat(orderToUpdate.totalAmount || 0);
+                    const earnedPoints = Math.floor(totalAmount * (settings.pointsPerCurrency || 1));
+                    const newPoints = (userData.points || 0) + earnedPoints;
+
+                    // Permanent Level Logic: Only upgrade, never downgrade.
+                    let currentLevel = userData.membershipLevel || 'Bronze';
+                    let newLevel = currentLevel;
+
+                    if (newPoints >= settings.goldThreshold) {
+                        newLevel = 'Gold';
+                    } else if (newPoints >= settings.silverThreshold) {
+                        if (currentLevel !== 'Gold') newLevel = 'Silver';
+                    }
+
+                    await updateDoc(userRef, {
+                        points: newPoints,
+                        membershipLevel: newLevel,
+                        lastPointsEarned: earnedPoints
+                    });
+
+                    updates.pointsAwarded = true;
+                }
+            }
+
+            await updateDoc(doc(db, 'orders', orderId), updates);
 
             // Send Notification if order exists
             if (orderToUpdate) {
-                // We pass the updated status, but need to be careful using 'orderToUpdate' which has old status
-                // But sendNotification only needs userId and id, which don't change.
                 sendNotification(orderToUpdate, newStatus);
             }
 
@@ -191,9 +230,32 @@ const OrderManager = () => {
         }
     };
 
-    const openModal = (order) => {
+    const openModal = async (order) => {
         setSelectedOrder(order);
         setIsModalOpen(true);
+        setCustomerDetails({ totalOrders: 0, points: 0 });
+
+        if (order.userId) {
+            try {
+                // Fetch user points
+                const userDoc = await getDocs(query(collection(db, 'users'), where('__name__', '==', order.userId)));
+                let points = 0;
+                if (!userDoc.empty) {
+                    points = userDoc.docs[0].data().points || 0;
+                }
+
+                // Fetch total orders count
+                const ordersQuery = query(collection(db, 'orders'), where('userId', '==', order.userId));
+                const ordersSnapshot = await getDocs(ordersQuery);
+
+                setCustomerDetails({
+                    totalOrders: ordersSnapshot.size,
+                    points: points
+                });
+            } catch (error) {
+                console.error("Error fetching customer details:", error);
+            }
+        }
     };
 
     const filteredOrders = orders.filter(order =>
@@ -399,6 +461,10 @@ const OrderManager = () => {
                                         <div className="info-content">
                                             <p><strong>{t('orders.name')}:</strong> {selectedOrder.customerName || t('orders.anonymous')}</p>
                                             <p><strong>{t('orders.phone')}:</strong> {selectedOrder.address?.phone || selectedOrder.customerEmail || t('common.noData')}</p>
+                                            <div className="customer-loyalty-info">
+                                                <p><strong>{t('orders.totalOrders')}:</strong> {customerDetails.totalOrders}</p>
+                                                <p><strong>{t('orders.loyaltyPoints')}:</strong> <span className="points-badge">{customerDetails.points}</span></p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
