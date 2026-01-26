@@ -1,13 +1,20 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Menu, X } from 'lucide-react';
+import { Menu, Moon, Sun } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { toggleTheme, getStoredTheme } from '../utils/theme';
 import './DashboardLayout.css';
 
 const DashboardLayout = () => {
     const { t } = useTranslation();
-    const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isDark, setIsDark] = useState(getStoredTheme() === 'dark');
+
+    const handleToggleTheme = () => {
+        const newTheme = toggleTheme();
+        setIsDark(newTheme === 'dark');
+    };
 
     return (
         <div className={`dashboard-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
@@ -30,6 +37,13 @@ const DashboardLayout = () => {
                         </div>
                     </div>
                     <div className="header-actions">
+                        <button 
+                            className="theme-toggle-btn" 
+                            onClick={handleToggleTheme}
+                            aria-label="Toggle Theme"
+                        >
+                            {isDark ? <Sun size={20} /> : <Moon size={20} />}
+                        </button>
                         <div className="user-profile">
                             <div className="avatar">A</div>
                             <span className="user-name">{t('dashboard.adminRole')}</span>

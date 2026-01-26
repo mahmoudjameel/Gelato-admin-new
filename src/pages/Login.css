@@ -3,9 +3,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%);
+    background: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%);
     padding: 1.5rem;
     direction: rtl;
+}
+
+[data-theme='dark'] .login-container {
+    background: linear-gradient(135deg, var(--background) 0%, var(--card) 100%);
 }
 
 .login-card {
@@ -14,6 +18,12 @@
     padding: 3rem 2.5rem;
     border-radius: calc(var(--radius) * 1.5);
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+    background: var(--card);
+    border: 1px solid var(--border);
+}
+
+[data-theme='dark'] .login-card {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 .login-header {
@@ -24,13 +34,14 @@
 .login-logo {
     width: 64px;
     height: 64px;
-    background: white;
+    background: var(--card);
     border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 1.5rem;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
 }
 
 .login-header h1 {
@@ -80,7 +91,8 @@
     padding: 1rem 3.25rem 1rem 1.25rem;
     border-radius: var(--radius);
     border: 1px solid var(--border);
-    background: white;
+    background: var(--card);
+    color: var(--foreground);
     font-size: 1rem;
     transition: all 0.2s ease;
 }
@@ -107,7 +119,8 @@
 
 .login-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(217, 70, 239, 0.3);
+    box-shadow: 0 10px 15px -3px rgba(143, 211, 196, 0.4);
+    opacity: 0.9;
 }
 
 .login-footer {

@@ -26,6 +26,7 @@ const UserManager = () => {
     const [isAddingUser, setIsAddingUser] = useState(false);
     const [newUser, setNewUser] = useState({
         email: '',
+        username: '',
         password: '',
         displayName: '',
         phoneNumber: '',
@@ -96,13 +97,20 @@ const UserManager = () => {
             secondaryApp = initializeApp(app.options, 'SecondaryApp');
             const secondaryAuth = getAuth(secondaryApp);
 
-            const userCredential = await createUserWithEmailAndPassword(secondaryAuth, newUser.email, newUser.password);
+            // If it's a staff member and username is provided, use it to generate an email
+            let authEmail = newUser.email;
+            if ((newUser.role === 'cashier' || newUser.role === 'admin' || newUser.role === 'accountant') && newUser.username) {
+                authEmail = `${newUser.username.toLowerCase()}@store.local`;
+            }
+
+            const userCredential = await createUserWithEmailAndPassword(secondaryAuth, authEmail, newUser.password);
             const uid = userCredential.user.uid;
 
             // Create user document in Firestore with Role
             await setDoc(doc(db, 'users', uid), {
                 displayName: newUser.displayName,
-                email: newUser.email,
+                email: authEmail,
+                username: newUser.username || null,
                 phoneNumber: newUser.phoneNumber,
                 role: newUser.role,
                 createdAt: serverTimestamp(),
@@ -115,7 +123,7 @@ const UserManager = () => {
 
             alert(t('users.successAdd'));
             setIsAddModalOpen(false);
-            setNewUser({ email: '', password: '', displayName: '', phoneNumber: '', role: 'customer' });
+            setNewUser({ email: '', username: '', password: '', displayName: '', phoneNumber: '', role: 'customer' });
             fetchUsers(); // Refresh list
 
         } catch (error) {
@@ -309,7 +317,10 @@ const UserManager = () => {
                                                 <User size={16} />
                                             </div>
                                         )}
-                                        {user.displayName || t('users.noName')}
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <span>{user.displayName || t('users.noName')}</span>
+                                            {user.username && <small style={{ color: '#9ca3af' }}>@{user.username}</small>}
+                                        </div>
                                     </td>
                                     <td>{getRoleBadge(user.role)}</td>
                                     <td>{user.email || '-'}</td>
@@ -371,17 +382,32 @@ const UserManager = () => {
                                     />
                                 </div>
 
-                                <div className="form-group">
-                                    <label>{t('users.emailLogin')}</label>
-                                    <input
-                                        type="email"
-                                        className="form-input"
-                                        value={newUser.email}
-                                        onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                                        required
-                                        placeholder={t('users.emailPlaceholder')}
-                                    />
-                                </div>
+                                {newUser.role !== 'customer' ? (
+                                    <div className="form-group">
+                                        <label>{t('users.username')}</label>
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            value={newUser.username}
+                                            onChange={(e) => setNewUser({ ...newUser, username: e.target.value.replace(/\s/g, '') })}
+                                            required
+                                            placeholder={t('users.usernamePlaceholder')}
+                                        />
+                                        <small className="form-help">{t('users.usernameTooltip')}</small>
+                                    </div>
+                                ) : (
+                                    <div className="form-group">
+                                        <label>{t('users.emailLogin')}</label>
+                                        <input
+                                            type="email"
+                                            className="form-input"
+                                            value={newUser.email}
+                                            onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                                            required
+                                            placeholder={t('users.emailPlaceholder')}
+                                        />
+                                    </div>
+                                )}
 
                                 <div className="form-group">
                                     <label>{t('users.password')}</label>

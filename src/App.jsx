@@ -13,6 +13,8 @@ import StoreManager from './pages/StoreManager';
 import UserManager from './pages/UserManager';
 import AlertManager from './pages/AlertManager';
 import PromoCodeManager from './pages/PromoCodeManager';
+
+import ExtrasManager from './pages/ExtrasManager';
 import Login from './pages/Login';
 
 const ProtectedRoute = ({ children }) => {
@@ -33,12 +35,25 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+import LandingPage from './pages/LandingPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
+import ContactPage from './pages/ContactPage';
+import { Navigate } from 'react-router-dom';
+
 function App() {
   return (
     <Router>
       <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+
+        {/* Protected Dashboard Routes */}
+        <Route path="/dashboard" element={
           <ProtectedRoute>
             <DashboardLayout />
           </ProtectedRoute>
@@ -51,8 +66,13 @@ function App() {
           <Route path="users" element={<UserManager />} />
           <Route path="alerts" element={<AlertManager />} />
           <Route path="promos" element={<PromoCodeManager />} />
+
+          <Route path="extras" element={<ExtrasManager />} />
           <Route path="store" element={<StoreManager />} />
         </Route>
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );

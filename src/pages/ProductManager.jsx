@@ -12,7 +12,12 @@ import {
     Trash,
     Check,
     Image as ImageIcon,
-    Database
+    Database,
+    Snowflake,
+    RotateCcw,
+    Clock,
+    Calendar,
+    AlertTriangle
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { db, storage } from '../firebase/config';
@@ -24,16 +29,19 @@ import {
     deleteDoc,
     doc,
     query,
-    orderBy
+    orderBy,
+    where
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { seedRewards } from '../utils/seedData';
+import { seedData } from '../data/seedData';
 import './ProductManager.css';
 
 const ProductManager = () => {
     const { t } = useTranslation();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [globalExtras, setGlobalExtras] = useState([]); // [NEW] Store global extras
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,6 +51,11 @@ const ProductManager = () => {
     const [extraImageFiles, setExtraImageFiles] = useState({}); // { index: File }
     const [uploading, setUploading] = useState(false);
     const [seeding, setSeeding] = useState(false);
+    const [showDeleted, setShowDeleted] = useState(false);
+    const [freezeModalOpen, setFreezeModalOpen] = useState(false);
+    const [productToFreeze, setProductToFreeze] = useState(null);
+    const [freezeType, setFreezeType] = useState('tomorrow'); // tomorrow, scheduled, indefinite
+    const [customFreezeDate, setCustomFreezeDate] = useState('');
 
     const [formData, setFormData] = useState({
         nameAr: '',
@@ -60,23 +73,146 @@ const ProductManager = () => {
         loyaltyPointsPrice: ''
     });
 
+    // [NEW] Collapsible state for extras picker
+    const [isExtrasExpanded, setIsExtrasExpanded] = useState(false);
+
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [showDeleted]); // Re-fetch or re-filter when toggling deleted view
 
     const fetchData = async () => {
+        setLoading(true);
         try {
+            // Filter query based on isDeleted status (default false if field missing)
+            // Note: Firestore querying on non-existent fields can be tricky, 
+            // so we might filter client-side if the field was just added.
+            // But let's try a direct query first.
+            // Actually, for simplicity and to handle mixed data (some docs without isDeleted),
+            // fetching all might be safer if the collection isn't huge, OR update all docs.
+            // Let's assume we filter client side for safer migration or use a where clause.
+
+            // To properly query `isDeleted == false`, we need to index it or ensure all docs have it.
+            // Let's fetch all and filter in JS for smoother transition without re-indexing immediately.
             const pQ = query(collection(db, 'products'), orderBy('name'));
             const cQ = query(collection(db, 'categories'), orderBy('name'));
+            const eQ = query(collection(db, 'extras'), orderBy('nameAr')); // [NEW] Fetch extras
 
-            const [pSnapshot, cSnapshot] = await Promise.all([getDocs(pQ), getDocs(cQ)]);
+            const [pSnapshot, cSnapshot, eSnapshot] = await Promise.all([getDocs(pQ), getDocs(cQ), getDocs(eQ)]); // [NEW] Await fetch
 
-            setProducts(pSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            const allProducts = pSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                isDeleted: doc.data().isDeleted || false,
+                isFrozen: doc.data().isFrozen || false
+            }));
+
+            // Filter based on the toggle
+            const visibleProducts = allProducts.filter(p => p.isDeleted === showDeleted);
+
+            setProducts(visibleProducts);
             setCategories(cSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            setGlobalExtras(eSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))); // [NEW] Set extras
         } catch (error) {
             console.error("Error fetching data: ", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Seed Functions
+    const handleSeedDatabase = async () => {
+        if (!window.confirm('هل أنت متأكد من إضافة البيانات التجريبية (Seed)؟ سيتم إضافة تصنيفات، إضافات، ومنتجات.')) return;
+
+        setSeeding(true);
+        try {
+            // 1. Add Categories
+            console.log("Seeding Categories...");
+            for (const cat of seedData.categories) {
+                // Check duplicate if needed, or just add
+                await addDoc(collection(db, 'categories'), { ...cat, createdAt: new Date() });
+            }
+
+            // 2. Add Extras and map IDs
+            console.log("Seeding Extras...");
+            const extrasMap = {}; // seedID -> firestoreID
+            for (const extra of seedData.extras) {
+                const { id: seedId, ...extraData } = extra;
+                const docRef = await addDoc(collection(db, 'extras'), { ...extraData, createdAt: new Date() });
+                extrasMap[seedId] = docRef.id;
+            }
+
+            // 3. Add Products
+            console.log("Seeding Products...");
+            for (const prod of seedData.products) {
+                const { linkedExtras, ...prodData } = prod;
+
+                // Map extras if any
+                let finalExtras = [];
+                if (linkedExtras && linkedExtras.length > 0) {
+                    finalExtras = linkedExtras.map(seedExtraId => {
+                        const firestoreId = extrasMap[seedExtraId];
+                        // We also need the extra details embedded in product sometimes, 
+                        // but the new system references by ID mainly.
+                        // However, EditProductScreen expects full objects in the 'extras' array often.
+                        // Let's attach at least the ID. 
+                        // Actually, looking at the code, we save array of objects in product.extras usually.
+                        // Let's fetch the data we just saved or use the seed data.
+                        const extraSeedData = seedData.extras.find(e => e.id === seedExtraId);
+                        if (extraSeedData && firestoreId) {
+                            const { id, ...data } = extraSeedData;
+                            return { id: firestoreId, ...data };
+                        }
+                        return null;
+                    }).filter(Boolean);
+                }
+
+                await addDoc(collection(db, 'products'), {
+                    ...prodData,
+                    extras: finalExtras,
+                    createdAt: new Date()
+                });
+            }
+
+            alert('تمت إضافة البيانات التجريبية بنجاح!');
+            fetchData();
+        } catch (error) {
+            console.error("Seeding error:", error);
+            alert('حدث خطأ أثناء إضافة البيانات');
+        } finally {
+            setSeeding(false);
+        }
+    };
+
+    const handleClearSeed = async () => {
+        if (!window.confirm('هل أنت متأكد من حذف جميع البيانات التجريبية (Seeded Data)؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+
+        setSeeding(true);
+        try {
+            // Delete Products
+            const pQ = query(collection(db, 'products'), where('isSeeded', '==', true));
+            const pSnap = await getDocs(pQ);
+            const pDeletePromises = pSnap.docs.map(doc => deleteDoc(doc.ref));
+            await Promise.all(pDeletePromises);
+
+            // Delete Extras
+            const eQ = query(collection(db, 'extras'), where('isSeeded', '==', true));
+            const eSnap = await getDocs(eQ);
+            const eDeletePromises = eSnap.docs.map(doc => deleteDoc(doc.ref));
+            await Promise.all(eDeletePromises);
+
+            // Delete Categories
+            const cQ = query(collection(db, 'categories'), where('isSeeded', '==', true));
+            const cSnap = await getDocs(cQ);
+            const cDeletePromises = cSnap.docs.map(doc => deleteDoc(doc.ref));
+            await Promise.all(cDeletePromises);
+
+            alert('تم حذف البيانات التجريبية بنجاح!');
+            fetchData();
+        } catch (error) {
+            console.error("Clearing seed error:", error);
+            alert('حدث خطأ أثناء حذف البيانات');
+        } finally {
+            setSeeding(false);
         }
     };
 
@@ -182,32 +318,41 @@ const ProductManager = () => {
         setFormData({ ...formData, flavors: newFlavors });
     };
 
-    const addExtra = () => {
-        setFormData({
-            ...formData,
-            extras: [...(formData.extras || []), { nameAr: '', nameHe: '', price: 0, isDefault: false, image: '' }]
-        });
+    const addExtra = (points = false) => {
+        // No longer creating new extras here ad-hoc. 
+        // Logic handled by selecting from list.
     };
 
-    const removeExtra = (index) => {
-        const newExtras = (formData.extras || []).filter((_, i) => i !== index);
-        // Also remove matched file if exists
-        const newFiles = { ...extraImageFiles };
-        delete newFiles[index];
-        setExtraImageFiles(newFiles);
+    const toggleExtraSelection = (extraId) => {
+        const currentExtras = formData.extras || [];
+        const exists = currentExtras.find(ex => ex.id === extraId);
+
+        let newExtras;
+        if (exists) {
+            newExtras = currentExtras.filter(ex => ex.id !== extraId);
+        } else {
+            // Find original extra
+            const original = globalExtras.find(ex => ex.id === extraId);
+            if (original) {
+                newExtras = [...currentExtras, {
+                    id: original.id,
+                    nameAr: original.nameAr,
+                    nameHe: original.nameHe,
+                    price: original.price,
+                    image: original.image,
+                    isDefault: false
+                }];
+            }
+        }
         setFormData({ ...formData, extras: newExtras });
     };
 
-    const updateExtra = (index, field, value) => {
+    const updateExtraOverride = (index, field, value) => {
+        // Allow overriding price or default status per product if needed? 
+        // For now, let's stick to global properties mainly, but 'isDefault' is per product.
         const newExtras = [...(formData.extras || [])];
         newExtras[index][field] = value;
         setFormData({ ...formData, extras: newExtras });
-    };
-
-    const handleExtraImageChange = (index, file) => {
-        if (file) {
-            setExtraImageFiles(prev => ({ ...prev, [index]: file }));
-        }
     };
 
     const resetForm = () => {
@@ -258,10 +403,86 @@ const ProductManager = () => {
     const handleDelete = async (id) => {
         if (window.confirm(t('products.deleteConfirm'))) {
             try {
-                await deleteDoc(doc(db, 'products', id));
+                // Soft delete
+                await updateDoc(doc(db, 'products', id), { isDeleted: true });
                 fetchData();
             } catch (error) {
                 console.error("Error deleting product: ", error);
+            }
+        }
+    };
+
+    const handleRestore = async (id) => {
+        if (window.confirm(t('products.restoreConfirm'))) {
+            try {
+                await updateDoc(doc(db, 'products', id), { isDeleted: false });
+                fetchData();
+            } catch (error) {
+                console.error("Error restoring product: ", error);
+            }
+        }
+    };
+
+    const handlePermanentDelete = async (id) => {
+        if (window.confirm(t('products.permanentDeleteConfirm'))) {
+            try {
+                await deleteDoc(doc(db, 'products', id));
+                fetchData();
+            } catch (error) {
+                console.error("Error permanently deleting product: ", error);
+            }
+        }
+    };
+
+    // Freeze Functions
+    const handleFreezeClick = (product) => {
+        setProductToFreeze(product);
+        setFreezeType('tomorrow');
+        setCustomFreezeDate('');
+        setFreezeModalOpen(true);
+    };
+
+    const submitFreeze = async () => {
+        if (!productToFreeze) return;
+
+        let unfreezeAt = null;
+        const now = new Date();
+
+        if (freezeType === 'tomorrow') {
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0); // Midnight
+            unfreezeAt = tomorrow;
+        } else if (freezeType === 'scheduled' && customFreezeDate) {
+            unfreezeAt = new Date(customFreezeDate);
+        }
+        // If indefinite, unfreezeAt remains null but isFrozen is true
+
+        try {
+            await updateDoc(doc(db, 'products', productToFreeze.id), {
+                isFrozen: true,
+                freezeType,
+                unfreezeAt: unfreezeAt ? unfreezeAt : null
+            });
+            setFreezeModalOpen(false);
+            setProductToFreeze(null);
+            fetchData();
+        } catch (error) {
+            console.error("Error freezing product: ", error);
+        }
+    };
+
+    const unfreezeProduct = async (id) => {
+        if (window.confirm(t('products.unfreezeConfirm'))) {
+            try {
+                await updateDoc(doc(db, 'products', id), {
+                    isFrozen: false,
+                    freezeType: null,
+                    unfreezeAt: null
+                });
+                fetchData();
+            } catch (error) {
+                console.error("Error unfreezing product: ", error);
             }
         }
     };
@@ -279,41 +500,74 @@ const ProductManager = () => {
                         <Plus size={20} />
                         <span>{t('products.addNew')}</span>
                     </button>
+
+                    <div className="seed-controls" style={{ display: 'flex', gap: '8px', marginLeft: '1rem' }}>
+                        <button
+                            className="seed-btn glass"
+                            onClick={handleSeedDatabase}
+                            disabled={seeding}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                background: 'rgba(16, 185, 129, 0.1)',
+                                border: '1px solid rgba(16, 185, 129, 0.2)',
+                                color: '#10B981',
+                                padding: '10px 16px',
+                                borderRadius: '12px',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                cursor: seeding ? 'not-allowed' : 'pointer'
+                            }}
+                        >
+                            <Database size={18} />
+                            <span>{seeding ? t('common.loading') : 'إضافة بيانات تجريبية'}</span>
+                        </button>
+
+                        <button
+                            className="clear-seed-btn glass"
+                            onClick={handleClearSeed}
+                            disabled={seeding}
+                            title="حذف البيانات التجريبية فقط"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                background: 'rgba(239, 68, 68, 0.1)',
+                                border: '1px solid rgba(239, 68, 68, 0.2)',
+                                color: '#EF4444',
+                                padding: '10px 16px',
+                                borderRadius: '12px',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                cursor: seeding ? 'not-allowed' : 'pointer'
+                            }}
+                        >
+                            <Trash2 size={18} />
+                            <span>حذف بيانات Seed</span>
+                        </button>
+                    </div>
+
                     <button
-                        className="seed-btn glass"
-                        onClick={async () => {
-                            if (window.confirm('هل تريد إضافة منتجات متجر المكافآت المميزة؟')) {
-                                setSeeding(true);
-                                try {
-                                    const result = await seedRewards();
-                                    alert(`تمت الإضافة بنجاح! تم إضافة ${result.addedCount} منتجات جديدة.`);
-                                    fetchData();
-                                } catch (error) {
-                                    console.error(error);
-                                    alert('حدث خطأ أثناء استخراج البيانات');
-                                } finally {
-                                    setSeeding(false);
-                                }
-                            }
-                        }}
-                        disabled={seeding}
+                        className={`delete-toggle-btn ${showDeleted ? 'active' : ''}`}
+                        onClick={() => setShowDeleted(!showDeleted)}
                         style={{
                             marginLeft: '1rem',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            background: 'rgba(162, 28, 175, 0.1)',
-                            border: '1px solid rgba(162, 28, 175, 0.2)',
-                            color: '#A21CAF',
+                            background: showDeleted ? '#EF4444' : 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                            color: showDeleted ? 'white' : '#EF4444',
                             padding: '10px 16px',
                             borderRadius: '12px',
                             fontSize: '14px',
                             fontWeight: '600',
-                            cursor: seeding ? 'not-allowed' : 'pointer'
+                            cursor: 'pointer'
                         }}
                     >
-                        <Database size={18} />
-                        <span>{seeding ? t('common.loading') : 'استخراج منتجات المكافآت'}</span>
+                        <Trash2 size={18} />
+                        <span>{showDeleted ? t('products.showActive') : t('products.showDeleted')}</span>
                     </button>
                 </div>
                 <div className="header-right">
@@ -360,8 +614,30 @@ const ProductManager = () => {
                                 <td>⭐ {product.rating}</td>
                                 <td>
                                     <div className="table-actions">
-                                        <button className="edit-btn" onClick={() => openModal(product)}><Edit2 size={16} /></button>
-                                        <button className="delete-btn" onClick={() => handleDelete(product.id)}><Trash2 size={16} /></button>
+                                        {!showDeleted ? (
+                                            <>
+                                                {product.isFrozen ? (
+                                                    <button className="unfreeze-btn" title={t('products.unfreeze')} onClick={() => unfreezeProduct(product.id)}>
+                                                        <Snowflake size={16} color="#3B82F6" />
+                                                    </button>
+                                                ) : (
+                                                    <button className="freeze-btn" title={t('products.freeze')} onClick={() => handleFreezeClick(product)}>
+                                                        <Clock size={16} color="#F59E0B" />
+                                                    </button>
+                                                )}
+                                                <button className="edit-btn" onClick={() => openModal(product)}><Edit2 size={16} /></button>
+                                                <button className="delete-btn" onClick={() => handleDelete(product.id)}><Trash2 size={16} /></button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <button className="restore-btn" title={t('products.restore')} onClick={() => handleRestore(product.id)}>
+                                                    <RotateCcw size={16} color="#10B981" />
+                                                </button>
+                                                <button className="permanent-delete-btn" title={t('products.deletePermanently')} onClick={() => handlePermanentDelete(product.id)}>
+                                                    <Trash size={16} color="#EF4444" />
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
                                 </td>
                             </tr>
@@ -572,58 +848,62 @@ const ProductManager = () => {
                             </div>
 
                             <div className="dynamic-section">
-                                <div className="section-header-modal">
-                                    <h3>{t('products.extras')}</h3>
-                                    <button type="button" className="btn-icon-add" onClick={addExtra}><Plus size={16} /></button>
+                                <div
+                                    className="section-header-modal clickable-header"
+                                    onClick={() => setIsExtrasExpanded(!isExtrasExpanded)}
+                                    style={{ cursor: 'pointer' }}
+                                >
+                                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        {t('products.extras')}
+                                        <ChevronDown size={16} style={{ transform: isExtrasExpanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
+                                    </h3>
+                                    <span style={{ fontSize: '0.8rem', color: '#6B7280' }}>
+                                        {(formData.extras || []).length} {t('products.selectedExtras')}
+                                    </span>
                                 </div>
-                                {(formData.extras || []).map((extra, index) => (
-                                    <div key={index} className="dynamic-row extras-row-enhanced">
-                                        <div className="extra-image-upload">
-                                            <label htmlFor={`extra-img-${index}`} className="extra-img-label">
-                                                {extraImageFiles[index] ? (
-                                                    <img src={URL.createObjectURL(extraImageFiles[index])} alt="extra" className="extra-thumb" />
-                                                ) : extra.image ? (
-                                                    <img src={extra.image} alt="extra" className="extra-thumb" />
-                                                ) : (
-                                                    <ImageIcon size={18} />
-                                                )}
-                                            </label>
-                                            <input
-                                                id={`extra-img-${index}`}
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={(e) => handleExtraImageChange(index, e.target.files[0])}
-                                                style={{ display: 'none' }}
-                                            />
-                                        </div>
-                                        <input
-                                            placeholder={t('products.extraNameAr')}
-                                            value={extra.nameAr || extra.name}
-                                            onChange={(e) => updateExtra(index, 'nameAr', e.target.value)}
-                                        />
-                                        <input
-                                            placeholder={t('products.extraNameHe')}
-                                            value={extra.nameHe || ''}
-                                            onChange={(e) => updateExtra(index, 'nameHe', e.target.value)}
-                                            dir="rtl"
-                                        />
-                                        <input
-                                            type="number"
-                                            placeholder={t('products.price')}
-                                            value={extra.price}
-                                            onChange={(e) => updateExtra(index, 'price', parseFloat(e.target.value))}
-                                        />
-                                        <label className="checkbox-label">
-                                            <input
-                                                type="checkbox"
-                                                checked={extra.isDefault}
-                                                onChange={(e) => updateExtra(index, 'isDefault', e.target.checked)}
-                                            />
-                                            <span>{t('products.default')}</span>
-                                        </label>
-                                        <button type="button" className="btn-remove" onClick={() => removeExtra(index)}><Trash size={16} /></button>
+
+                                {isExtrasExpanded && (
+                                    <div className="extras-selector-grid" style={{ animation: 'slideDown 0.3s ease' }}>
+                                        {globalExtras.map((gExtra) => {
+                                            const isSelected = (formData.extras || []).some(ex => ex.id === gExtra.id);
+                                            return (
+                                                <div
+                                                    key={gExtra.id}
+                                                    className={`extra-select-card ${isSelected ? 'selected' : ''}`}
+                                                    onClick={() => toggleExtraSelection(gExtra.id)}
+                                                >
+                                                    <div className="extra-select-img">
+                                                        {gExtra.image ? <img src={gExtra.image} alt={gExtra.nameAr} /> : <ImageIcon size={16} />}
+                                                    </div>
+                                                    <div className="extra-select-info">
+                                                        <span className="name">{gExtra.nameAr}</span>
+                                                        <span className="price">{gExtra.price} ₪</span>
+                                                    </div>
+                                                    {isSelected && <div className="check-badge"><Check size={12} /></div>}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                ))}
+                                )}
+
+                                {formData.extras && formData.extras.length > 0 && (
+                                    <div className="selected-extras-preview">
+                                        <h4>{t('products.selectedExtras')} ({(formData.extras || []).length})</h4>
+                                        {(formData.extras || []).map((extra, index) => (
+                                            <div key={index} className="selected-extra-row">
+                                                <span>{extra.nameAr}</span>
+                                                <label className="checkbox-label">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={extra.isDefault}
+                                                        onChange={(e) => updateExtraOverride(index, 'isDefault', e.target.checked)}
+                                                    />
+                                                    <span>{t('products.default')}</span>
+                                                </label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="modal-footer">
@@ -639,6 +919,72 @@ const ProductManager = () => {
                         </form>
                     </div >
                 </div >
+            )}
+
+            {freezeModalOpen && (
+                <div className="modal-overlay">
+                    <div className="modal-content glass modal-small" style={{ maxWidth: '400px' }}>
+                        <div className="modal-header">
+                            <h2>{t('products.freezeProduct')}</h2>
+                            <button onClick={() => setFreezeModalOpen(false)}><X size={20} /></button>
+                        </div>
+                        <div className="modal-body" style={{ padding: '20px' }}>
+                            <div className="freeze-options">
+                                <label className={`freeze-option ${freezeType === 'tomorrow' ? 'selected' : ''}`}>
+                                    <input
+                                        type="radio"
+                                        name="freezeType"
+                                        value="tomorrow"
+                                        checked={freezeType === 'tomorrow'}
+                                        onChange={(e) => setFreezeType(e.target.value)}
+                                    />
+                                    <Clock size={20} />
+                                    <span>{t('products.freezeTomorrow')}</span>
+                                </label>
+
+                                <label className={`freeze-option ${freezeType === 'scheduled' ? 'selected' : ''}`}>
+                                    <input
+                                        type="radio"
+                                        name="freezeType"
+                                        value="scheduled"
+                                        checked={freezeType === 'scheduled'}
+                                        onChange={(e) => setFreezeType(e.target.value)}
+                                    />
+                                    <Calendar size={20} />
+                                    <span>{t('products.freezeScheduled')}</span>
+                                </label>
+
+                                {freezeType === 'scheduled' && (
+                                    <input
+                                        type="datetime-local"
+                                        className="freeze-date-input"
+                                        value={customFreezeDate}
+                                        onChange={(e) => setCustomFreezeDate(e.target.value)}
+                                        style={{ width: '100%', marginTop: '10px', padding: '8px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                    />
+                                )}
+
+                                <label className={`freeze-option ${freezeType === 'indefinite' ? 'selected' : ''}`}>
+                                    <input
+                                        type="radio"
+                                        name="freezeType"
+                                        value="indefinite"
+                                        checked={freezeType === 'indefinite'}
+                                        onChange={(e) => setFreezeType(e.target.value)}
+                                    />
+                                    <Snowflake size={20} />
+                                    <span>{t('products.freezeIndefinite')}</span>
+                                </label>
+                            </div>
+
+                            <div className="modal-footer" style={{ marginTop: '20px' }}>
+                                <button className="save-btn" onClick={submitFreeze} disabled={freezeType === 'scheduled' && !customFreezeDate}>
+                                    {t('products.confirmFreeze')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </div >
     );

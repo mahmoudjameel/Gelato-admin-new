@@ -91,6 +91,7 @@
         "sizes": "الأحجام",
         "flavors": "النكهات",
         "extras": "الإضافات",
+        "selectedExtras": "الإضافات المختارة",
         "sizeNameAr": "الحجم (عربي)",
         "sizeNameHe": "الحجم (عبري)",
         "additionalPrice": "السعر الإضافي",
@@ -102,7 +103,21 @@
         "searchProducts": "البحث عن منتج أو قسم...",
         "product": "المنتج",
         "deleteConfirm": "هل أنت متأكد من حذف هذا المنتج؟",
-        "loyaltyPointsPrice": "السعر بالنقاط (للمكافآت)"
+        "loyaltyPointsPrice": "السعر بالنقاط (للمكافآت)",
+        "showDeleted": "المنتجات المحذوفة",
+        "showActive": "المنتجات النشطة",
+        "freeze": "تجميد الوجبة",
+        "unfreeze": "إلغاء التجميد",
+        "restore": "استعادة",
+        "deletePermanently": "حذف نهائي",
+        "unfreezeConfirm": "هل تريد إلغاء تجميد هذا المنتج وإعادته للبيع؟",
+        "restoreConfirm": "هل أنت متأكد من استعادة هذا المنتج؟",
+        "permanentDeleteConfirm": "تحذير: سيتم حذف المنتج نهائياً ولا يمكن استعادته. هل أنت متأكد؟",
+        "freezeProduct": "تجميد الوجبة",
+        "freezeTomorrow": "تجميد لليوم التالي",
+        "freezeScheduled": "تجميد حتى وقت محدد",
+        "freezeIndefinite": "تجميد حتى إشعار آخر",
+        "confirmFreeze": "تأكيد التجميد"
     },
     "categories": {
         "title": "إدارة الأقسام",
@@ -117,6 +132,11 @@
         "browseProducts": "تصفح المنتجات في هذا القسم",
         "searchCategories": "البحث عن قسم...",
         "deleteConfirm": "هل أنت متأكد من حذف هذا القسم؟"
+    },
+    "menuManagement": {
+        "extras": "الإضافات",
+        "addExtra": "إضافة إضافة جديدة",
+        "editExtras": "تعديل الإضافات"
     },
     "users": {
         "title": "إدارة الموظفين والمستخدمين ({{count}})",
@@ -145,6 +165,9 @@
         "addModalTitle": "إضافة مستخدم / موظف جديد",
         "fullName": "الاسم الكامل",
         "fullNamePlaceholder": "مثال: أحمد محمد",
+        "username": "اسم المستخدم",
+        "usernamePlaceholder": "مثال: cashier1",
+        "usernameTooltip": "سيستخدم الموظف هذا الاسم لتسجيل الدخول بدلاً من البريد الإلكتروني",
         "emailLogin": "البريد الإلكتروني (لتسجيل الدخول)",
         "emailPlaceholder": "user@example.com",
         "phoneOptional": "رقم الهاتف (اختياري)",
@@ -194,8 +217,12 @@
         "addressPlaceholder": "الرياض، حي...",
         "phoneNumber": "رقم الهاتف",
         "phonePlaceholder": "+966...",
-        "locationUrl": "رابط الموقع الجغرافي (Google Maps URL)",
+        "locationUrl": "رابط الموقع الجغرافي (Map URL)",
         "locationUrlPlaceholder": "https://maps.app.goo.gl/...",
+        "googleMapsUrl": "رابط خرائط جوجل (Google Maps URL)",
+        "googleMapsPlaceholder": "https://maps.google.com/...",
+        "wazeUrl": "رابط وايز (Waze URL)",
+        "wazePlaceholder": "https://waze.com/ul?...",
         "workingAndDelivery": "أوقات العمل والتوصيل",
         "workingHours": "ساعات العمل",
         "workingHoursAr": "ساعات العمل (العربية)",
@@ -240,7 +267,13 @@
         "errorSave": "حدث خطأ أثناء الحفظ",
         "errorUpload": "فشل رفع الصورة",
         "days": {
-            "sunday": "الأحد"
+            "sunday": "الأحد",
+            "monday": "الإثنين",
+            "tuesday": "الثلاثاء",
+            "wednesday": "الأربعاء",
+            "thursday": "الخميس",
+            "friday": "الجمعة",
+            "saturday": "السبت"
         },
         "loyalty": {
             "title": "نظام الولاء والمكافآت",

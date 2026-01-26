@@ -20,7 +20,7 @@ const Login = () => {
         setError('');
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            navigate('/');
+            navigate('/dashboard');
         } catch (err) {
             setError(t('login.error'));
             console.error(err);

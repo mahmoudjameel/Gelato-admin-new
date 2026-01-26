@@ -91,6 +91,7 @@
         "sizes": "גדלים",
         "flavors": "טעמים",
         "extras": "תוספות",
+        "selectedExtras": "תוספות נבחרות",
         "sizeNameAr": "שם גודל (ערבית)",
         "sizeNameHe": "שם גודל (עברית)",
         "additionalPrice": "מחיר נוסף",
@@ -102,7 +103,21 @@
         "searchProducts": "חפש מוצר או קטגוריה...",
         "product": "מוצר",
         "deleteConfirm": "האם אתה בטוח שברצונך למחוק מוצר זה?",
-        "loyaltyPointsPrice": "מחיר בנקודות (לתגמולים)"
+        "loyaltyPointsPrice": "מחיר בנקודות (לתגמולים)",
+        "showDeleted": "פריטים שנמחקו",
+        "showActive": "מוצרים פעילים",
+        "freeze": "הקפאת פריט",
+        "unfreeze": "ביטול הקפאה",
+        "restore": "שחזר",
+        "deletePermanently": "מחק לצמיתות",
+        "unfreezeConfirm": "האם לבטל את הקפאת המוצר ולהחזירו למכירה?",
+        "restoreConfirm": "האם לשחזר מוצר זה?",
+        "permanentDeleteConfirm": "אזהרה: המוצר יימחק לצמיתות ולא ניתן יהיה לשחזרו. למחוק?",
+        "freezeProduct": "הקפאת מוצר",
+        "freezeTomorrow": "הקפאה למחר",
+        "freezeScheduled": "הקפאה מתוזמנת",
+        "freezeIndefinite": "הקפאה עד להודעה חדשה",
+        "confirmFreeze": "אשר הקפאה"
     },
     "categories": {
         "title": "ניהול קטגוריות",
@@ -117,6 +132,11 @@
         "browseProducts": "עיין במוצרים בקטגוריה זו",
         "searchCategories": "חפש קטגוריה...",
         "deleteConfirm": "האם אתה בטוח שברצונך למחוק קטגוריה זו?"
+    },
+    "menuManagement": {
+        "extras": "תוספות",
+        "addExtra": "הוסף תוספת חדשה",
+        "editExtras": "ערוך תוספות"
     },
     "users": {
         "title": "ניהול עובדים ומשתמשים ({{count}})",
@@ -145,6 +165,9 @@
         "addModalTitle": "הוסף משתמש / עובד חדש",
         "fullName": "שם מלא",
         "fullNamePlaceholder": "לדוגמה: ישראל ישראלי",
+        "username": "שם משתמש",
+        "usernamePlaceholder": "לדוגמה: cashier1",
+        "usernameTooltip": "העובד ישתמש בשם זה כדי להתחבר במקום באימייל",
         "emailLogin": "אימייל (להתחברות)",
         "emailPlaceholder": "user@example.com",
         "phoneOptional": "מספר טלפון (אופציונלי)",
@@ -194,8 +217,12 @@
         "addressPlaceholder": "תל אביב, שכונה...",
         "phoneNumber": "מספר טלפון",
         "phonePlaceholder": "+972...",
-        "locationUrl": "קישור למיקום גיאוגרפי (Google Maps URL)",
+        "locationUrl": "קישור למיקום גיאוגרפי (Map URL)",
         "locationUrlPlaceholder": "https://maps.app.goo.gl/...",
+        "googleMapsUrl": "קישור ל-Google Maps",
+        "googleMapsPlaceholder": "https://maps.google.com/...",
+        "wazeUrl": "קישור ל-Waze",
+        "wazePlaceholder": "https://waze.com/ul?...",
         "workingAndDelivery": "שעות פעילות ומשלוח",
         "workingHours": "שעות פעילות",
         "workingHoursAr": "שעות פעילות (ערבית)",
@@ -240,7 +267,13 @@
         "errorSave": "אירעה שגיאה בעת השמירה",
         "errorUpload": "העלאת התמונה נכשלה",
         "days": {
-            "sunday": "ראשון"
+            "sunday": "ראשון",
+            "monday": "שני",
+            "tuesday": "שלישי",
+            "wednesday": "רביעי",
+            "thursday": "חמישי",
+            "friday": "שישי",
+            "saturday": "שבת"
         },
         "loyalty": {
             "title": "מערכת נאמנות ותגמולים",

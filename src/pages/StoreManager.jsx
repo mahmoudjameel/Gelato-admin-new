@@ -45,6 +45,8 @@ const StoreManager = () => {
         logo: '',
         cover: '',
         locationUrl: '',
+        googleMapsUrl: '',
+        wazeUrl: '',
         workingHoursWeekly: {
             monday: { open: '10:00', close: '22:00', closed: false },
             tuesday: { open: '10:00', close: '22:00', closed: false },
@@ -70,13 +72,13 @@ const StoreManager = () => {
     });
 
     const dayLabels = {
+        sunday: t('store.days.sunday'),
         monday: t('store.days.monday'),
         tuesday: t('store.days.tuesday'),
         wednesday: t('store.days.wednesday'),
         thursday: t('store.days.thursday'),
         friday: t('store.days.friday'),
-        saturday: t('store.days.saturday'),
-        sunday: t('store.days.sunday')
+        saturday: t('store.days.saturday')
     };
 
     useEffect(() => {
@@ -304,6 +306,28 @@ const StoreManager = () => {
                                 placeholder={t('store.locationUrlPlaceholder')}
                             />
                         </div>
+                        <div className="grid-2">
+                            <div className="form-group">
+                                <label>{t('store.googleMapsUrl')}</label>
+                                <input
+                                    type="text"
+                                    name="googleMapsUrl"
+                                    value={storeData.googleMapsUrl || ''}
+                                    onChange={handleInputChange}
+                                    placeholder={t('store.googleMapsPlaceholder')}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>{t('store.wazeUrl')}</label>
+                                <input
+                                    type="text"
+                                    name="wazeUrl"
+                                    value={storeData.wazeUrl || ''}
+                                    onChange={handleInputChange}
+                                    placeholder={t('store.wazePlaceholder')}
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <div className="form-section glass">
@@ -366,7 +390,7 @@ const StoreManager = () => {
                         <h2><Clock size={20} /> {t('store.detailedWorkingHours')}</h2>
                         <div className="weekly-hours-grid">
                             {Object.keys(storeData.workingHoursWeekly || {}).sort((a, b) => {
-                                const order = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+                                const order = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
                                 return order.indexOf(a) - order.indexOf(b);
                             }).map(day => (
                                 <div key={day} className="day-row">

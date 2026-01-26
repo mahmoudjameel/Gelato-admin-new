@@ -25,15 +25,17 @@ const Sidebar = ({ isOpen, onClose }) => {
     const { t } = useTranslation();
 
     const menuItems = [
-        { title: t('sidebar.dashboard'), icon: <LayoutDashboard size={20} />, path: '/' },
-        { title: t('sidebar.orders'), icon: <ShoppingBag size={20} />, path: '/orders' },
-        { title: t('sidebar.categories'), icon: <Tag size={20} />, path: '/categories' },
-        { title: t('sidebar.products'), icon: <Package size={20} />, path: '/products' },
-        { title: t('sidebar.users'), icon: <Users size={20} />, path: '/users' },
-        { title: t('sidebar.promoCodes'), icon: <Ticket size={20} />, path: '/promos' },
-        { title: t('sidebar.notifications'), icon: <Bell size={20} />, path: '/alerts' },
-        { title: t('sidebar.analytics'), icon: <ImageIcon size={20} />, path: '/banner' },
-        { title: t('sidebar.store'), icon: <Store size={20} />, path: '/store' },
+        { title: t('sidebar.dashboard'), icon: <LayoutDashboard size={20} />, path: '' },
+        { title: t('sidebar.orders'), icon: <ShoppingBag size={20} />, path: 'orders' },
+        { title: t('sidebar.categories'), icon: <Tag size={20} />, path: 'categories' },
+        { title: t('sidebar.products'), icon: <Package size={20} />, path: 'products' },
+        { title: t('sidebar.users'), icon: <Users size={20} />, path: 'users' },
+        { title: t('sidebar.promoCodes'), icon: <Ticket size={20} />, path: 'promos' },
+
+        { title: t('menuManagement.extras'), icon: <Tag size={20} />, path: 'extras' }, // Using Tag icon for extras
+        { title: t('sidebar.notifications'), icon: <Bell size={20} />, path: 'alerts' },
+        { title: t('sidebar.analytics'), icon: <ImageIcon size={20} />, path: 'banner' },
+        { title: t('sidebar.store'), icon: <Store size={20} />, path: 'store' },
     ];
 
     const toggleLanguage = () => {
@@ -53,7 +55,11 @@ const Sidebar = ({ isOpen, onClose }) => {
     return (
         <aside className={`sidebar glass ${isOpen ? 'open' : ''}`}>
             <div className="sidebar-header">
-                <h1 className="logo-text">Gelato House <span>Admin</span></h1>
+                <h1 className="logo-text">
+                    <span style={{ color: 'var(--gelato-mint)' }}>Gelato</span>{' '}
+                    <span style={{ color: 'var(--gelato-pink)' }}>House</span>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--muted-foreground)' }}> Admin</span>
+                </h1>
                 <button className="mobile-close-btn" onClick={onClose}>
                     <X size={24} />
                 </button>
