@@ -93,24 +93,23 @@ const UserManager = () => {
         let secondaryApp = null;
         try {
             // Initialize a secondary Firebase app to create user without logging out admin
-            // We use 'app.options' to get the config from the existing initialized app
             secondaryApp = initializeApp(app.options, 'SecondaryApp');
             const secondaryAuth = getAuth(secondaryApp);
 
-            // If it's a staff member and username is provided, use it to generate an email
+            // Only 'cashier' uses username-based store email. Others use real email.
             let authEmail = newUser.email;
-            if ((newUser.role === 'cashier' || newUser.role === 'admin' || newUser.role === 'accountant') && newUser.username) {
+            if (newUser.role === 'cashier' && newUser.username) {
                 authEmail = `${newUser.username.toLowerCase()}@store.local`;
             }
 
             const userCredential = await createUserWithEmailAndPassword(secondaryAuth, authEmail, newUser.password);
             const uid = userCredential.user.uid;
 
-            // Create user document in Firestore with Role
+            // Create user document in Firestore
             await setDoc(doc(db, 'users', uid), {
                 displayName: newUser.displayName,
                 email: authEmail,
-                username: newUser.username || null,
+                username: newUser.role === 'cashier' ? newUser.username : null,
                 phoneNumber: newUser.phoneNumber,
                 role: newUser.role,
                 createdAt: serverTimestamp(),
@@ -118,13 +117,13 @@ const UserManager = () => {
                 lastLoginAt: null
             });
 
-            // Sign out from secondary app
             await signOut(secondaryAuth);
 
-            alert(t('users.successAdd'));
+            const roleName = t(`users.roles.${newUser.role}`);
+            alert(t('users.successAddWithRole', { role: roleName }));
             setIsAddModalOpen(false);
             setNewUser({ email: '', username: '', password: '', displayName: '', phoneNumber: '', role: 'customer' });
-            fetchUsers(); // Refresh list
+            fetchUsers();
 
         } catch (error) {
             console.error('Error creating user:', error);
@@ -382,7 +381,7 @@ const UserManager = () => {
                                     />
                                 </div>
 
-                                {newUser.role !== 'customer' ? (
+                                {newUser.role === 'cashier' ? (
                                     <div className="form-group">
                                         <label>{t('users.username')}</label>
                                         <input

@@ -54,6 +54,7 @@ const Login = () => {
                             <Mail size={18} className="input-icon" />
                             <input
                                 type="email"
+                                className="email-input"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="admin@cooltreat.com"

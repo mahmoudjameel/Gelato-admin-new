@@ -81,8 +81,8 @@
 }
 
 .role-badge.admin {
-    background-color: #fef2f2;
-    color: #dc2626;
+    background-color: #eff6ff;
+    color: #3b82f6;
 }
 
 .role-badge.cashier {
@@ -453,6 +453,7 @@
         grid-template-columns: 1fr;
     }
 }
+
 /* Loyalty Stats Section */
 .loyalty-stats-section {
     margin-top: 24px;

@@ -180,6 +180,7 @@
         "adding": "جاري الإضافة...",
         "loadingUsers": "جاري تحميل المستخدمين...",
         "successAdd": "تم إضافة المستخدم بنجاح! ✅",
+        "successAddWithRole": "تم إضافة {{role}} بنجاح! ✅",
         "errorAdd": "حدث خطأ: {{error}}",
         "deleteConfirm": "هل أنت متأكد من حذف هذا المستخدم؟ لا يمكن تراجع هذا الإجراء.",
         "errorDelete": "حدث خطأ أثناء حذف المستخدم",
@@ -187,10 +188,10 @@
         "lastSeen": "آخر ظهور",
         "deleteBtn": "حذف المستخدم",
         "roles": {
-            "admin": "مدير",
+            "admin": "مدير عام (Admin)",
             "cashier": "كاشير",
             "accountant": "محاسب",
-            "user": "مستخدم"
+            "user": "عميل"
         },
         "totalOrders": "إجمالي الطلبات",
         "loyaltyPoints": "نقاط الولاء",

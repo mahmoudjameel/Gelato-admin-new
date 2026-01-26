@@ -180,6 +180,7 @@
         "adding": "מוסיף...",
         "loadingUsers": "טוען משתמשים...",
         "successAdd": "המשתמש נוסף בהצלחה! ✅",
+        "successAddWithRole": "{{role}} נוסף בהצלחה! ✅",
         "errorAdd": "אירעה שגיאה: {{error}}",
         "deleteConfirm": "האם אתה בטוח שברצונך למחוק משתמש זה? לא ניתן לבטל פעולה זו.",
         "errorDelete": "אירעה שגיאה בעת מחיקת המשתמש",
@@ -187,10 +188,10 @@
         "lastSeen": "הופעה אחרונה",
         "deleteBtn": "מחק משתמש",
         "roles": {
-            "admin": "מנהל",
+            "admin": "מנהל כללי (Admin)",
             "cashier": "קופאי",
             "accountant": "רואה חשבון",
-            "user": "משתמש"
+            "user": "לקוח"
         },
         "totalOrders": "סה\"כ הזמנות",
         "loyaltyPoints": "נקודות נאמנות",
