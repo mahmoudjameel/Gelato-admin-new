@@ -38,6 +38,7 @@ const OrderManager = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [customerDetails, setCustomerDetails] = useState({ totalOrders: 0, points: 0 });
@@ -258,10 +259,15 @@ const OrderManager = () => {
         }
     };
 
-    const filteredOrders = orders.filter(order =>
-        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (order.customerName && order.customerName.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const filteredOrders = orders.filter(order => {
+        const matchesSearch = !searchTerm.trim() ||
+            order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (order.customerName && order.customerName.toLowerCase().includes(searchTerm.toLowerCase()));
+        if (!matchesSearch) return false;
+        if (!statusFilter) return true;
+        if (statusFilter === 'cancelled') return order.status === 'cancelled';
+        return (order.status || 'pending') === statusFilter;
+    });
 
     const formatDate = (timestamp) => {
         if (!timestamp) return t('orders.notAvailable');
@@ -283,6 +289,20 @@ const OrderManager = () => {
                     <p>{t('orders.subtitle')}</p>
                 </div>
                 <div className="header-right">
+                    <select
+                        className="status-filter-select glass"
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        title={t('orders.filterByStatus')}
+                    >
+                        <option value="">{t('orders.filterAll')}</option>
+                        <option value="pending">{t('orders.statusPending')}</option>
+                        <option value="processing">{t('orders.statusProcessing')}</option>
+                        <option value="ready">{t('orders.statusReady')}</option>
+                        <option value="shipped">{t('orders.statusShipped')}</option>
+                        <option value="completed">{t('orders.statusCompleted')}</option>
+                        <option value="cancelled">{t('orders.statusCancelled')}</option>
+                    </select>
                     <div className="search-bar glass">
                         <Search size={18} color="#9CA3AF" />
                         <input
@@ -316,7 +336,7 @@ const OrderManager = () => {
                             const statusInfo = getStatusInfo(order.status || 'pending', order.orderType || order.deliveryType);
                             return (
                                 <tr key={order.id}>
-                                    <td><span className="order-id">#{order.orderNumber || order.id.slice(-6).toUpperCase()}</span></td>
+                                    <td><span className="order-id">#{order.orderNumber || order.id.replace(/\D/g, '').slice(-6)}</span></td>
                                     <td>
                                         <div className="customer-cell">
                                             {order.customerPhoto ? (
@@ -330,10 +350,22 @@ const OrderManager = () => {
                                     <td><span className="date-cell">{formatDate(order.createdAt)}</span></td>
                                     <td><span className="price-tag">{order.totalAmount || 0} ₪</span></td>
                                     <td>
-                                        <span className="status-badge" style={{ backgroundColor: statusInfo.bg, color: statusInfo.color }}>
-                                            {statusInfo.icon}
-                                            {statusInfo.label}
-                                        </span>
+                                        <div>
+                                            <span className="status-badge" style={{ backgroundColor: statusInfo.bg, color: statusInfo.color }}>
+                                                {statusInfo.icon}
+                                                {statusInfo.label}
+                                            </span>
+                                            {order.driverCancellationReason && (
+                                                <span className="driver-cancelled-badge" title={order.driverCancellationReason}>
+                                                    {t('orders.cancelledByDriver')}
+                                                </span>
+                                            )}
+                                            {order.driverCancellationReason && (
+                                                <span className="driver-cancelled-reason" title={order.driverCancellationReason}>
+                                                    {order.driverCancellationReason}
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td>
                                         <div className="table-actions">
@@ -371,7 +403,7 @@ const OrderManager = () => {
                     <div className="modal-content glass modal-xl">
                         <div className="modal-header">
                             <div className="modal-title-box">
-                                <h2>{t('orders.orderDetails')} #{selectedOrder.orderNumber || selectedOrder.id.slice(-6).toUpperCase()}</h2>
+                                <h2>{t('orders.orderDetails')} #{selectedOrder.orderNumber || selectedOrder.id.replace(/\D/g, '').slice(-6)}</h2>
                                 <span className="modal-date">{formatDate(selectedOrder.createdAt)}</span>
                             </div>
                             <button className="close-btn" onClick={() => setIsModalOpen(false)}><XCircle size={24} /></button>
@@ -412,7 +444,8 @@ const OrderManager = () => {
                                                                 <div className="extras-chips">
                                                                     {item.selectedExtras.map((extra, eIdx) => {
                                                                         const isObj = typeof extra === 'object' && extra !== null;
-                                                                        const name = isObj ? extra.name : extra;
+                                                                        const lang = i18n.language;
+                                                                        const name = isObj ? (lang === 'he' ? (extra.nameHe || extra.name) : (extra.nameAr || extra.name)) : extra;
                                                                         const img = isObj ? extra.image : null;
                                                                         return (
                                                                             <div key={eIdx} className="extra-chip">
@@ -439,8 +472,14 @@ const OrderManager = () => {
                                     <div className="order-summary">
                                         <div className="summary-row">
                                             <span>{t('orders.subtotal')}:</span>
-                                            <span>{selectedOrder.subtotal || selectedOrder.totalAmount} ₪</span>
+                                            <span>{selectedOrder.subtotal || (selectedOrder.totalAmount - (selectedOrder.deliveryFee || 0) - (selectedOrder.tax || 0)).toFixed(2)} ₪</span>
                                         </div>
+                                        {parseFloat(selectedOrder.tax || 0) > 0 && (
+                                            <div className="summary-row">
+                                                <span>{t('orders.tax')}:</span>
+                                                <span>{selectedOrder.tax} ₪</span>
+                                            </div>
+                                        )}
                                         <div className="summary-row">
                                             <span>{t('orders.deliveryFee')}:</span>
                                             <span>{selectedOrder.deliveryFee || 0} ₪</span>
@@ -456,14 +495,33 @@ const OrderManager = () => {
                             <div className="modal-col-side">
                                 <div className="info-section glass-inner">
                                     <h3><User size={18} /> {t('orders.customerInfo')}</h3>
-                                    <div className="customer-detail-header">
-                                        {selectedOrder.customerPhoto && <img src={selectedOrder.customerPhoto} alt="" className="detail-avatar" />}
+                                    <div className="customer-detail-header-v2">
+                                        <div className="customer-avatar-box">
+                                            {selectedOrder.customerPhoto ? (
+                                                <img src={selectedOrder.customerPhoto} alt="" className="detail-avatar-img" />
+                                            ) : (
+                                                <div className="detail-avatar-placeholder">{selectedOrder.customerName?.charAt(0) || 'C'}</div>
+                                            )}
+                                        </div>
                                         <div className="info-content">
-                                            <p><strong>{t('orders.name')}:</strong> {selectedOrder.customerName || t('orders.anonymous')}</p>
-                                            <p><strong>{t('orders.phone')}:</strong> {selectedOrder.address?.phone || selectedOrder.customerEmail || t('common.noData')}</p>
-                                            <div className="customer-loyalty-info">
-                                                <p><strong>{t('orders.totalOrders')}:</strong> {customerDetails.totalOrders}</p>
-                                                <p><strong>{t('orders.loyaltyPoints')}:</strong> <span className="points-badge">{customerDetails.points}</span></p>
+                                            <h4>{selectedOrder.customerName || t('orders.anonymous')}</h4>
+                                            <p className="customer-email">{selectedOrder.customerEmail || '---'}</p>
+
+                                            <div className="customer-tags">
+                                                {selectedOrder.customerAge && <span className="tag-chip age">{selectedOrder.customerAge} {t('common.years')}</span>}
+                                                {(i18n.language === 'he' ? selectedOrder.customerCityHe : selectedOrder.customerCityAr) &&
+                                                    <span className="tag-chip city">{i18n.language === 'he' ? selectedOrder.customerCityHe : selectedOrder.customerCityAr}</span>
+                                                }
+                                            </div>
+
+                                            <p className="customer-phone">
+                                                <Phone size={14} />
+                                                <span>{selectedOrder.address?.phone || selectedOrder.customerPhone || t('common.noData')}</span>
+                                            </p>
+
+                                            <div className="customer-loyalty-mini">
+                                                <span><strong>{t('orders.totalOrders')}:</strong> {customerDetails.totalOrders}</span>
+                                                <span><strong>{t('orders.loyaltyPoints')}:</strong> <span className="points-text">{customerDetails.points}</span></span>
                                             </div>
                                         </div>
                                     </div>
@@ -514,6 +572,31 @@ const OrderManager = () => {
                                     </div>
                                 </div>
 
+                                {(selectedOrder.driverCancellationReason || selectedOrder.driverCancelledByName) && (
+                                    <div className="info-section glass-inner driver-cancelled-box">
+                                        <h3 className="driver-cancelled-title">
+                                            <XCircle size={18} />
+                                            {t('orders.driverCancelledAcceptance')}
+                                        </h3>
+                                        <div className="driver-cancelled-content">
+                                            {selectedOrder.driverCancelledByName && (
+                                                <p className="driver-cancelled-row">
+                                                    <strong>{t('orders.cancelledBy')}:</strong> {selectedOrder.driverCancelledByName}
+                                                </p>
+                                            )}
+                                            <p className="driver-cancelled-row">
+                                                <strong>{t('orders.cancellationReason')}:</strong> {selectedOrder.driverCancellationReason || '—'}
+                                            </p>
+                                            {selectedOrder.driverCancelledAt && (
+                                                <p className="driver-cancelled-row driver-cancelled-date">
+                                                    <strong>{t('orders.cancelledAt')}:</strong>{' '}
+                                                    {(selectedOrder.driverCancelledAt?.toDate ? selectedOrder.driverCancelledAt.toDate() : new Date(selectedOrder.driverCancelledAt)).toLocaleString(i18n.language === 'ar' ? 'ar-EG' : 'he-IL', { dateStyle: 'medium', timeStyle: 'short' })}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="info-section glass-inner">
                                     <h3><CreditCard size={18} /> {t('orders.payment')}</h3>
                                     <div className="info-content">
@@ -528,7 +611,7 @@ const OrderManager = () => {
                                         {['pending', 'processing', 'ready', 'shipped', 'completed', 'cancelled']
                                             .filter(status => {
                                                 const isPickup = (selectedOrder.orderType || selectedOrder.deliveryType) === 'pickup';
-                                                if (isPickup && status === 'shipped') return false;
+                                                if (isPickup && (status === 'shipped')) return false;
                                                 return true;
                                             })
                                             .map(status => {

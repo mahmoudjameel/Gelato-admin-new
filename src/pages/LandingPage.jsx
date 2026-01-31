@@ -18,7 +18,6 @@ import {
     Download,
     ShoppingCart,
     Heart,
-    Clock,
     Shield,
     Star,
     Users,
@@ -28,7 +27,9 @@ import {
 } from 'lucide-react';
 import { seedData } from '../data/seedData';
 import { toggleTheme, getStoredTheme } from '../utils/theme';
-import { AppleIcon, GooglePlayIcon, InstagramIcon, FacebookIcon, TwitterIcon } from '../components/AppStoreIcons';
+import { AppleIcon, GooglePlayIcon, InstagramIcon, TikTokIcon, WhatsAppIcon } from '../components/AppStoreIcons';
+import { db } from '../firebase/config';
+import { doc, getDoc } from 'firebase/firestore';
 import './LandingPage.css';
 
 const LandingPage = () => {
@@ -36,6 +37,27 @@ const LandingPage = () => {
     const navigate = useNavigate();
     const [isDark, setIsDark] = useState(getStoredTheme() === 'dark');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [storeSocial, setStoreSocial] = useState({ instagram: '', tiktok: '', whatsapp: '' });
+
+    useEffect(() => {
+        const loadStoreProfile = async () => {
+            try {
+                const docRef = doc(db, 'store', 'profile');
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists() && docSnap.data().social) {
+                    const social = docSnap.data().social;
+                    setStoreSocial({
+                        instagram: social.instagram || '',
+                        tiktok: social.tiktok || '',
+                        whatsapp: social.whatsapp || ''
+                    });
+                }
+            } catch (err) {
+                console.warn('Landing: could not load store social', err);
+            }
+        };
+        loadStoreProfile();
+    }, []);
 
     const handleToggleTheme = () => {
         const newTheme = toggleTheme();
@@ -92,13 +114,6 @@ const LandingPage = () => {
             titleHe: 'דירוגים מעולים',
             descAr: 'أكثر من 10,000 عميل سعيد. تقييم 4.9/5 نجوم بناءً على آلاف المراجعات الإيجابية.',
             descHe: 'יותר מ-10,000 לקוחות מרוצים. דירוג 4.9/5 כוכבים על בסיס אלפי ביקורות חיוביות.'
-        },
-        {
-            icon: <Clock size={48} className="text-warning" />,
-            titleAr: 'متاح 24/7',
-            titleHe: 'זמין 24/7',
-            descAr: 'اطلب في أي وقت من اليوم. نحن متاحون على مدار الساعة لتلبية احتياجاتك.',
-            descHe: 'הזמינו בכל שעה ביום. אנו זמינים 24 שעות ביממה כדי לספק את צרכיכם.'
         }
     ];
 
@@ -117,7 +132,7 @@ const LandingPage = () => {
             titleAr: 'اختر طلبك',
             titleHe: 'בחרו את ההזמנה',
             descAr: 'تصفح القائمة المتنوعة من الجيلاتو والآيس كريم. اختر النكهات والأحجام والإضافات المفضلة لديك.',
-            descHe: 'דפדפו בתפריט המגוון של גלידה וגלידות. בחרו את הטעמים, הגדלים והתוספות האהובים עליכם.'
+            descHe: 'עיינו בתפריט ובמגוון הגדול ובחרי בקינוחים והגלידות האהובים עליכם.'
         },
         {
             step: '03',
@@ -156,7 +171,7 @@ const LandingPage = () => {
                             />
                             <span className="logo-fallback" style={{ fontSize: '1.5rem', display: 'none' }}>🍦</span>
                         </div>
-                        <div className="logo-text-wrapper branding-text">
+                        <div className="logo-text-wrapper branding-text store-name-en" dir="ltr">
                             <span className="logo-text main-brand">Gelato</span>
                             <span className="logo-text-secondary sub-brand">House</span>
                         </div>
@@ -196,7 +211,7 @@ const LandingPage = () => {
                 <div className="drawer-overlay" onClick={() => setIsMenuOpen(false)}></div>
                 <div className="drawer-content glass">
                     <div className="drawer-header">
-                        <div className="logo-text-wrapper branding-text">
+                        <div className="logo-text-wrapper branding-text store-name-en" dir="ltr">
                             <span className="logo-text main-brand">Gelato</span>
                             <span className="logo-text-secondary sub-brand">House</span>
                         </div>
@@ -205,7 +220,7 @@ const LandingPage = () => {
 
                     <nav className="drawer-nav">
                         <Link to="/" className="drawer-link" onClick={() => setIsMenuOpen(false)}>
-                            {i18n.language === 'ar' ? 'الرئيسية' : 'بيت'}
+                            {i18n.language === 'ar' ? 'الرئيسية' : 'בית'}
                         </Link>
                         <Link to="/contact" className="drawer-link" onClick={() => setIsMenuOpen(false)}>
                             {i18n.language === 'ar' ? 'اتصل بنا' : 'צור קשר'}
@@ -248,25 +263,25 @@ const LandingPage = () => {
                         <h1 className="hero-title">
                             {i18n.language === 'ar'
                                 ? <>استمتع بأشهى <span className="highlight-text">الجيلاتو والآيس كريم</span> الطازج</>
-                                : <>תהנו מהגלידה והגלידות <span className="highlight-text">הטריות והטעימות</span> ביותר</>}
+                                : <>גלידה טעימה וקינוחים מושחתים ואוירה נפלאה</>}
                         </h1>
                         <p className="hero-subtitle">
                             {i18n.language === 'ar'
                                 ? 'اكتشف عالماً من النكهات الإيطالية الأصيلة. جيلاتو طازج يومياً، وافل مقرمش، ومثلجات فاخرة. اطلب الآن واستمتع بالطعم الرائع في أي وقت.'
-                                : 'גלו עולם של טעמים איטלקיים אותנטיים. גלידה טרייה מדי יום, וופלים פריכים וגלידות יוקרתיות. הזמינו עכשיו ותהנו מהטעם המדהים בכל שעה.'}
+                                : 'גלו עולם של טעמים איטלקיים אותנטיים. גלידה טרייה מדי יום, וופלים פריכים וגלידות יוקרתיות. הזמינו עכשיו ותהנו מהטעם החזק באיזור.'}
                         </p>
 
-                        <div className="app-buttons">
+                        <div className="app-buttons app-buttons-row">
                             <a href="#" className="store-btn apple">
                                 <AppleIcon size={32} />
-                                <div className="btn-content">
+                                <div className="btn-content store-name-en" dir="ltr">
                                     <span className="small-text">{i18n.language === 'ar' ? 'حمّل من' : 'הורד מ'}</span>
                                     <span className="big-text">App Store</span>
                                 </div>
                             </a>
                             <a href="#" className="store-btn google">
                                 <GooglePlayIcon size={32} />
-                                <div className="btn-content">
+                                <div className="btn-content store-name-en" dir="ltr">
                                     <span className="small-text">{i18n.language === 'ar' ? 'احصل عليه من' : 'קבל מ'}</span>
                                     <span className="big-text">Google Play</span>
                                 </div>
@@ -368,17 +383,17 @@ const LandingPage = () => {
                     <div className="cta-content">
                         <h2>{i18n.language === 'ar' ? 'جاهز لتجربة الطعم الرائع؟' : 'מוכנים לטעום את הקסם?'}</h2>
                         <p>{i18n.language === 'ar' ? 'حمّل التطبيق الآن وانضم لآلاف العملاء السعداء. ابدأ رحلتك مع Gelato House اليوم!' : 'הורידו את האפליקציה עכשיו והצטרפו לאלפי לקוחות מרוצים. התחילו את המסע שלכם עם Gelato House היום!'}</p>
-                        <div className="app-buttons scale-down">
+                        <div className="app-buttons scale-down app-buttons-row">
                             <a href="#" className="store-btn apple dark-mode-btn">
                                 <AppleIcon size={28} />
-                                <div className="btn-content">
+                                <div className="btn-content store-name-en" dir="ltr">
                                     <span className="small-text">{i18n.language === 'ar' ? 'حمّل من' : 'הורד מ'}</span>
                                     <span className="big-text">App Store</span>
                                 </div>
                             </a>
                             <a href="#" className="store-btn google dark-mode-btn">
                                 <GooglePlayIcon size={28} />
-                                <div className="btn-content">
+                                <div className="btn-content store-name-en" dir="ltr">
                                     <span className="small-text">{i18n.language === 'ar' ? 'احصل عليه من' : 'קבל מ'}</span>
                                     <span className="big-text">Google Play</span>
                                 </div>
@@ -404,7 +419,7 @@ const LandingPage = () => {
                             />
                             <span style={{ fontSize: '1.5rem', display: 'none' }}>🍦</span>
                         </div>
-                        <div className="footer-brand-text branding-text">
+                        <div className="footer-brand-text branding-text store-name-en" dir="ltr">
                             <h3 className="main-brand">Gelato House</h3>
                             <p>{i18n.language === 'ar' ? 'وجهتك الأولى للسعادة والطعم الرائع.' : 'היעד שלكم לאושר וטעמים מדהימים.'}</p>
                         </div>
@@ -435,20 +450,28 @@ const LandingPage = () => {
                             </div>
                         </div>
 
-                        <div className="footer-section">
-                            <h4>{i18n.language === 'ar' ? 'تابعنا' : 'עקבו אחרינו'}</h4>
-                            <div className="footer-social">
-                                <a href="#" className="social-link" aria-label="Instagram">
-                                    <InstagramIcon size={20} />
-                                </a>
-                                <a href="#" className="social-link" aria-label="Facebook">
-                                    <FacebookIcon size={20} />
-                                </a>
-                                <a href="#" className="social-link" aria-label="Twitter">
-                                    <TwitterIcon size={20} />
-                                </a>
+                        {(storeSocial.instagram || storeSocial.tiktok || storeSocial.whatsapp) && (
+                            <div className="footer-section">
+                                <h4>{i18n.language === 'ar' ? 'تابعنا' : 'עקבו אחרינו'}</h4>
+                                <div className="footer-social">
+                                    {storeSocial.instagram && (
+                                        <a href={storeSocial.instagram.startsWith('http') ? storeSocial.instagram : `https://${storeSocial.instagram}`} target="_blank" rel="noopener noreferrer" className="social-link" aria-label="Instagram">
+                                            <InstagramIcon size={20} />
+                                        </a>
+                                    )}
+                                    {storeSocial.tiktok && (
+                                        <a href={storeSocial.tiktok.startsWith('http') ? storeSocial.tiktok : `https://${storeSocial.tiktok}`} target="_blank" rel="noopener noreferrer" className="social-link" aria-label="TikTok">
+                                            <TikTokIcon size={20} />
+                                        </a>
+                                    )}
+                                    {storeSocial.whatsapp && (
+                                        <a href={storeSocial.whatsapp.startsWith('http') ? storeSocial.whatsapp : `https://wa.me/${storeSocial.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="social-link" aria-label="WhatsApp">
+                                            <WhatsAppIcon size={20} />
+                                        </a>
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
 

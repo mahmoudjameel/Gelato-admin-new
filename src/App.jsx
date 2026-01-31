@@ -13,8 +13,11 @@ import StoreManager from './pages/StoreManager';
 import UserManager from './pages/UserManager';
 import AlertManager from './pages/AlertManager';
 import PromoCodeManager from './pages/PromoCodeManager';
+import DriverManager from './pages/DriverManager';
+import DriverDetails from './pages/DriverDetails';
 
 import ExtrasManager from './pages/ExtrasManager';
+import CityManager from './pages/CityManager';
 import Login from './pages/Login';
 
 const ProtectedRoute = ({ children }) => {
@@ -66,8 +69,11 @@ function App() {
           <Route path="users" element={<UserManager />} />
           <Route path="alerts" element={<AlertManager />} />
           <Route path="promos" element={<PromoCodeManager />} />
+          <Route path="drivers" element={<DriverManager />} />
+          <Route path="drivers/:driverId" element={<DriverDetails />} />
 
           <Route path="extras" element={<ExtrasManager />} />
+          <Route path="cities" element={<CityManager />} />
           <Route path="store" element={<StoreManager />} />
         </Route>
 

@@ -8,7 +8,8 @@
 :root,
 :root[data-theme='light'] {
   /* Brand palette - based on Gelato House logo */
-  --gelato-mint: #8fd3c4;         /* Approx. PANTONE P 133-4 C */
+  --gelato-mint: #8fd3c4;
+  /* Approx. PANTONE P 133-4 C */
   --gelato-pink: #d72b8c;
   --gelato-deep: #0f172a;
 
@@ -28,6 +29,7 @@
   --radius: 0.75rem;
   --shadow: 0 4px 6px -1px rgb(17 24 39 / 0.08), 0 2px 4px -2px rgb(17 24 39 / 0.06);
   --font-tajawal: 'Tajawal', sans-serif;
+  --font-logo: 'Outfit', 'Tajawal', sans-serif;
 
   /* Layout helpers */
   --header-bg: rgba(255, 255, 255, 0.9);
@@ -41,16 +43,16 @@
   --primary-foreground: #020617;
   --secondary: #0f172a;
   --background: #020617;
-  --foreground: #e5e7eb;
+  --foreground: #f1f5f9;
   --card: #0f172a;
-  --card-foreground: #e5e7eb;
-  --border: #1f2937;
-  --muted: #0f172a;
-  --muted-foreground: #9ca3af;
-  --accent: #0b1120;
+  --card-foreground: #f1f5f9;
+  --border: #1e293b;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #1e1b4b;
   --accent-foreground: var(--gelato-mint);
 
-  --header-bg: rgba(15, 23, 42, 0.92);
+  --header-bg: rgba(15, 23, 42, 0.95);
   --footer-bg: #020617;
 }
 

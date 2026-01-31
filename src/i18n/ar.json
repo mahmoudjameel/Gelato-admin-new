@@ -20,6 +20,18 @@
         "ar": "العربية",
         "he": "العبرية"
     },
+    "cities": {
+        "title": "إدارة المدن",
+        "subtitle": "أضف وتحكم في المدن المتاحة للتسجيل والتوصيل",
+        "addNew": "إضافة مدينة جديدة",
+        "editCity": "تعديل مدينة",
+        "nameAr": "الاسم بالعربية",
+        "nameHe": "الاسم بالعبرية",
+        "order": "الترتيب",
+        "arNameCol": "الاسم (عربي)",
+        "heNameCol": "الاسم (عبري)",
+        "deleteConfirm": "هل أنت متأكد من حذف هذه المدينة؟"
+    },
     "login": {
         "title": "تسجيل دخول المسؤول",
         "subtitle": "أدخل بياناتك للوصول إلى لوحة التحكم",
@@ -30,6 +42,16 @@
         "error": "خطأ في البريد الإلكتروني أو كلمة المرور. يرجى التأكد من البيانات والمحاولة مرة أخرى.",
         "footer": "© 2026 جيلاتو هاوس. جميع الحقوق محفوظة."
     },
+    "driverDetails": {
+        "title": "تفاصيل الدلفري والطلبات",
+        "activeOrders": "الطلبات الفعالة",
+        "completedOrders": "الطلبات المكتملة",
+        "cancelledOrders": "الطلبات الملغية",
+        "noActiveOrders": "لا توجد طلبات فعالة",
+        "noCompletedOrders": "لا توجد طلبات مكتملة",
+        "noCancelledOrders": "لا توجد طلبات ملغية",
+        "ordersCount": "عدد الطلبات"
+    },
     "sidebar": {
         "dashboard": "لوحة التحكم",
         "products": "المنتجات",
@@ -39,6 +61,8 @@
         "orders": "الطلبات",
         "notifications": "الإشعارات",
         "promoCodes": "أكواد الخصم",
+        "drivers": "السائقين",
+        "cities": "إدارة المدن",
         "deliveryZones": "مناطق التوصيل",
         "analytics": "التحليلات"
     },
@@ -223,7 +247,14 @@
         "googleMapsUrl": "رابط خرائط جوجل (Google Maps URL)",
         "googleMapsPlaceholder": "https://maps.google.com/...",
         "wazeUrl": "رابط وايز (Waze URL)",
-        "wazePlaceholder": "https://waze.com/ul?...",
+        "wazePlaceholder": "https://waze.com/ul?ll=32.0853,34.7818&navigate=yes",
+        "wazeUrlHelp": "يجب أن يكون الرابط رابطاً حقيقياً للموقع في تطبيق وايز وليس رسالة مشاركة.",
+        "generateMapLinks": "توليد الروابط من الإحداثيات",
+        "enterCoordsFirst": "أدخل خط العرض وخط الطول أولاً في قسم موقع المتجر.",
+        "paymentMethodsShown": "طرق الدفع المعروضة في شاشة السلة",
+        "paymentMethodsShownHelp": "حدد طرق الدفع التي تظهر للعميل في تطبيق العميل (شاشة الكيس). إلغاء التحديد يخفي الطريقة.",
+        "paymentCash": "نقداً",
+        "paymentCard": "بطاقة ائتمان",
         "workingAndDelivery": "أوقات العمل والتوصيل",
         "workingHours": "ساعات العمل",
         "workingHoursAr": "ساعات العمل (العربية)",
@@ -261,7 +292,7 @@
         "socialLinks": "روابط التواصل",
         "instagramPlaceholder": "رابط انستجرام",
         "tiktokPlaceholder": "رابط تيك توك",
-        "whatsappPlaceholder": "رابط واتساب",
+        "whatsappPlaceholder": "رقم الواتساب مع رمز الدولة (مثال: 972...)",
         "saveChanges": "حفظ التغييرات",
         "loading": "جاري التحميل...",
         "successSave": "تم حفظ البيانات بنجاح ✅",
@@ -314,6 +345,7 @@
         "noExtras": "بدون إضافات أو نكهات خاصة",
         "subtotal": "المجموع الفرعي",
         "deliveryFee": "رسوم التوصيل",
+        "tax": "الضريبة",
         "totalAmount": "الإجمالي الكلي",
         "customerInfo": "العميل",
         "totalOrders": "إجمالي الطلبات",
@@ -361,7 +393,14 @@
         "notifCompletedPickupMsg": "شكراً لزيارتك! نتمنى أن تستمتع بمذاق جيلاتو هاوس.",
         "notifCompletedMsg": "نتمنى أن تستمتع بطلبك! شكراً لاختيارك جيلاتو هاوس.",
         "notifCancelledTitle": "تم إلغاء الطلب ❌",
-        "notifCancelledMsg": "نأسف، تم إلغاء طلبك #{{orderId}}. يرجى التواصل معنا للمساعدة."
+        "notifCancelledMsg": "نأسف، تم إلغاء طلبك #{{orderId}}. يرجى التواصل معنا للمساعدة.",
+        "driverCancelledAcceptance": "إلغاء الدلفري قبول الطلب",
+        "cancelledByDriver": "ملغي من الدلفري",
+        "cancellationReason": "سبب الإلغاء",
+        "cancelledBy": "ألغى القبول",
+        "cancelledAt": "تاريخ الإلغاء",
+        "filterAll": "كل الطلبات",
+        "filterByStatus": "تصفية حسب الحالة"
     },
     "notifications": {
         "title": "إدارة الإشعارات",

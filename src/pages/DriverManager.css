@@ -1,0 +1,258 @@
+.driver-manager-container {
+    padding: 24px;
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.header-title h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--foreground);
+    margin: 0;
+}
+
+.add-driver-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.2);
+}
+
+.add-driver-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.3);
+}
+
+.drivers-table-container {
+    background: var(--card);
+    border-radius: 20px;
+    border: 1px border var(--border);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.drivers-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: right;
+    /* Default for RTL */
+}
+
+[dir="ltr"] .drivers-table {
+    text-align: left;
+}
+
+.drivers-table th {
+    padding: 16px 24px;
+    background-color: var(--muted);
+    color: var(--muted-foreground);
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.drivers-table td {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    color: var(--foreground);
+    font-size: 15px;
+}
+
+.drivers-table tr:last-child td {
+    border-bottom: none;
+}
+
+.driver-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background-color: var(--primary-light);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justifyContent: center;
+}
+
+.no-drivers {
+    padding: 48px !important;
+    text-align: center;
+    color: var(--muted-foreground);
+    font-style: italic;
+}
+
+.icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justifyContent: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.driver-actions-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.view-btn {
+    background-color: #dbeafe;
+    color: #2563eb;
+}
+
+.view-btn:hover {
+    background-color: #bfdbfe;
+}
+
+.delete-btn {
+    background-color: #fee2e2;
+    color: #ef4444;
+}
+
+.delete-btn:hover {
+    background-color: #fecaca;
+}
+
+/* Modal Styles - Shared with UserManager */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+    background-color: var(--card);
+    width: 90%;
+    max-width: 500px;
+    border-radius: 24px;
+    padding: 32px;
+    position: relative;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+}
+
+.close-modal-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    /* Adjust for RTL/LTR if needed */
+    background: none;
+    border: none;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+[dir="ltr"] .close-modal-btn {
+    left: auto;
+    right: 20px;
+}
+
+.close-modal-btn:hover {
+    background-color: var(--muted);
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 24px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted-foreground);
+    margin-bottom: 8px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background-color: var(--background);
+    color: var(--foreground);
+    font-size: 16px;
+    transition: border-color 0.2s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.form-help {
+    display: block;
+    font-size: 12px;
+    color: var(--muted-foreground);
+    marginTop: 6px;
+}
+
+.add-driver-submit-btn {
+    width: 100%;
+    padding: 14px;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.add-driver-submit-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.add-driver-submit-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.3);
+}

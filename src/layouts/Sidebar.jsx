@@ -14,7 +14,9 @@ import {
     Users,
     Bell,
     Ticket,
-    X
+    X,
+    MapPin,
+    Bike
 } from 'lucide-react';
 import { auth } from '../firebase/config';
 import { signOut } from 'firebase/auth';
@@ -31,9 +33,11 @@ const Sidebar = ({ isOpen, onClose }) => {
         { title: t('sidebar.products'), icon: <Package size={20} />, path: 'products' },
         { title: t('sidebar.users'), icon: <Users size={20} />, path: 'users' },
         { title: t('sidebar.promoCodes'), icon: <Ticket size={20} />, path: 'promos' },
+        { title: t('sidebar.drivers'), icon: <Bike size={20} />, path: 'drivers' },
 
         { title: t('menuManagement.extras'), icon: <Tag size={20} />, path: 'extras' }, // Using Tag icon for extras
         { title: t('sidebar.notifications'), icon: <Bell size={20} />, path: 'alerts' },
+        { title: t('sidebar.cities'), icon: <MapPin size={20} />, path: 'cities' },
         { title: t('sidebar.analytics'), icon: <ImageIcon size={20} />, path: 'banner' },
         { title: t('sidebar.store'), icon: <Store size={20} />, path: 'store' },
     ];

@@ -60,31 +60,31 @@
 
 .logo-text-wrapper.branding-text {
     display: flex;
-    flex-direction: column;
-    gap: 0;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.35rem;
+    flex-wrap: nowrap;
 }
 
 .main-brand {
-    font-family: 'Outfit', 'Tajawal', sans-serif;
-    font-weight: 900;
-    font-size: 1.8rem;
-    letter-spacing: -1px;
-    line-height: 0.9;
-    background: linear-gradient(135deg, #2D5A27 0%, #D946EF 100%);
+    font-family: var(--font-logo);
+    font-weight: 800;
+    font-size: 1.45rem;
+    letter-spacing: -0.5px;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--gelato-mint) 0%, var(--gelato-pink) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
 .sub-brand {
-    font-family: 'Outfit', 'Tajawal', sans-serif;
-    font-weight: 700;
-    font-size: 1.1rem;
-    color: var(--muted-foreground);
-    letter-spacing: 2px;
-    text-transform: uppercase;
+    font-family: var(--font-logo);
+    font-weight: 600;
+    font-size: 1.25rem;
+    letter-spacing: -0.2px;
     line-height: 1;
-    margin-top: 2px;
+    color: var(--muted-foreground);
 }
 
 .nav-menu {
@@ -318,6 +318,19 @@ section {
     display: flex;
     gap: 1rem;
     flex-wrap: wrap;
+}
+
+/* Store icons always in one row; names stay English (LTR) */
+.app-buttons-row {
+    flex-wrap: nowrap;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: flex-start;
+}
+
+.store-name-en {
+    text-align: left;
+    unicode-bidi: isolate;
 }
 
 .store-btn {
@@ -892,15 +905,71 @@ section {
         display: block;
     }
 
+    .landing-header {
+        padding: 0.75rem 4%;
+    }
+
+    section {
+        padding: 3rem 4%;
+    }
+
+    .section-head {
+        margin-bottom: 2.5rem;
+    }
+
+    .section-heading {
+        font-size: clamp(1.5rem, 5vw, 2.2rem);
+    }
+
     .hero-container {
         flex-direction: column;
-        padding-top: 2rem;
+        padding-top: 1.5rem;
+        padding-bottom: 2rem;
         text-align: center;
         overflow: visible;
+        min-height: auto;
+    }
+
+    .hero-text {
+        width: 100%;
+    }
+
+    .hero-title {
+        font-size: clamp(1.75rem, 5vw, 2.5rem);
+        margin-bottom: 1rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 0 0.5rem;
+    }
+
+    .app-buttons-row {
+        justify-content: center;
+        width: 100%;
+        gap: 0.75rem;
+    }
+
+    .app-buttons .store-btn {
+        flex: 1;
+        min-width: 0;
+        padding: 0.6rem 1rem;
+        justify-content: center;
+    }
+
+    .app-buttons .store-btn .btn-content {
+        align-items: center;
+    }
+
+    .app-buttons .store-btn svg {
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
     }
 
     .hero-image-wrapper {
-        margin-top: 4rem;
+        margin-top: 2rem;
         width: 100%;
         overflow: visible;
     }
@@ -931,18 +1000,62 @@ section {
         left: -30px;
     }
 
+    .services-section,
+    .steps-section {
+        padding: 3rem 4%;
+    }
+
     .services-grid {
         grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .service-card {
+        padding: 1.75rem 1.25rem;
+    }
+
+    .service-card h3 {
+        font-size: 1.2rem;
     }
 
     .steps-wrapper {
         flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .step-item {
+        min-width: 0;
+        padding: 2rem 1.25rem;
+    }
+
+    .cta-section {
+        padding: 2.5rem 4%;
+    }
+
+    .cta-container {
+        padding: 2.5rem 1.5rem;
+        border-radius: 2rem;
+    }
+
+    .cta-content h2 {
+        font-size: clamp(1.5rem, 4vw, 2rem);
+    }
+
+    .cta-content p {
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .main-footer {
+        padding: 2.5rem 4% 1.5rem;
+        margin-top: 2.5rem;
     }
 
     .footer-inner {
         grid-template-columns: 1fr;
         text-align: center;
-        gap: 3rem;
+        gap: 2rem;
+        margin-bottom: 1.5rem;
     }
 
     .footer-brand {
@@ -963,6 +1076,109 @@ section {
         justify-content: center;
         grid-column: span 2;
         margin-top: 1rem;
+    }
+
+    .footer-bottom {
+        padding-top: 1.5rem;
+    }
+
+    .footer-bottom p {
+        font-size: 0.85rem;
+    }
+}
+
+/* Extra small phones: tighter layout */
+@media (max-width: 480px) {
+    .landing-header {
+        padding: 0.6rem 3%;
+    }
+
+    .container {
+        padding: 0 0.75rem;
+    }
+
+    section {
+        padding: 2rem 3%;
+    }
+
+    .hero-container {
+        padding-top: 1rem;
+    }
+
+    .badge-pill {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .hero-title {
+        font-size: 1.6rem;
+    }
+
+    .hero-subtitle {
+        font-size: 0.95rem;
+    }
+
+    .app-buttons-row {
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+
+    .app-buttons .store-btn {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .small-text {
+        font-size: 0.55rem;
+    }
+
+    .app-buttons .big-text {
+        font-size: 0.95rem;
+    }
+
+    .phone-frame {
+        width: 200px;
+        height: 400px;
+    }
+
+    .services-section,
+    .steps-section {
+        padding: 2rem 3%;
+    }
+
+    .service-card {
+        padding: 1.5rem 1rem;
+    }
+
+    .step-item {
+        padding: 1.5rem 1rem;
+    }
+
+    .step-number {
+        width: 50px;
+        height: 50px;
+        font-size: 1rem;
+    }
+
+    .cta-section {
+        padding: 1.5rem 3%;
+    }
+
+    .cta-container {
+        padding: 1.5rem 1rem;
+        border-radius: 1.5rem;
+    }
+
+    .main-footer {
+        padding: 2rem 3% 1rem;
+    }
+
+    .footer-sections {
+        grid-template-columns: 1fr;
+    }
+
+    .footer-social {
+        grid-column: span 1;
     }
 }
 

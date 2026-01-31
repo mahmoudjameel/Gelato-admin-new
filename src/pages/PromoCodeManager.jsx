@@ -134,7 +134,7 @@ const PromoCodeManager = () => {
 
         try {
             const promoData = {
-                code: formData.code.toUpperCase(),
+                code: formData.code.trim(),
                 type: formData.type,
                 maxUsesGlobal: formData.maxUsesGlobal ? Number(formData.maxUsesGlobal) : null,
                 maxUsesPerUser: formData.maxUsesPerUser ? Number(formData.maxUsesPerUser) : 1,
@@ -257,7 +257,7 @@ const PromoCodeManager = () => {
                                 <input
                                     type="text"
                                     value={formData.code}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
                                     placeholder={t('promos.promoCodePlaceholder')}
                                     className="font-mono text-lg uppercase"
                                     required

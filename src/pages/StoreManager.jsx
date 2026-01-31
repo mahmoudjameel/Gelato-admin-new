@@ -57,7 +57,8 @@ const StoreManager = () => {
             sunday: { open: '10:00', close: '22:00', closed: false },
         },
         location: { lat: 0, lng: 0 },
-        deliveryZones: [] // Array of { name, radiusKm, fee, isActive }
+        deliveryZones: [], // Array of { name, radiusKm, fee, isActive }
+        paymentMethodsEnabled: { cash: true, card: true }
     });
 
     const [loyaltyData, setLoyaltyData] = useState({
@@ -95,11 +96,19 @@ const StoreManager = () => {
                 setStoreData(prev => ({
                     ...prev,
                     ...data,
-                    // Migrate old fields if they exist and new ones don't
                     nameAr: data.nameAr || data.name || '',
                     descriptionAr: data.descriptionAr || data.description || '',
                     addressAr: data.addressAr || data.address || '',
-                    workingHoursAr: data.workingHoursAr || data.workingHours || ''
+                    workingHoursAr: data.workingHoursAr || data.workingHours || '',
+                    locationUrl: data.locationUrl || prev.locationUrl || '',
+                    googleMapsUrl: data.googleMapsUrl || prev.googleMapsUrl || '',
+                    wazeUrl: data.wazeUrl || prev.wazeUrl || '',
+                    location: data.location && typeof data.location.lat === 'number' && typeof data.location.lng === 'number'
+                        ? data.location
+                        : (prev.location || { lat: 0, lng: 0 }),
+                    paymentMethodsEnabled: data.paymentMethodsEnabled && typeof data.paymentMethodsEnabled.cash === 'boolean' && typeof data.paymentMethodsEnabled.card === 'boolean'
+                        ? data.paymentMethodsEnabled
+                        : (prev.paymentMethodsEnabled || { cash: true, card: true })
                 }));
             }
 
@@ -177,15 +186,40 @@ const StoreManager = () => {
         }
     };
 
+    const isValidMapUrl = (val) => {
+        if (!val || typeof val !== 'string') return false;
+        const v = val.trim();
+        return v.startsWith('http://') || v.startsWith('https://') || v.startsWith('waze://') || v.startsWith('geo:');
+    };
+
+    const generateMapLinksFromCoords = () => {
+        const lat = storeData.location?.lat;
+        const lng = storeData.location?.lng;
+        if (typeof lat !== 'number' || typeof lng !== 'number' || Number.isNaN(lat) || Number.isNaN(lng)) {
+            alert(t('store.enterCoordsFirst'));
+            return;
+        }
+        setStoreData(prev => ({
+            ...prev,
+            googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
+            wazeUrl: `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`
+        }));
+    };
+
     const handleSave = async () => {
         try {
             setSaving(true);
+            const toSave = { ...storeData };
+            if (!isValidMapUrl(toSave.googleMapsUrl)) toSave.googleMapsUrl = '';
+            if (!isValidMapUrl(toSave.wazeUrl)) toSave.wazeUrl = '';
+            if (!isValidMapUrl(toSave.locationUrl)) toSave.locationUrl = '';
 
             // Save Store Profile
             await setDoc(doc(db, 'store', 'profile'), {
-                ...storeData,
+                ...toSave,
                 updatedAt: new Date()
             }, { merge: true });
+            setStoreData(prev => ({ ...prev, ...toSave }));
 
             // Save Loyalty Settings
             await setDoc(doc(db, 'settings', 'loyalty'), {
@@ -310,7 +344,7 @@ const StoreManager = () => {
                             <div className="form-group">
                                 <label>{t('store.googleMapsUrl')}</label>
                                 <input
-                                    type="text"
+                                    type="url"
                                     name="googleMapsUrl"
                                     value={storeData.googleMapsUrl || ''}
                                     onChange={handleInputChange}
@@ -320,12 +354,52 @@ const StoreManager = () => {
                             <div className="form-group">
                                 <label>{t('store.wazeUrl')}</label>
                                 <input
-                                    type="text"
+                                    type="url"
                                     name="wazeUrl"
                                     value={storeData.wazeUrl || ''}
                                     onChange={handleInputChange}
                                     placeholder={t('store.wazePlaceholder')}
                                 />
+                                <small className="text-muted" style={{ display: 'block', marginTop: '0.25rem', fontSize: '0.8rem' }}>
+                                    {t('store.wazeUrlHelp')}
+                                </small>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={generateMapLinksFromCoords}
+                            style={{ marginTop: '0.5rem' }}
+                        >
+                            {t('store.generateMapLinks')}
+                        </button>
+
+                        <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid #eee' }}>
+                            <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', fontWeight: 600 }}>{t('store.paymentMethodsShown')}</h3>
+                            <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '0.75rem' }}>{t('store.paymentMethodsShownHelp')}</p>
+                            <div className="grid-2" style={{ gap: '0.5rem' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={storeData.paymentMethodsEnabled?.cash !== false}
+                                        onChange={(e) => setStoreData(prev => ({
+                                            ...prev,
+                                            paymentMethodsEnabled: { ...(prev.paymentMethodsEnabled || { cash: true, card: true }), cash: e.target.checked }
+                                        }))}
+                                    />
+                                    <span>{t('store.paymentCash')}</span>
+                                </label>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={storeData.paymentMethodsEnabled?.card !== false}
+                                        onChange={(e) => setStoreData(prev => ({
+                                            ...prev,
+                                            paymentMethodsEnabled: { ...(prev.paymentMethodsEnabled || { cash: true, card: true }), card: e.target.checked }
+                                        }))}
+                                    />
+                                    <span>{t('store.paymentCard')}</span>
+                                </label>
                             </div>
                         </div>
                     </div>

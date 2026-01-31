@@ -20,6 +20,18 @@
         "ar": "ערבית",
         "he": "עברית"
     },
+    "cities": {
+        "title": "ניהול ערים",
+        "subtitle": "הוסף ונהל ערים זמינות להרשמה ומשלוחים",
+        "addNew": "הוסף עיר חדשה",
+        "editCity": "ערוך עיר",
+        "nameAr": "שם בערבית",
+        "nameHe": "שם בעברית",
+        "order": "סדר",
+        "arNameCol": "שם (ערבית)",
+        "heNameCol": "שם (עברית)",
+        "deleteConfirm": "האם אתה בטוח שברצונך למחוק עיר זו?"
+    },
     "login": {
         "title": "כניסת מנהל",
         "subtitle": "הזן את הפרטים שלך כדי לגשת ללוח הבקרה",
@@ -30,6 +42,16 @@
         "error": "שגיאה באימייל או בסיסמה. נא לוודא את הנתונים ולנסות שוב.",
         "footer": "© 2026 ג'לאטו האוס. כל הזכויות שמורות."
     },
+    "driverDetails": {
+        "title": "פרטי נהג והזמנות",
+        "activeOrders": "הזמנות פעילות",
+        "completedOrders": "הזמנות שהושלמו",
+        "cancelledOrders": "הזמנות שבוטלו",
+        "noActiveOrders": "אין הזמנות פעילות",
+        "noCompletedOrders": "אין הזמנות שהושלמו",
+        "noCancelledOrders": "אין הזמנות שבוטלו",
+        "ordersCount": "מספר הזמנות"
+    },
     "sidebar": {
         "dashboard": "לוח בקרה",
         "products": "מוצרים",
@@ -39,6 +61,8 @@
         "orders": "הזמנות",
         "notifications": "התראות",
         "promoCodes": "קודי קופון",
+        "drivers": "נהגים",
+        "cities": "ניהול ערים",
         "deliveryZones": "אזורי משלוח",
         "analytics": "אנליטיקה"
     },
@@ -223,7 +247,14 @@
         "googleMapsUrl": "קישור ל-Google Maps",
         "googleMapsPlaceholder": "https://maps.google.com/...",
         "wazeUrl": "קישור ל-Waze",
-        "wazePlaceholder": "https://waze.com/ul?...",
+        "wazePlaceholder": "https://waze.com/ul?ll=32.0853,34.7818&navigate=yes",
+        "wazeUrlHelp": "יש להזין קישור אמיתי למיקום באפליקציית Waze, לא הודעת שיתוף.",
+        "generateMapLinks": "יצירת קישורים מהקואורדינטות",
+        "enterCoordsFirst": "הזן קודם קו רוחב וקו אורך בסעיף מיקום החנות.",
+        "paymentMethodsShown": "אמצעי תשלום המוצגים במסך העגלה",
+        "paymentMethodsShownHelp": "בחר אילו אמצעי תשלום יוצגו ללקוח באפליקציה. ביטול הסימון מסתיר את האפשרות.",
+        "paymentCash": "מזומן",
+        "paymentCard": "כרטיס אשראי",
         "workingAndDelivery": "שעות פעילות ומשלוח",
         "workingHours": "שעות פעילות",
         "workingHoursAr": "שעות פעילות (ערבית)",
@@ -261,7 +292,7 @@
         "socialLinks": "קישורי מדיה חברתית",
         "instagramPlaceholder": "קישור אינסטגרם",
         "tiktokPlaceholder": "קישור טיקטוק",
-        "whatsappPlaceholder": "קישור וואטסאפ",
+        "whatsappPlaceholder": "מספר וואטסאפ עם קידומת מדינה (לדוגמה: 972...)",
         "saveChanges": "שמור שינויים",
         "loading": "טוען...",
         "successSave": "הנתונים נשמרו בהצלחה ✅",
@@ -314,6 +345,7 @@
         "noExtras": "ללא תוספות או טעמים מיוחדים",
         "subtotal": "סיכום ביניים",
         "deliveryFee": "דמי משלוח",
+        "tax": "מע\"מ",
         "totalAmount": "סה\"כ לתשלום",
         "customerInfo": "לקוח",
         "totalOrders": "סה\"כ הזמנות",
@@ -361,7 +393,14 @@
         "notifCompletedPickupMsg": "תודה שביקרת אותנו! מקווים שתיהנו מהג'לאטו של ג'לאטו האוס.",
         "notifCompletedMsg": "מקווים שתיהנו מההזמנה שלכם! תודה שבחרתם בג'לאטו האוס.",
         "notifCancelledTitle": "ההזמנה בוטלה ❌",
-        "notifCancelledMsg": "מצטערים, ההזמנה שלך #{{orderId}} בוטלה. נא ליצור איתנו קשר לעזרה."
+        "notifCancelledMsg": "מצטערים, ההזמנה שלך #{{orderId}} בוטלה. נא ליצור איתנו קשר לעזרה.",
+        "driverCancelledAcceptance": "ביטול קבלה על ידי הנהג",
+        "cancelledByDriver": "בוטל על ידי הנהג",
+        "cancellationReason": "סיבת הביטול",
+        "cancelledBy": "בוטל על ידי",
+        "cancelledAt": "תאריך הביטול",
+        "filterAll": "כל ההזמנות",
+        "filterByStatus": "סנן לפי סטטוס"
     },
     "notifications": {
         "title": "ניהול התראות",
