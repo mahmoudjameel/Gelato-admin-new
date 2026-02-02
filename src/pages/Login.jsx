@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebase/config';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { LogIn, Lock, Mail, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import './Login.css';
@@ -12,7 +12,17 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [checkingAuth, setCheckingAuth] = useState(true);
     const navigate = useNavigate();
+
+    // إذا كان المستخدم مسجل دخوله مسبقاً - انتقال مباشر للوحة التحكم
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setCheckingAuth(false);
+            if (user) navigate('/dashboard', { replace: true });
+        });
+        return unsubscribe;
+    }, [navigate]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -28,6 +38,16 @@ const Login = () => {
             setLoading(false);
         }
     };
+
+    if (checkingAuth) {
+        return (
+            <div className="login-container">
+                <div className="login-card glass">
+                    <p>جاري التحقق...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="login-container">

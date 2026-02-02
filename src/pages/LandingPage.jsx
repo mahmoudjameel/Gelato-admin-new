@@ -27,9 +27,7 @@ import {
 } from 'lucide-react';
 import { seedData } from '../data/seedData';
 import { toggleTheme, getStoredTheme } from '../utils/theme';
-import { AppleIcon, GooglePlayIcon, InstagramIcon, TikTokIcon, WhatsAppIcon } from '../components/AppStoreIcons';
-import { db } from '../firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
+import { AppleIcon, GooglePlayIcon, InstagramIcon, FacebookIcon, TwitterIcon, TikTokIcon, WhatsAppIcon } from '../components/AppStoreIcons';
 import './LandingPage.css';
 
 const LandingPage = () => {
@@ -37,27 +35,7 @@ const LandingPage = () => {
     const navigate = useNavigate();
     const [isDark, setIsDark] = useState(getStoredTheme() === 'dark');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [storeSocial, setStoreSocial] = useState({ instagram: '', tiktok: '', whatsapp: '' });
-
-    useEffect(() => {
-        const loadStoreProfile = async () => {
-            try {
-                const docRef = doc(db, 'store', 'profile');
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists() && docSnap.data().social) {
-                    const social = docSnap.data().social;
-                    setStoreSocial({
-                        instagram: social.instagram || '',
-                        tiktok: social.tiktok || '',
-                        whatsapp: social.whatsapp || ''
-                    });
-                }
-            } catch (err) {
-                console.warn('Landing: could not load store social', err);
-            }
-        };
-        loadStoreProfile();
-    }, []);
+    const storeSocial = {};
 
     const handleToggleTheme = () => {
         const newTheme = toggleTheme();
@@ -211,7 +189,7 @@ const LandingPage = () => {
                 <div className="drawer-overlay" onClick={() => setIsMenuOpen(false)}></div>
                 <div className="drawer-content glass">
                     <div className="drawer-header">
-                        <div className="logo-text-wrapper branding-text store-name-en" dir="ltr">
+                        <div className="logo-text-wrapper branding-text">
                             <span className="logo-text main-brand">Gelato</span>
                             <span className="logo-text-secondary sub-brand">House</span>
                         </div>
@@ -263,25 +241,25 @@ const LandingPage = () => {
                         <h1 className="hero-title">
                             {i18n.language === 'ar'
                                 ? <>استمتع بأشهى <span className="highlight-text">الجيلاتو والآيس كريم</span> الطازج</>
-                                : <>גלידה טעימה וקינוחים מושחתים ואוירה נפלאה</>}
+                                : <>תהנו מהגלידה והגלידות <span className="highlight-text">הטריות והטעימות</span> ביותר</>}
                         </h1>
                         <p className="hero-subtitle">
                             {i18n.language === 'ar'
                                 ? 'اكتشف عالماً من النكهات الإيطالية الأصيلة. جيلاتو طازج يومياً، وافل مقرمش، ومثلجات فاخرة. اطلب الآن واستمتع بالطعم الرائع في أي وقت.'
-                                : 'גלו עולם של טעמים איטלקיים אותנטיים. גלידה טרייה מדי יום, וופלים פריכים וגלידות יוקרתיות. הזמינו עכשיו ותהנו מהטעם החזק באיזור.'}
+                                : 'גלו עולם של טעמים איטלקיים אותנטיים. גלידה טרייה מדי יום, וופלים פריכים וגלידות יוקרתיות. הזמינו עכשיו ותהנו מהטעם המדהים בכל שעה.'}
                         </p>
 
-                        <div className="app-buttons app-buttons-row">
+                        <div className="app-buttons">
                             <a href="#" className="store-btn apple">
                                 <AppleIcon size={32} />
-                                <div className="btn-content store-name-en" dir="ltr">
+                                <div className="btn-content">
                                     <span className="small-text">{i18n.language === 'ar' ? 'حمّل من' : 'הורד מ'}</span>
                                     <span className="big-text">App Store</span>
                                 </div>
                             </a>
                             <a href="#" className="store-btn google">
                                 <GooglePlayIcon size={32} />
-                                <div className="btn-content store-name-en" dir="ltr">
+                                <div className="btn-content">
                                     <span className="small-text">{i18n.language === 'ar' ? 'احصل عليه من' : 'קבל מ'}</span>
                                     <span className="big-text">Google Play</span>
                                 </div>

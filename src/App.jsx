@@ -1,24 +1,35 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import DashboardLayout from './layouts/DashboardLayout';
-import CategoryManager from './pages/CategoryManager';
-
+import React, { Suspense, lazy } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import ErrorBoundary from './components/ErrorBoundary';
 import { auth } from './firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
-import DashboardHome from './pages/DashboardHome';
-import ProductManager from './pages/ProductManager';
-import BannerManager from './pages/BannerManager';
-import OrderManager from './pages/OrderManager';
-import StoreManager from './pages/StoreManager';
-import UserManager from './pages/UserManager';
-import AlertManager from './pages/AlertManager';
-import PromoCodeManager from './pages/PromoCodeManager';
-import DriverManager from './pages/DriverManager';
-import DriverDetails from './pages/DriverDetails';
 
-import ExtrasManager from './pages/ExtrasManager';
-import CityManager from './pages/CityManager';
-import Login from './pages/Login';
+// Lazy load للصفحات - تحميل أسرع وأقل كراش
+const DashboardLayout = lazy(() => import('./layouts/DashboardLayout'));
+const DashboardHome = lazy(() => import('./pages/DashboardHome'));
+const CategoryManager = lazy(() => import('./pages/CategoryManager'));
+const ProductManager = lazy(() => import('./pages/ProductManager'));
+const BannerManager = lazy(() => import('./pages/BannerManager'));
+const OrderManager = lazy(() => import('./pages/OrderManager'));
+const StoreManager = lazy(() => import('./pages/StoreManager'));
+const UserManager = lazy(() => import('./pages/UserManager'));
+const AlertManager = lazy(() => import('./pages/AlertManager'));
+const PromoCodeManager = lazy(() => import('./pages/PromoCodeManager'));
+const DriverManager = lazy(() => import('./pages/DriverManager'));
+const DriverDetails = lazy(() => import('./pages/DriverDetails'));
+const ExtrasManager = lazy(() => import('./pages/ExtrasManager'));
+const CityManager = lazy(() => import('./pages/CityManager'));
+const Login = lazy(() => import('./pages/Login'));
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
+
+const PageLoader = () => (
+  <div className="loading-screen" style={{ minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    جاري التحميل...
+  </div>
+);
 
 const ProtectedRoute = ({ children }) => {
   const [user, setUser] = React.useState(null);
@@ -38,15 +49,11 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-import LandingPage from './pages/LandingPage';
-import TermsPage from './pages/TermsPage';
-import PrivacyPage from './pages/PrivacyPage';
-import ContactPage from './pages/ContactPage';
-import { Navigate } from 'react-router-dom';
-
 function App() {
   return (
+    <ErrorBoundary>
     <Router>
+      <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
@@ -80,7 +87,9 @@ function App() {
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </Router>
+    </ErrorBoundary>
   );
 }
 
