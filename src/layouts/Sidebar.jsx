@@ -6,6 +6,7 @@ import {
     LayoutDashboard,
     Tag,
     Package,
+    Layers,
     Image as ImageIcon,
     LogOut,
     ChevronLeft,
@@ -35,7 +36,8 @@ const Sidebar = ({ isOpen, onClose }) => {
         { title: t('sidebar.promoCodes'), icon: <Ticket size={20} />, path: 'promos' },
         { title: t('sidebar.drivers'), icon: <Bike size={20} />, path: 'drivers' },
 
-        { title: t('menuManagement.extras'), icon: <Tag size={20} />, path: 'extras' }, // Using Tag icon for extras
+        { title: t('menuManagement.extras'), icon: <Tag size={20} />, path: 'extras' },
+        { title: t('menuManagement.extraGroups'), icon: <Layers size={20} />, path: 'extra-groups' },
         { title: t('sidebar.notifications'), icon: <Bell size={20} />, path: 'alerts' },
         { title: t('sidebar.cities'), icon: <MapPin size={20} />, path: 'cities' },
         { title: t('sidebar.analytics'), icon: <ImageIcon size={20} />, path: 'banner' },

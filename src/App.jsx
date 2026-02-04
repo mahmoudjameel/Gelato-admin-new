@@ -18,6 +18,7 @@ const PromoCodeManager = lazy(() => import('./pages/PromoCodeManager'));
 const DriverManager = lazy(() => import('./pages/DriverManager'));
 const DriverDetails = lazy(() => import('./pages/DriverDetails'));
 const ExtrasManager = lazy(() => import('./pages/ExtrasManager'));
+const ExtraGroupsManager = lazy(() => import('./pages/ExtraGroupsManager'));
 const CityManager = lazy(() => import('./pages/CityManager'));
 const Login = lazy(() => import('./pages/Login'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -80,6 +81,7 @@ function App() {
           <Route path="drivers/:driverId" element={<DriverDetails />} />
 
           <Route path="extras" element={<ExtrasManager />} />
+          <Route path="extra-groups" element={<ExtraGroupsManager />} />
           <Route path="cities" element={<CityManager />} />
           <Route path="store" element={<StoreManager />} />
         </Route>
