@@ -270,6 +270,19 @@ const StoreManager = () => {
         }));
     };
 
+    /** إزالة القيم undefined من الكائن لأن Firestore لا يقبلها */
+    const stripUndefined = (obj) => {
+        if (obj === null || obj === undefined) return obj;
+        if (Array.isArray(obj)) return obj.map((item) => stripUndefined(item)).filter((item) => item !== undefined);
+        if (typeof obj !== 'object') return obj;
+        const out = {};
+        for (const key of Object.keys(obj)) {
+            const v = obj[key];
+            if (v !== undefined) out[key] = stripUndefined(v);
+        }
+        return out;
+    };
+
     const handleSave = async () => {
         try {
             setSaving(true);
@@ -278,18 +291,14 @@ const StoreManager = () => {
             if (!isValidMapUrl(toSave.wazeUrl)) toSave.wazeUrl = '';
             if (!isValidMapUrl(toSave.locationUrl)) toSave.locationUrl = '';
 
-            // Save Store Profile
-            await setDoc(doc(db, 'store', 'profile'), {
-                ...toSave,
-                updatedAt: new Date()
-            }, { merge: true });
+            // Save Store Profile (strip undefined so Firestore accepts the document)
+            const storePayload = stripUndefined({ ...toSave, updatedAt: new Date() });
+            await setDoc(doc(db, 'store', 'profile'), storePayload, { merge: true });
             setStoreData(prev => ({ ...prev, ...toSave }));
 
-            // Save Loyalty Settings
-            await setDoc(doc(db, 'settings', 'loyalty'), {
-                ...loyaltyData,
-                updatedAt: new Date()
-            }, { merge: true });
+            // Save Loyalty Settings (strip undefined)
+            const loyaltyPayload = stripUndefined({ ...loyaltyData, updatedAt: new Date() });
+            await setDoc(doc(db, 'settings', 'loyalty'), loyaltyPayload, { merge: true });
 
             setSaving(false);
             alert(t('store.successSave'));
@@ -777,6 +786,53 @@ const StoreManager = () => {
                                     >
                                         <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>×</span>
                                     </button>
+                                    <div style={{ width: '100%', marginTop: '0.75rem', padding: '0.75rem', background: '#F0FDF4', borderRadius: '10px', border: '1px solid #BBF7D0' }}>
+                                        <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#059669', marginBottom: '0.5rem' }}>{t('store.zoneOfferSection')}</div>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'flex-end' }}>
+                                            <div className="rate-field" style={{ flex: '1 1 100px' }}>
+                                                <label style={{ fontSize: '0.75rem', color: '#374151' }}>{t('store.zoneFreeDeliveryAbove')}</label>
+                                                <input
+                                                    type="number"
+                                                    step="any"
+                                                    min="0"
+                                                    placeholder={t('store.zoneFreeDeliveryAbovePlaceholder')}
+                                                    value={zone.freeDeliveryAbove ?? ''}
+                                                    onChange={(e) => {
+                                                        const arr = [...(storeData.deliveryZones || [])];
+                                                        const v = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                                                        arr[index] = { ...arr[index], freeDeliveryAbove: v };
+                                                        setStoreData(prev => ({ ...prev, deliveryZones: arr }));
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="rate-field" style={{ flex: '1 1 220px' }}>
+                                                <label style={{ fontSize: '0.75rem', color: '#374151' }}>{t('store.zoneOfferLabelAr')}</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder={t('store.zoneOfferLabelArPlaceholder')}
+                                                    value={zone.offerLabelAr ?? ''}
+                                                    onChange={(e) => {
+                                                        const arr = [...(storeData.deliveryZones || [])];
+                                                        arr[index] = { ...arr[index], offerLabelAr: e.target.value };
+                                                        setStoreData(prev => ({ ...prev, deliveryZones: arr }));
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="rate-field" style={{ flex: '1 1 220px' }}>
+                                                <label style={{ fontSize: '0.75rem', color: '#374151' }}>{t('store.zoneOfferLabelHe')}</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder={t('store.zoneOfferLabelHePlaceholder')}
+                                                    value={zone.offerLabelHe ?? ''}
+                                                    onChange={(e) => {
+                                                        const arr = [...(storeData.deliveryZones || [])];
+                                                        arr[index] = { ...arr[index], offerLabelHe: e.target.value };
+                                                        setStoreData(prev => ({ ...prev, deliveryZones: arr }));
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             ))}
                             <button
@@ -784,7 +840,7 @@ const StoreManager = () => {
                                 className="add-rate-btn"
                                 onClick={() => setStoreData(prev => ({
                                     ...prev,
-                                    deliveryZones: [...(prev.deliveryZones || []), { name: '', latMin: undefined, latMax: undefined, lngMin: undefined, lngMax: undefined, fee: 0, isActive: true }]
+                                    deliveryZones: [...(prev.deliveryZones || []), { name: '', fee: 0, isActive: true, offerLabelAr: '', offerLabelHe: '' }]
                                 }))}
                                 style={{
                                     marginTop: '1rem',
