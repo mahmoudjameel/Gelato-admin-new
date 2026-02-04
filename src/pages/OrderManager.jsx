@@ -347,16 +347,7 @@ const OrderManager = () => {
                                             <span>{order.customerName || t('orders.anonymous')}</span>
                                         </div>
                                     </td>
-                                    <td>
-                                        <span className="date-cell">{formatDate(order.createdAt)}</span>
-                                        {(order.scheduledFor || order.scheduledForLabel) && (
-                                            <div className="scheduled-badge-inline" title={order.scheduledForLabel || (order.scheduledFor?.toDate ? order.scheduledFor.toDate().toLocaleString(i18n.language === 'ar' ? 'ar-EG' : 'he-IL', { dateStyle: 'short', timeStyle: 'short' }) : '')}>
-                                                <Calendar size={12} />
-                                                <span>{t('orders.scheduledBadge')}</span>
-                                                <span className="scheduled-time">{order.scheduledForLabel || (order.scheduledFor?.toDate ? order.scheduledFor.toDate().toLocaleString(i18n.language === 'ar' ? 'ar-EG' : 'he-IL', { hour: '2-digit', minute: '2-digit' }) : '')}</span>
-                                            </div>
-                                        )}
-                                    </td>
+                                    <td><span className="date-cell">{formatDate(order.createdAt)}</span></td>
                                     <td><span className="price-tag">{order.totalAmount || 0} ₪</span></td>
                                     <td>
                                         <div>
@@ -414,12 +405,6 @@ const OrderManager = () => {
                             <div className="modal-title-box">
                                 <h2>{t('orders.orderDetails')} #{selectedOrder.orderNumber || selectedOrder.id.replace(/\D/g, '').slice(-6)}</h2>
                                 <span className="modal-date">{formatDate(selectedOrder.createdAt)}</span>
-                                {(selectedOrder.scheduledFor || selectedOrder.scheduledForLabel) && (
-                                    <div className="modal-scheduled-badge">
-                                        <Calendar size={16} />
-                                        <span>{t('orders.scheduledOrder')}: {selectedOrder.scheduledForLabel || (selectedOrder.scheduledFor?.toDate ? selectedOrder.scheduledFor.toDate().toLocaleString(i18n.language === 'ar' ? 'ar-EG' : 'he-IL', { dateStyle: 'short', timeStyle: 'short' }) : '—')}</span>
-                                    </div>
-                                )}
                             </div>
                             <button className="close-btn" onClick={() => setIsModalOpen(false)}><XCircle size={24} /></button>
                         </div>
@@ -562,15 +547,6 @@ const OrderManager = () => {
                                         </div>
                                     </div>
                                 </div>
-
-                                {(selectedOrder.scheduledFor || selectedOrder.scheduledForLabel) && (
-                                    <div className="info-section glass-inner scheduled-order-box">
-                                        <h3><Calendar size={18} /> {t('orders.scheduledOrder')}</h3>
-                                        <div className="info-content">
-                                            <p><strong>{t('orders.scheduledForTime')}:</strong> {selectedOrder.scheduledForLabel || (selectedOrder.scheduledFor?.toDate ? selectedOrder.scheduledFor.toDate().toLocaleString(i18n.language === 'ar' ? 'ar-EG' : 'he-IL', { dateStyle: 'medium', timeStyle: 'short' }) : '—')}</p>
-                                        </div>
-                                    </div>
-                                )}
 
                                 <div className="info-section glass-inner">
                                     <h3><MapPin size={18} /> {t('orders.deliveryAddress')}</h3>

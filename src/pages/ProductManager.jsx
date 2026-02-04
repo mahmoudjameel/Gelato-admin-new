@@ -4,7 +4,6 @@ import {
     Search,
     Edit2,
     Trash2,
-    Copy,
     Package,
     X,
     Save,
@@ -76,7 +75,6 @@ const ProductManager = () => {
 
     // [NEW] Collapsible state for extras picker
     const [isExtrasExpanded, setIsExtrasExpanded] = useState(false);
-    const [isDuplicateMode, setIsDuplicateMode] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -267,7 +265,7 @@ const ProductManager = () => {
                 await addDoc(collection(db, 'products'), productData);
             }
 
-            closeProductModal();
+            setIsModalOpen(false);
             resetForm();
             fetchData();
         } catch (error) {
@@ -379,13 +377,7 @@ const ProductManager = () => {
         });
     };
 
-    const closeProductModal = () => {
-        setIsModalOpen(false);
-        setIsDuplicateMode(false);
-    };
-
     const openModal = (product = null) => {
-        setIsDuplicateMode(false);
         if (product) {
             setEditingProduct(product);
             setFormData({
@@ -405,32 +397,6 @@ const ProductManager = () => {
         } else {
             resetForm();
         }
-        setIsModalOpen(true);
-    };
-
-    /** فتح المودال لإنشاء نسخة من المنتج (بيانات مشابهة، يُضاف للمنتجات بعد الحفظ) */
-    const handleDuplicate = (product) => {
-        const copySuffix = ' (نسخة)';
-        setEditingProduct(null);
-        setFormData({
-            nameAr: (product.nameAr || product.name || '').trim() + copySuffix,
-            nameHe: (product.nameHe || '').trim() + copySuffix,
-            descriptionAr: product.descriptionAr || product.description || '',
-            descriptionHe: product.descriptionHe || '',
-            price: product.price != null ? String(product.price) : '',
-            category: product.category || '',
-            classification: product.classification || '',
-            image: product.image || '',
-            rating: product.rating != null ? String(product.rating) : '4.5',
-            sizes: Array.isArray(product.sizes) ? product.sizes.map(s => ({ ...s })) : [],
-            flavors: Array.isArray(product.flavors) ? product.flavors.map(f => typeof f === 'string' ? { nameAr: f, nameHe: '' } : { ...f }) : [],
-            extras: Array.isArray(product.extras) ? product.extras.map(e => ({ ...e })) : [],
-            loyaltyPointsPrice: product.loyaltyPointsPrice != null ? String(product.loyaltyPointsPrice) : ''
-        });
-        setImagePreview(product.image || null);
-        setImageFile(null);
-        setExtraImageFiles({});
-        setIsDuplicateMode(true);
         setIsModalOpen(true);
     };
 
@@ -585,15 +551,14 @@ const ProductManager = () => {
                     <button
                         className={`delete-toggle-btn ${showDeleted ? 'active' : ''}`}
                         onClick={() => setShowDeleted(!showDeleted)}
-                        title={showDeleted ? t('products.backToProducts') : t('products.archive')}
                         style={{
                             marginLeft: '1rem',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            background: showDeleted ? '#6366F1' : 'rgba(99, 102, 241, 0.15)',
-                            border: '1px solid rgba(99, 102, 241, 0.3)',
-                            color: showDeleted ? 'white' : '#6366F1',
+                            background: showDeleted ? '#EF4444' : 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                            color: showDeleted ? 'white' : '#EF4444',
                             padding: '10px 16px',
                             borderRadius: '12px',
                             fontSize: '14px',
@@ -601,8 +566,8 @@ const ProductManager = () => {
                             cursor: 'pointer'
                         }}
                     >
-                        <Package size={18} />
-                        <span>{showDeleted ? t('products.backToProducts') : t('products.archive')}</span>
+                        <Trash2 size={18} />
+                        <span>{showDeleted ? t('products.showActive') : t('products.showDeleted')}</span>
                     </button>
                 </div>
                 <div className="header-right">
@@ -617,13 +582,6 @@ const ProductManager = () => {
                     </div>
                 </div>
             </div>
-
-            {showDeleted && (
-                <div className="archive-banner glass" style={{ marginBottom: '1rem', padding: '1rem 1.25rem', borderRadius: '12px', background: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#6366F1', fontWeight: 600 }}>{t('products.archiveTitle')}</h3>
-                    <p style={{ margin: '0.35rem 0 0', fontSize: '0.9rem', color: '#64748B' }}>{t('products.archiveHint')}</p>
-                </div>
-            )}
 
             <div className="data-table-container glass">
                 <table className="data-table">
@@ -667,9 +625,8 @@ const ProductManager = () => {
                                                         <Clock size={16} color="#F59E0B" />
                                                     </button>
                                                 )}
-                                                <button className="edit-btn" onClick={() => openModal(product)} title={t('products.editProduct')}><Edit2 size={16} /></button>
-                                                <button className="duplicate-btn" onClick={() => handleDuplicate(product)} title={t('products.duplicate')}><Copy size={16} /></button>
-                                                <button className="delete-btn" onClick={() => handleDelete(product.id)} title={t('products.delete')}><Trash2 size={16} /></button>
+                                                <button className="edit-btn" onClick={() => openModal(product)}><Edit2 size={16} /></button>
+                                                <button className="delete-btn" onClick={() => handleDelete(product.id)}><Trash2 size={16} /></button>
                                             </>
                                         ) : (
                                             <>
@@ -690,14 +647,11 @@ const ProductManager = () => {
             </div>
 
             {isModalOpen && (
-                <div className="modal-overlay product-modal-overlay">
-                    <div className="modal-content glass modal-large product-modal">
-                        <div className={`modal-header product-modal-header ${isDuplicateMode ? 'product-modal-header--duplicate' : ''}`}>
-                            <div className="product-modal-title-wrap">
-                                <h2>{isDuplicateMode ? t('products.duplicateProduct') : editingProduct ? t('products.editProduct') : t('products.addNew')}</h2>
-                                {isDuplicateMode && <span className="product-modal-badge">{t('products.duplicate')}</span>}
-                            </div>
-                            <button type="button" className="modal-close-btn" onClick={closeProductModal} aria-label="Close"><X size={22} /></button>
+                <div className="modal-overlay">
+                    <div className="modal-content glass modal-large">
+                        <div className="modal-header">
+                            <h2>{editingProduct ? t('products.editProduct') : t('products.addNew')}</h2>
+                            <button onClick={() => setIsModalOpen(false)}><X size={20} /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="modal-form scrollable">
                             <div className="form-row">
@@ -968,45 +922,63 @@ const ProductManager = () => {
             )}
 
             {freezeModalOpen && (
-                <div className="freeze-modal-overlay">
-                    <div className="freeze-modal glass">
-                        <div className="freeze-modal-header">
+                <div className="modal-overlay">
+                    <div className="modal-content glass modal-small" style={{ maxWidth: '400px' }}>
+                        <div className="modal-header">
                             <h2>{t('products.freezeProduct')}</h2>
-                            <button type="button" className="freeze-modal-close" onClick={() => setFreezeModalOpen(false)} aria-label="Close"><X size={22} /></button>
+                            <button onClick={() => setFreezeModalOpen(false)}><X size={20} /></button>
                         </div>
-                        <div className="freeze-modal-body">
+                        <div className="modal-body" style={{ padding: '20px' }}>
                             <div className="freeze-options">
                                 <label className={`freeze-option ${freezeType === 'tomorrow' ? 'selected' : ''}`}>
-                                    <input type="radio" name="freezeType" value="tomorrow" checked={freezeType === 'tomorrow'} onChange={(e) => setFreezeType(e.target.value)} />
-                                    <span className="freeze-option-icon"><Clock size={20} /></span>
-                                    <span className="freeze-option-text">{t('products.freezeTomorrow')}</span>
+                                    <input
+                                        type="radio"
+                                        name="freezeType"
+                                        value="tomorrow"
+                                        checked={freezeType === 'tomorrow'}
+                                        onChange={(e) => setFreezeType(e.target.value)}
+                                    />
+                                    <Clock size={20} />
+                                    <span>{t('products.freezeTomorrow')}</span>
                                 </label>
 
-                                <div className="freeze-option-group">
-                                    <label className={`freeze-option ${freezeType === 'scheduled' ? 'selected' : ''}`}>
-                                        <input type="radio" name="freezeType" value="scheduled" checked={freezeType === 'scheduled'} onChange={(e) => setFreezeType(e.target.value)} />
-                                        <span className="freeze-option-icon"><Calendar size={20} /></span>
-                                        <span className="freeze-option-text">{t('products.freezeScheduled')}</span>
-                                    </label>
-                                    {freezeType === 'scheduled' && (
-                                        <input
-                                            type="datetime-local"
-                                            className="freeze-date-input"
-                                            value={customFreezeDate}
-                                            onChange={(e) => setCustomFreezeDate(e.target.value)}
-                                        />
-                                    )}
-                                </div>
+                                <label className={`freeze-option ${freezeType === 'scheduled' ? 'selected' : ''}`}>
+                                    <input
+                                        type="radio"
+                                        name="freezeType"
+                                        value="scheduled"
+                                        checked={freezeType === 'scheduled'}
+                                        onChange={(e) => setFreezeType(e.target.value)}
+                                    />
+                                    <Calendar size={20} />
+                                    <span>{t('products.freezeScheduled')}</span>
+                                </label>
+
+                                {freezeType === 'scheduled' && (
+                                    <input
+                                        type="datetime-local"
+                                        className="freeze-date-input"
+                                        value={customFreezeDate}
+                                        onChange={(e) => setCustomFreezeDate(e.target.value)}
+                                        style={{ width: '100%', marginTop: '10px', padding: '8px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                    />
+                                )}
 
                                 <label className={`freeze-option ${freezeType === 'indefinite' ? 'selected' : ''}`}>
-                                    <input type="radio" name="freezeType" value="indefinite" checked={freezeType === 'indefinite'} onChange={(e) => setFreezeType(e.target.value)} />
-                                    <span className="freeze-option-icon"><Snowflake size={20} /></span>
-                                    <span className="freeze-option-text">{t('products.freezeIndefinite')}</span>
+                                    <input
+                                        type="radio"
+                                        name="freezeType"
+                                        value="indefinite"
+                                        checked={freezeType === 'indefinite'}
+                                        onChange={(e) => setFreezeType(e.target.value)}
+                                    />
+                                    <Snowflake size={20} />
+                                    <span>{t('products.freezeIndefinite')}</span>
                                 </label>
                             </div>
 
-                            <div className="freeze-modal-footer">
-                                <button type="button" className="freeze-confirm-btn" onClick={submitFreeze} disabled={freezeType === 'scheduled' && !customFreezeDate}>
+                            <div className="modal-footer" style={{ marginTop: '20px' }}>
+                                <button className="save-btn" onClick={submitFreeze} disabled={freezeType === 'scheduled' && !customFreezeDate}>
                                     {t('products.confirmFreeze')}
                                 </button>
                             </div>

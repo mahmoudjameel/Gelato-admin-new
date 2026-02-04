@@ -56,45 +56,6 @@
     color: var(--muted-foreground);
 }
 
-.scheduled-badge-inline {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    margin-top: 0.25rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 6px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    background: #FEF3C7;
-    color: #B45309;
-}
-
-.scheduled-badge-inline .scheduled-time {
-    color: #92400E;
-    font-weight: 500;
-}
-
-.modal-scheduled-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-    padding: 0.35rem 0.75rem;
-    border-radius: 8px;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    background: #FEF3C7;
-    color: #B45309;
-}
-
-.scheduled-order-box {
-    border-left: 3px solid #F59E0B;
-}
-
-.scheduled-order-box h3 {
-    color: #B45309;
-}
-
 .customer-avatar-img {
     width: 32px;
     height: 32px;
