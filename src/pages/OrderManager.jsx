@@ -216,6 +216,8 @@ const OrderManager = () => {
         switch (status) {
             case 'pending':
                 return { label: t('orders.statusPending'), icon: <Clock size={14} />, color: '#F59E0B', bg: '#FEF3C7' };
+            case 'awaiting_payment':
+                return { label: t('orders.statusAwaitingPayment') || t('orders.statusPending'), icon: <Clock size={14} />, color: '#F59E0B', bg: '#FEF3C7' };
             case 'processing':
                 return { label: t('orders.statusProcessing'), icon: <ShoppingBag size={14} />, color: '#3B82F6', bg: '#DBEAFE' };
             case 'ready':
@@ -297,6 +299,7 @@ const OrderManager = () => {
                     >
                         <option value="">{t('orders.filterAll')}</option>
                         <option value="pending">{t('orders.statusPending')}</option>
+                        <option value="awaiting_payment">{t('orders.statusAwaitingPayment')}</option>
                         <option value="processing">{t('orders.statusProcessing')}</option>
                         <option value="ready">{t('orders.statusReady')}</option>
                         <option value="shipped">{t('orders.statusShipped')}</option>
@@ -378,7 +381,7 @@ const OrderManager = () => {
                                     </td>
                                     <td>
                                         <div className="table-actions">
-                                            <button className="view-btn" onClick={() => openModal(order)} title={t('orders.viewDetails')}>
+                                            <button type="button" className="view-btn" onClick={(e) => { e.stopPropagation(); openModal(order); }} title={t('orders.viewDetails')}>
                                                 <Eye size={18} />
                                             </button>
                                             <div className="status-dropdown">
@@ -388,6 +391,7 @@ const OrderManager = () => {
                                                     className="status-select-hidden"
                                                 >
                                                     <option value="pending">{t('orders.statusPending')}</option>
+                                                    <option value="awaiting_payment">{t('orders.statusAwaitingPayment')}</option>
                                                     <option value="processing">{t('orders.statusProcessing')}</option>
                                                     <option value="ready">{t('orders.statusReady')}</option>
                                                     <option value="shipped">{t('orders.statusShipped')}</option>
@@ -632,7 +636,7 @@ const OrderManager = () => {
                                 <div className="status-update-box glass-inner">
                                     <h3>{t('orders.updateStatus')}</h3>
                                     <div className="status-buttons">
-                                        {['pending', 'processing', 'ready', 'shipped', 'completed', 'cancelled']
+                                        {['pending', 'awaiting_payment', 'processing', 'ready', 'shipped', 'completed', 'cancelled']
                                             .filter(status => {
                                                 const isPickup = (selectedOrder.orderType || selectedOrder.deliveryType) === 'pickup';
                                                 if (isPickup && (status === 'shipped')) return false;

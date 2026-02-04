@@ -1,7 +1,41 @@
 .order-manager {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.5rem;
+}
+
+/* ---------- هيدر الصفحة: عنوان + بحث + فلتر ---------- */
+.order-manager .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    padding: 1.5rem 1.75rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.order-manager .header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.order-manager .page-header h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--foreground);
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.order-manager .page-header .header-left p {
+    font-size: 0.9rem;
+    color: var(--muted-foreground);
+    margin: 0;
 }
 
 .order-manager .header-right {
@@ -11,16 +45,101 @@
     flex-wrap: wrap;
 }
 
-.status-filter-select {
-    padding: 10px 14px;
+.order-manager .search-bar.glass {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1rem 0.65rem 1.25rem;
+    border-radius: 50px;
+    min-width: 260px;
+    max-width: 320px;
+    border: 1px solid var(--border);
+    background: var(--card);
+}
+
+.order-manager .search-bar input {
+    background: none;
+    border: none;
+    width: 100%;
+    font-size: 0.9375rem;
+    color: var(--foreground);
+}
+
+.order-manager .search-bar input::placeholder {
+    color: var(--muted-foreground);
+}
+
+.order-manager .status-filter-select.glass {
+    padding: 0.65rem 1rem;
     border-radius: 12px;
     border: 1px solid var(--border);
     background: var(--card);
     color: var(--foreground);
-    font-size: 14px;
-    font-weight: 500;
-    min-width: 140px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    min-width: 160px;
     cursor: pointer;
+}
+
+/* ---------- جدول الطلبات: رأس واضح + صفوف منظمة ---------- */
+.order-manager .data-table-container.glass {
+    overflow-x: auto;
+    border-radius: var(--radius);
+    padding: 0;
+    border: 1px solid var(--border);
+    background: var(--card);
+    box-shadow: var(--shadow);
+}
+
+.order-manager .data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.order-manager .data-table thead {
+    background: var(--muted);
+    border-bottom: 2px solid var(--border);
+}
+
+.order-manager .data-table th {
+    text-align: right;
+    padding: 1rem 1.25rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.order-manager .data-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s ease;
+}
+
+.order-manager .data-table tbody tr:nth-child(even) {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.order-manager .data-table tbody tr:hover {
+    background: var(--secondary);
+}
+
+.order-manager .data-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.order-manager .data-table td {
+    padding: 1rem 1.25rem;
+    font-size: 0.9375rem;
+    color: var(--foreground);
+}
+
+.order-manager .data-table .loading,
+.order-manager .data-table .empty {
+    text-align: center;
+    padding: 2.5rem !important;
+    color: var(--muted-foreground);
+    font-weight: 500;
 }
 
 .order-id {
@@ -74,17 +193,18 @@
     font-weight: 500;
 }
 
-.modal-scheduled-badge {
+.order-manager .modal-scheduled-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    margin-top: 0.5rem;
-    padding: 0.35rem 0.75rem;
+    margin-top: 0.35rem;
+    padding: 0.4rem 0.75rem;
     border-radius: 8px;
     font-size: 0.8125rem;
     font-weight: 600;
     background: #FEF3C7;
     color: #B45309;
+    width: fit-content;
 }
 
 .scheduled-order-box {
@@ -112,6 +232,13 @@
     font-weight: 700;
 }
 
+.table-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+}
+
 .view-btn {
     background: var(--accent);
     color: var(--primary);
@@ -121,10 +248,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 2;
+    cursor: pointer;
+}
+
+.view-btn:hover {
+    opacity: 0.9;
+    transform: scale(1.05);
 }
 
 .status-dropdown {
     position: relative;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
 }
 
 .status-select-hidden {
@@ -135,6 +274,7 @@
     height: 100%;
     opacity: 0;
     cursor: pointer;
+    z-index: 1;
 }
 
 .action-btn-circle {
@@ -148,25 +288,133 @@
     color: var(--muted-foreground);
 }
 
+/* مودال تفاصيل الطلب: يظهر فوق الصفحة */
+.order-manager .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+.order-manager .modal-overlay .modal-content {
+    position: relative;
+    margin: auto;
+    max-height: calc(100vh - 2rem);
+    width: 95%;
+    max-width: 920px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: var(--radius);
+}
+
+/* هيدر المودال: عنوان + تاريخ + إغلاق */
+.order-manager .modal-content .modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+    flex-shrink: 0;
+}
+
+.order-manager .modal-content .modal-title-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.order-manager .modal-content .modal-header h2 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--foreground);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.order-manager .modal-content .modal-date {
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+}
+
+.order-manager .modal-content .close-btn {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--muted-foreground);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.order-manager .modal-content .close-btn:hover {
+    background: var(--muted);
+    color: var(--foreground);
+}
+
+/* جسم المودال: قابل للتمرير */
+.order-manager .modal-content .modal-grid {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1.25rem 1.5rem;
+}
+
 /* Modal XL */
 .modal-xl {
-    width: 95%;
-    max-width: 900px;
     max-height: 90vh;
 }
 
-.modal-grid {
+.order-manager .modal-grid {
     display: grid;
     grid-template-columns: 1.5fr 1fr;
     gap: 1.5rem;
-    margin-top: 1.5rem;
+    align-items: start;
+}
+
+.order-manager .modal-col-main,
+.order-manager .modal-col-side {
+    min-width: 0;
+}
+
+.order-manager .modal-col-side {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 .glass-inner {
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.6);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 1.5rem;
+    padding: 1.25rem;
+}
+
+[data-theme='dark'] .order-manager .glass-inner {
+    background: rgba(15, 23, 42, 0.6);
+}
+
+.order-manager .order-items-section.glass-inner,
+.order-manager .info-section.glass-inner,
+.order-manager .status-update-box.glass-inner {
+    margin-bottom: 0;
 }
 
 .order-items-section h3,
@@ -174,36 +422,55 @@
 .status-update-box h3 {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    font-size: 1rem;
+    gap: 0.5rem;
+    font-size: 0.9375rem;
     font-weight: 800;
-    margin-bottom: 1.25rem;
+    margin-bottom: 1rem;
     color: var(--foreground);
 }
 
-.items-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+.order-manager .info-section.glass-inner .info-content p,
+.order-manager .info-section.glass-inner .info-content .customer-phone {
+    margin-bottom: 0.5rem;
 }
 
-.order-item-card {
+.order-manager .info-section.glass-inner .info-content p:last-child {
+    margin-bottom: 0;
+}
+
+.order-manager .items-list {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.order-manager .order-item-card {
+    display: flex;
+    align-items: flex-start;
     gap: 1rem;
-    padding: 0.75rem;
-    background: white;
+    padding: 1rem;
+    background: var(--card);
     border-radius: var(--radius);
     border: 1px solid var(--border);
 }
 
-.item-img-box {
-    width: 50px;
-    height: 50px;
-    border-radius: 8px;
+.order-manager .item-img-box {
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
     overflow: hidden;
     background: var(--muted);
+    flex-shrink: 0;
+}
+
+.order-manager .item-img-box .img-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted-foreground);
 }
 
 .item-img-box img {
@@ -212,18 +479,20 @@
     object-fit: cover;
 }
 
-.item-info {
+.order-manager .item-info {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.35rem;
 }
 
-.item-info h4 {
+.order-manager .item-info h4 {
     font-size: 0.9375rem;
     font-weight: 800;
     color: var(--foreground);
-    margin-bottom: 0.25rem;
+    margin: 0 0 0.2rem 0;
+    line-height: 1.3;
 }
 
 .item-details-list {
@@ -281,28 +550,36 @@
     font-style: italic;
 }
 
-.item-pricing {
-    text-align: left;
+.order-manager .item-pricing {
+    text-align: end;
     display: flex;
     flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
 }
 
-.item-qty {
+[dir="ltr"] .order-manager .item-pricing {
+    text-align: right;
+}
+
+.order-manager .item-qty {
     font-size: 0.75rem;
     color: var(--muted-foreground);
 }
 
-.item-price {
+.order-manager .item-price {
     font-weight: 800;
+    font-size: 1rem;
     color: var(--foreground);
 }
 
-.order-summary {
-    border-top: 1px dashed var(--border);
-    padding-top: 1.25rem;
+.order-manager .order-summary {
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+    margin-top: 0.25rem;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
 }
 
 .summary-row {
@@ -312,12 +589,12 @@
     color: var(--muted-foreground);
 }
 
-.summary-row.total {
+.order-manager .summary-row.total {
     font-size: 1.125rem;
     font-weight: 900;
     color: var(--primary);
     margin-top: 0.5rem;
-    padding-top: 0.5rem;
+    padding-top: 0.75rem;
     border-top: 1px solid var(--border);
 }
 
@@ -344,19 +621,19 @@
     font-size: 0.8rem;
 }
 
-.customer-detail-header-v2 {
+.order-manager .customer-detail-header-v2 {
     display: flex;
-    gap: 1.25rem;
+    gap: 1rem;
 }
 
-.customer-avatar-box {
-    width: 64px;
-    height: 64px;
+.order-manager .customer-avatar-box {
+    width: 56px;
+    height: 56px;
     border-radius: 12px;
     overflow: hidden;
     flex-shrink: 0;
-    border: 2px solid white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 2px solid var(--border);
+    background: var(--muted);
 }
 
 .detail-avatar-img {
@@ -461,16 +738,14 @@
     opacity: 0.9;
 }
 
-.modal-col-side {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
+.order-manager .status-update-box.glass-inner {
+    margin-top: 0.25rem;
 }
 
-.status-buttons {
+.order-manager .status-buttons {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
+    gap: 0.5rem;
 }
 
 .status-btn-option {
@@ -532,23 +807,100 @@
     border-color: var(--primary);
 }
 
+/* ريسبونس: جدول الطلبات */
 @media (max-width: 900px) {
-    .modal-grid {
-        grid-template-columns: 1fr;
+    .order-manager .data-table th:nth-child(4),
+    .order-manager .data-table td:nth-child(4),
+    .order-manager .data-table th:nth-child(5),
+    .order-manager .data-table td:nth-child(5) {
+        display: none;
+    }
+}
+
+/* ريسبونس: مودال تفاصيل الطلب */
+@media (max-width: 900px) {
+    .order-manager .modal-overlay .modal-content {
+        max-height: 95vh;
+        width: 98%;
     }
 
-    .data-table th:nth-child(4),
-    .data-table td:nth-child(4),
-    .data-table th:nth-child(5),
-    .data-table td:nth-child(5) {
-        display: none;
-        /* Hide date and payment on mobile */
+    .order-manager .modal-content .modal-header {
+        padding: 1rem 1.25rem;
+    }
+
+    .order-manager .modal-content .modal-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .order-manager .modal-grid {
+        grid-template-columns: 1fr;
+        padding: 1rem 1.25rem;
+        gap: 1.25rem;
+    }
+
+    .order-manager .modal-col-side {
+        order: -1;
     }
 }
 
 @media (max-width: 600px) {
-    .status-buttons {
+    .order-manager .modal-overlay {
+        padding: 0.5rem;
+        align-items: flex-start;
+    }
+
+    .order-manager .modal-overlay .modal-content {
+        width: 100%;
+        max-height: 98vh;
+    }
+
+    .order-manager .modal-content .modal-header {
+        padding: 0.875rem 1rem;
+    }
+
+    .order-manager .modal-content .modal-header h2 {
+        font-size: 1rem;
+    }
+
+    .order-manager .modal-content .modal-grid {
+        padding: 0.875rem 1rem;
+    }
+
+    .order-manager .glass-inner {
+        padding: 1rem;
+    }
+
+    .order-manager .order-item-card {
+        flex-wrap: wrap;
+        padding: 0.75rem;
+    }
+
+    .order-manager .item-pricing {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px dashed var(--border);
+    }
+
+    .order-manager .status-buttons {
         grid-template-columns: 1fr;
+    }
+
+    .order-manager .customer-detail-header-v2 {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .order-manager .customer-avatar-box {
+        width: 48px;
+        height: 48px;
+    }
+
+    .order-manager .detail-avatar-placeholder {
+        font-size: 1.25rem;
     }
 }
 
@@ -596,22 +948,20 @@
     padding-top: 4px;
 }
 
-/* Fix for Modal Scrolling */
-.modal-content {
-    max-height: 90vh;
-    overflow-y: auto;
+/* تمرير جسم المودال */
+.order-manager .modal-content .modal-grid {
     scrollbar-width: thin;
 }
 
-.modal-content::-webkit-scrollbar {
+.order-manager .modal-content .modal-grid::-webkit-scrollbar {
     width: 6px;
 }
 
-.modal-content::-webkit-scrollbar-track {
+.order-manager .modal-content .modal-grid::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.modal-content::-webkit-scrollbar-thumb {
+.order-manager .modal-content .modal-grid::-webkit-scrollbar-thumb {
     background-color: var(--border);
     border-radius: 20px;
 }

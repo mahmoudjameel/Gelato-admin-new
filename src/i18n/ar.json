@@ -423,6 +423,7 @@
         "unpaid": "غير مدفوع",
         "updateStatus": "تحديث حالة الطلب",
         "statusPending": "قيد الانتظار",
+        "statusAwaitingPayment": "بانتظار الدفع",
         "statusProcessing": "جاري التحضير",
         "statusReady": "جاهز",
         "statusReadyPickup": "جاهز للاستلام",

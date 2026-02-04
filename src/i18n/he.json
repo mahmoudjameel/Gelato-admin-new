@@ -423,6 +423,7 @@
         "unpaid": "לא שולם",
         "updateStatus": "עדכן סטטוס הזמנה",
         "statusPending": "בהמתנה",
+        "statusAwaitingPayment": "ממתין לתשלום",
         "statusProcessing": "בהכנה",
         "statusReady": "מוכן",
         "statusReadyPickup": "מוכן לאיסוף",
