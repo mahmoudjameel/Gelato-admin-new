@@ -57,7 +57,8 @@ const StoreManager = () => {
             sunday: { open: '10:00', close: '22:00', closed: false },
         },
         location: { lat: 0, lng: 0 },
-        deliveryZones: [], // Array of { name, radiusKm, fee, isActive }
+        deliveryZones: [], // مناطق التوصيل: اسم + إحداثيات (مستطيل) + سعر: { name, latMin, latMax, lngMin, lngMax, fee, isActive }
+        deliveryCityFees: [], // رسوم حسب المدينة: { cityNameAr, cityNameHe, fee, isActive }
         paymentMethodsEnabled: { cash: true, card: true }
     });
 
@@ -71,6 +72,62 @@ const StoreManager = () => {
         goldThreshold: 3000,
         goldFreeDelivery: true
     });
+
+    const [geocodeLoadingIndex, setGeocodeLoadingIndex] = useState(null);
+    /** قائمة نتائج البحث لكل صف: { [zoneIndex]: [{ display_name, boundingbox }, ...] } */
+    const [geocodeResultsByZone, setGeocodeResultsByZone] = useState({});
+
+    /** جلب عناوين/أماكن من اسم المكان وعرض قائمة للاختيار */
+    const fetchCoordsForZone = async (index) => {
+        const zones = [...(storeData.deliveryZones || [])];
+        const zone = zones[index];
+        const query = (zone?.name || '').trim();
+        if (!query) {
+            alert(t('store.enterZoneNameFirst'));
+            return;
+        }
+        setGeocodeLoadingIndex(index);
+        setGeocodeResultsByZone(prev => ({ ...prev, [index]: [] }));
+        try {
+            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=8&countrycodes=il`;
+            const res = await fetch(url, {
+                headers: { 'User-Agent': 'GelatoHouse-Admin/1.0' }
+            });
+            if (!res.ok) throw new Error('Network error');
+            const data = await res.json();
+            if (!data || data.length === 0) {
+                alert(t('store.coordsNotFound'));
+                setGeocodeLoadingIndex(null);
+                return;
+            }
+            setGeocodeResultsByZone(prev => ({ ...prev, [index]: data }));
+        } catch (err) {
+            console.error(err);
+            alert(t('store.coordsFetchError'));
+        } finally {
+            setGeocodeLoadingIndex(null);
+        }
+    };
+
+    /** عند اختيار عنوان من القائمة: تعبئة الإحداثيات وإغلاق القائمة */
+    const applyGeocodeResult = (zoneIndex, result) => {
+        const bbox = result.boundingbox; // [south, north, west, east]
+        const latMin = parseFloat(bbox[0]);
+        const latMax = parseFloat(bbox[1]);
+        const lngMin = parseFloat(bbox[2]);
+        const lngMax = parseFloat(bbox[3]);
+        const zones = [...(storeData.deliveryZones || [])];
+        zones[zoneIndex] = {
+            ...zones[zoneIndex],
+            name: result.display_name || zones[zoneIndex].name,
+            latMin,
+            latMax,
+            lngMin,
+            lngMax
+        };
+        setStoreData(prev => ({ ...prev, deliveryZones: zones }));
+        setGeocodeResultsByZone(prev => ({ ...prev, [zoneIndex]: [] }));
+    };
 
     const dayLabels = {
         sunday: t('store.days.sunday'),
@@ -93,9 +150,16 @@ const StoreManager = () => {
 
             if (docSnap.exists()) {
                 const data = docSnap.data();
+                const hasOldZonesByCoords = Array.isArray(data.deliveryZonesByCoords) && data.deliveryZonesByCoords.length > 0;
+                const zonesEmptyOrOld = !Array.isArray(data.deliveryZones) || data.deliveryZones.length === 0 ||
+                    (data.deliveryZones[0] && 'radiusKm' in data.deliveryZones[0]);
+                const deliveryZones = (hasOldZonesByCoords && zonesEmptyOrOld)
+                    ? data.deliveryZonesByCoords
+                    : (data.deliveryZones || []);
                 setStoreData(prev => ({
                     ...prev,
                     ...data,
+                    deliveryZones,
                     nameAr: data.nameAr || data.name || '',
                     descriptionAr: data.descriptionAr || data.description || '',
                     addressAr: data.addressAr || data.address || '',
@@ -537,92 +601,198 @@ const StoreManager = () => {
 
                     <div className="form-section glass">
                         <div className="section-header-box">
-                            <h2><BadgeDollarSign size={20} /> {t('store.deliveryZones')}</h2>
-                            <p className="section-helper">{t('store.zonesHelper')}</p>
+                            <h2><MapPin size={20} /> {t('store.deliveryZones')}</h2>
+                            <p className="section-helper">{t('store.zonesByCoordsHelper')}</p>
                         </div>
                         <div className="delivery-rates-list">
                             {(storeData.deliveryZones || []).map((zone, index) => (
-                                <div key={index} className="rate-row" style={{ alignItems: 'flex-end', paddingBottom: '1rem', borderBottom: '1px solid #eee' }}>
-                                    <div className="rate-field" style={{ flex: 2 }}>
+                                <div key={index} className="rate-row" style={{ alignItems: 'flex-end', paddingBottom: '1rem', borderBottom: '1px solid #eee', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                    <div className="rate-field" style={{ flex: '1 1 180px', position: 'relative' }}>
                                         <label>{t('store.zoneName')}</label>
-                                        <input
-                                            placeholder={t('store.zoneNamePlaceholder')}
-                                            value={zone.name}
-                                            onChange={(e) => {
-                                                const newZones = [...(storeData.deliveryZones || [])];
-                                                newZones[index].name = e.target.value;
-                                                setStoreData(prev => ({ ...prev, deliveryZones: newZones }));
-                                            }}
-                                        />
+                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                            <input
+                                                placeholder={t('store.zoneNamePlaceholder')}
+                                                value={zone.name || ''}
+                                                onChange={(e) => {
+                                                    const arr = [...(storeData.deliveryZones || [])];
+                                                    arr[index] = { ...arr[index], name: e.target.value };
+                                                    setStoreData(prev => ({ ...prev, deliveryZones: arr }));
+                                                }}
+                                                style={{ flex: 1 }}
+                                            />
+                                            <button
+                                                type="button"
+                                                title={t('store.fetchCoordsFromName')}
+                                                onClick={() => fetchCoordsForZone(index)}
+                                                disabled={geocodeLoadingIndex !== null}
+                                                style={{
+                                                    padding: '6px 10px',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #059669',
+                                                    background: '#ECFDF5',
+                                                    color: '#059669',
+                                                    cursor: geocodeLoadingIndex !== null ? 'not-allowed' : 'pointer',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 600,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px'
+                                                }}
+                                            >
+                                                {geocodeLoadingIndex === index ? <Loader size={14} className="spin" /> : <MapPin size={14} />}
+                                                {geocodeLoadingIndex === index ? t('store.fetchingCoords') : t('store.fetchCoordsBtn')}
+                                            </button>
+                                        </div>
+                                        {(geocodeResultsByZone[index] || []).length > 0 && (
+                                            <ul
+                                                className="geocode-results-list"
+                                                style={{
+                                                    listStyle: 'none',
+                                                    margin: '6px 0 0',
+                                                    padding: '6px 0',
+                                                    background: '#fff',
+                                                    border: '1px solid var(--border)',
+                                                    borderRadius: '10px',
+                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                                    maxHeight: '220px',
+                                                    overflowY: 'auto',
+                                                    position: 'relative',
+                                                    zIndex: 10
+                                                }}
+                                            >
+                                                {(geocodeResultsByZone[index] || []).map((result, i) => (
+                                                    <li
+                                                        key={i}
+                                                        onClick={() => applyGeocodeResult(index, result)}
+                                                        style={{
+                                                            padding: '10px 12px',
+                                                            cursor: 'pointer',
+                                                            fontSize: '0.8125rem',
+                                                            borderBottom: i < geocodeResultsByZone[index].length - 1 ? '1px solid #eee' : 'none'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = '#ECFDF5';
+                                                            e.currentTarget.style.color = '#059669';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = '';
+                                                            e.currentTarget.style.color = '';
+                                                        }}
+                                                    >
+                                                        {result.display_name}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
                                     </div>
-                                    <div className="rate-field">
-                                        <label>{t('store.distanceKm')}</label>
+                                    <div className="rate-field" style={{ flex: '0 1 90px' }}>
+                                        <label>{t('store.latMin')}</label>
                                         <input
                                             type="number"
-                                            placeholder="5"
-                                            value={zone.radiusKm}
+                                            step="any"
+                                            placeholder="32.1"
+                                            value={zone.latMin ?? ''}
                                             onChange={(e) => {
-                                                const newZones = [...(storeData.deliveryZones || [])];
-                                                newZones[index].radiusKm = parseFloat(e.target.value);
-                                                setStoreData(prev => ({ ...prev, deliveryZones: newZones }));
+                                                const arr = [...(storeData.deliveryZones || [])];
+                                                arr[index] = { ...arr[index], latMin: parseFloat(e.target.value) };
+                                                setStoreData(prev => ({ ...prev, deliveryZones: arr }));
                                             }}
                                         />
-                                        <small style={{ color: '#666', fontSize: '0.7em' }}>{t('store.upTo', { distance: zone.radiusKm })}</small>
                                     </div>
-                                    <div className="rate-field">
+                                    <div className="rate-field" style={{ flex: '0 1 90px' }}>
+                                        <label>{t('store.latMax')}</label>
+                                        <input
+                                            type="number"
+                                            step="any"
+                                            placeholder="32.2"
+                                            value={zone.latMax ?? ''}
+                                            onChange={(e) => {
+                                                const arr = [...(storeData.deliveryZones || [])];
+                                                arr[index] = { ...arr[index], latMax: parseFloat(e.target.value) };
+                                                setStoreData(prev => ({ ...prev, deliveryZones: arr }));
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="rate-field" style={{ flex: '0 1 90px' }}>
+                                        <label>{t('store.lngMin')}</label>
+                                        <input
+                                            type="number"
+                                            step="any"
+                                            placeholder="34.8"
+                                            value={zone.lngMin ?? ''}
+                                            onChange={(e) => {
+                                                const arr = [...(storeData.deliveryZones || [])];
+                                                arr[index] = { ...arr[index], lngMin: parseFloat(e.target.value) };
+                                                setStoreData(prev => ({ ...prev, deliveryZones: arr }));
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="rate-field" style={{ flex: '0 1 90px' }}>
+                                        <label>{t('store.lngMax')}</label>
+                                        <input
+                                            type="number"
+                                            step="any"
+                                            placeholder="35.0"
+                                            value={zone.lngMax ?? ''}
+                                            onChange={(e) => {
+                                                const arr = [...(storeData.deliveryZones || [])];
+                                                arr[index] = { ...arr[index], lngMax: parseFloat(e.target.value) };
+                                                setStoreData(prev => ({ ...prev, deliveryZones: arr }));
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="rate-field" style={{ flex: '0 1 70px' }}>
                                         <label>{t('store.zoneFee')}</label>
                                         <input
                                             type="number"
-                                            placeholder="15"
-                                            value={zone.fee}
+                                            step="any"
+                                            placeholder="20"
+                                            value={zone.fee ?? ''}
                                             onChange={(e) => {
-                                                const newZones = [...(storeData.deliveryZones || [])];
-                                                newZones[index].fee = parseFloat(e.target.value);
-                                                setStoreData(prev => ({ ...prev, deliveryZones: newZones }));
+                                                const arr = [...(storeData.deliveryZones || [])];
+                                                arr[index] = { ...arr[index], fee: parseFloat(e.target.value) || 0 };
+                                                setStoreData(prev => ({ ...prev, deliveryZones: arr }));
                                             }}
                                         />
                                     </div>
-                                    <div className="rate-field" style={{ flex: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '10px' }}>
-                                        <label className="switch-label" title={zone.isActive ? t('store.active') : t('store.inactive')}>
+                                    <div className="rate-field" style={{ flex: '0 0 36px', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '10px' }}>
+                                        <label className="switch-label" title={zone.isActive !== false ? t('store.active') : t('store.inactive')}>
                                             <input
                                                 type="checkbox"
-                                                checked={zone.isActive}
+                                                checked={zone.isActive !== false}
                                                 onChange={(e) => {
-                                                    const newZones = [...(storeData.deliveryZones || [])];
-                                                    newZones[index].isActive = e.target.checked;
-                                                    setStoreData(prev => ({ ...prev, deliveryZones: newZones }));
+                                                    const arr = [...(storeData.deliveryZones || [])];
+                                                    arr[index] = { ...arr[index], isActive: e.target.checked };
+                                                    setStoreData(prev => ({ ...prev, deliveryZones: arr }));
                                                 }}
                                             />
                                         </label>
                                     </div>
-
                                     <button
+                                        type="button"
                                         className="remove-rate-btn"
                                         title={t('store.deleteZone')}
-                                        onClick={() => {
-                                            const newZones = storeData.deliveryZones.filter((_, i) => i !== index);
-                                            setStoreData(prev => ({ ...prev, deliveryZones: newZones }));
-                                        }}
+                                        onClick={() => setStoreData(prev => ({ ...prev, deliveryZones: (prev.deliveryZones || []).filter((_, i) => i !== index) }))}
                                         style={{ backgroundColor: '#FEE2E2', color: '#EF4444', border: 'none', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                                     >
                                         <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>×</span>
                                     </button>
                                 </div>
                             ))}
-
                             <button
+                                type="button"
                                 className="add-rate-btn"
                                 onClick={() => setStoreData(prev => ({
                                     ...prev,
-                                    deliveryZones: [...(prev.deliveryZones || []), { name: '', radiusKm: 0, fee: 0, isActive: true }]
+                                    deliveryZones: [...(prev.deliveryZones || []), { name: '', latMin: undefined, latMax: undefined, lngMin: undefined, lngMax: undefined, fee: 0, isActive: true }]
                                 }))}
                                 style={{
                                     marginTop: '1rem',
                                     padding: '0.75rem 1.5rem',
                                     borderRadius: '12px',
-                                    border: '1px dashed #E11D48',
-                                    color: '#E11D48',
-                                    background: '#FFF1F2',
+                                    border: '1px dashed #059669',
+                                    color: '#059669',
+                                    background: '#ECFDF5',
                                     cursor: 'pointer',
                                     fontWeight: 'bold',
                                     width: '100%',
@@ -632,7 +802,104 @@ const StoreManager = () => {
                                     gap: '0.5rem'
                                 }}
                             >
-                                {t('store.addZone')}
+                                {t('store.addZoneByCoords')}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="form-section glass">
+                        <div className="section-header-box">
+                            <h2><BadgeDollarSign size={20} /> {t('store.deliveryCityFees')}</h2>
+                            <p className="section-helper">{t('store.cityFeesHelper')}</p>
+                        </div>
+                        <div className="delivery-rates-list">
+                            {(storeData.deliveryCityFees || []).map((row, index) => (
+                                <div key={`city-${index}`} className="rate-row" style={{ alignItems: 'flex-end', paddingBottom: '1rem', borderBottom: '1px solid #eee' }}>
+                                    <div className="rate-field" style={{ flex: 2 }}>
+                                        <label>{t('store.cityName')}</label>
+                                        <input
+                                            placeholder={t('store.cityNamePlaceholder')}
+                                            value={row.cityNameAr || ''}
+                                            onChange={(e) => {
+                                                const arr = [...(storeData.deliveryCityFees || [])];
+                                                arr[index] = { ...arr[index], cityNameAr: e.target.value };
+                                                setStoreData(prev => ({ ...prev, deliveryCityFees: arr }));
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="rate-field" style={{ flex: 1.5 }}>
+                                        <label>{t('store.cityNameHe')}</label>
+                                        <input
+                                            placeholder={t('store.cityNameHePlaceholder')}
+                                            value={row.cityNameHe || ''}
+                                            onChange={(e) => {
+                                                const arr = [...(storeData.deliveryCityFees || [])];
+                                                arr[index] = { ...arr[index], cityNameHe: e.target.value };
+                                                setStoreData(prev => ({ ...prev, deliveryCityFees: arr }));
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="rate-field">
+                                        <label>{t('store.zoneFee')}</label>
+                                        <input
+                                            type="number"
+                                            placeholder="18"
+                                            value={row.fee ?? ''}
+                                            onChange={(e) => {
+                                                const arr = [...(storeData.deliveryCityFees || [])];
+                                                arr[index] = { ...arr[index], fee: parseFloat(e.target.value) || 0 };
+                                                setStoreData(prev => ({ ...prev, deliveryCityFees: arr }));
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="rate-field" style={{ flex: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '10px' }}>
+                                        <label className="switch-label" title={row.isActive !== false ? t('store.active') : t('store.inactive')}>
+                                            <input
+                                                type="checkbox"
+                                                checked={row.isActive !== false}
+                                                onChange={(e) => {
+                                                    const arr = [...(storeData.deliveryCityFees || [])];
+                                                    arr[index] = { ...arr[index], isActive: e.target.checked };
+                                                    setStoreData(prev => ({ ...prev, deliveryCityFees: arr }));
+                                                }}
+                                            />
+                                        </label>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className="remove-rate-btn"
+                                        title={t('store.deleteCityFee')}
+                                        onClick={() => setStoreData(prev => ({ ...prev, deliveryCityFees: (prev.deliveryCityFees || []).filter((_, i) => i !== index) }))}
+                                        style={{ backgroundColor: '#FEE2E2', color: '#EF4444', border: 'none', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                    >
+                                        <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>×</span>
+                                    </button>
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                className="add-rate-btn"
+                                onClick={() => setStoreData(prev => ({
+                                    ...prev,
+                                    deliveryCityFees: [...(prev.deliveryCityFees || []), { cityNameAr: '', cityNameHe: '', fee: 0, isActive: true }]
+                                }))}
+                                style={{
+                                    marginTop: '1rem',
+                                    padding: '0.75rem 1.5rem',
+                                    borderRadius: '12px',
+                                    border: '1px dashed #0EA5E9',
+                                    color: '#0EA5E9',
+                                    background: '#F0F9FF',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold',
+                                    width: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem'
+                                }}
+                            >
+                                {t('store.addCityFee')}
                             </button>
                         </div>
                     </div>
