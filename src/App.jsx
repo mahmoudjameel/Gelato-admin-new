@@ -8,6 +8,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 const DashboardLayout = lazy(() => import('./layouts/DashboardLayout'));
 const DashboardHome = lazy(() => import('./pages/DashboardHome'));
 const CategoryManager = lazy(() => import('./pages/CategoryManager'));
+const ProductLayout = lazy(() => import('./layouts/ProductLayout'));
 const ProductManager = lazy(() => import('./pages/ProductManager'));
 const BannerManager = lazy(() => import('./pages/BannerManager'));
 const OrderManager = lazy(() => import('./pages/OrderManager'));
@@ -71,7 +72,11 @@ function App() {
         }>
           <Route index element={<DashboardHome />} />
           <Route path="categories" element={<CategoryManager />} />
-          <Route path="products" element={<ProductManager />} />
+          <Route path="products" element={<ProductLayout />}>
+            <Route index element={<ProductManager />} />
+            <Route path="extras" element={<ExtrasManager />} />
+            <Route path="extra-groups" element={<ExtraGroupsManager />} />
+          </Route>
           <Route path="banner" element={<BannerManager />} />
           <Route path="orders" element={<OrderManager />} />
           <Route path="users" element={<UserManager />} />
@@ -80,8 +85,6 @@ function App() {
           <Route path="drivers" element={<DriverManager />} />
           <Route path="drivers/:driverId" element={<DriverDetails />} />
 
-          <Route path="extras" element={<ExtrasManager />} />
-          <Route path="extra-groups" element={<ExtraGroupsManager />} />
           <Route path="cities" element={<CityManager />} />
           <Route path="store" element={<StoreManager />} />
         </Route>

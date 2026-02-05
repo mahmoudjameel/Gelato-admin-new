@@ -1,0 +1,55 @@
+.product-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100%;
+}
+
+.product-layout-nav {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 0.5rem 1rem;
+}
+
+[dir="rtl"] .product-layout-nav {
+    flex-direction: row-reverse;
+}
+
+.product-layout-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    border-radius: var(--radius);
+    color: var(--muted-foreground);
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.product-layout-tab:hover {
+    background: var(--muted);
+    color: var(--foreground);
+}
+
+.product-layout-tab.active {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    box-shadow: 0 2px 8px rgba(217, 70, 239, 0.25);
+}
+
+.product-layout-tab .tab-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.product-layout-content {
+    flex: 1;
+    min-height: 0;
+}

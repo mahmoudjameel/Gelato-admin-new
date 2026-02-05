@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
     Plus,
     Search,
@@ -212,7 +213,7 @@ const ExtrasManager = () => {
         <div className="extras-manager">
             <div className="page-header">
                 <div className="header-left">
-                    <button className="add-btn" onClick={() => openModal()}>
+                    <button type="button" className="add-btn" onClick={() => openModal()}>
                         <Plus size={20} />
                         <span>{t('menuManagement.addExtra')}</span>
                     </button>
@@ -280,78 +281,81 @@ const ExtrasManager = () => {
                 )}
             </div>
 
-            {isModalOpen && (
-                <div className="modal-overlay">
-                    <div className="modal-content glass">
-                        <div className="modal-header">
-                            <h2>{editingExtra ? t('menuManagement.editExtras') : t('menuManagement.addExtra')}</h2>
-                            <button onClick={handleCloseModal}><X size={20} /></button>
-                        </div>
-                        <form onSubmit={handleSubmit} className="modal-form">
-                            <div className="image-upload-area" onClick={() => document.getElementById('extraImageInput').click()}>
-                                {imagePreview ? (
-                                    <img src={imagePreview} alt="Preview" className="preview-img-modal" />
-                                ) : (
-                                    <>
-                                        <Upload size={24} color="#9CA3AF" />
-                                        <span style={{ color: '#6B7280', marginTop: 8 }}>{t('products.uploadImage')}</span>
-                                    </>
-                                )}
-                                <input
-                                    id="extraImageInput"
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleImageChange}
-                                    style={{ display: 'none' }}
-                                />
+            {isModalOpen && createPortal(
+                <div className="extras-manager modal-root">
+                    <div className="modal-overlay" onClick={handleCloseModal}>
+                        <div className="modal-content glass" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h2>{editingExtra ? t('menuManagement.editExtras') : t('menuManagement.addExtra')}</h2>
+                                <button type="button" onClick={handleCloseModal}><X size={20} /></button>
                             </div>
-
-                            <div className="form-group">
-                                <label>{t('products.nameAr')}</label>
-                                <input
-                                    type="text"
-                                    value={formData.nameAr}
-                                    onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
-                                    required
-                                    placeholder={t('products.nameAr')}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>{t('products.nameHe')}</label>
-                                <input
-                                    type="text"
-                                    value={formData.nameHe}
-                                    onChange={(e) => setFormData({ ...formData, nameHe: e.target.value })}
-                                    dir="rtl"
-                                    placeholder={t('products.nameHe')}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>{t('products.price')}</label>
-                                <input
-                                    type="number"
-                                    step="0.5"
-                                    value={formData.price}
-                                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                                    placeholder="0"
-                                />
-                            </div>
-
-                            <div className="modal-footer">
-                                <button type="submit" className="save-btn" disabled={uploading}>
-                                    {uploading ? (
-                                        <span>{t('common.loading')}</span>
+                            <form onSubmit={handleSubmit} className="modal-form">
+                                <div className="image-upload-area" onClick={() => document.getElementById('extraImageInput').click()}>
+                                    {imagePreview ? (
+                                        <img src={imagePreview} alt="Preview" className="preview-img-modal" />
                                     ) : (
                                         <>
-                                            <Save size={18} />
-                                            <span>{editingExtra ? t('common.save') : t('common.add')}</span>
+                                            <Upload size={24} color="#9CA3AF" />
+                                            <span style={{ color: '#6B7280', marginTop: 8 }}>{t('products.uploadImage')}</span>
                                         </>
                                     )}
-                                </button>
-                            </div>
-                        </form>
+                                    <input
+                                        id="extraImageInput"
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageChange}
+                                        style={{ display: 'none' }}
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>{t('products.nameAr')}</label>
+                                    <input
+                                        type="text"
+                                        value={formData.nameAr}
+                                        onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
+                                        required
+                                        placeholder={t('products.nameAr')}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>{t('products.nameHe')}</label>
+                                    <input
+                                        type="text"
+                                        value={formData.nameHe}
+                                        onChange={(e) => setFormData({ ...formData, nameHe: e.target.value })}
+                                        dir="rtl"
+                                        placeholder={t('products.nameHe')}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>{t('products.price')}</label>
+                                    <input
+                                        type="number"
+                                        step="0.5"
+                                        value={formData.price}
+                                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                                        placeholder="0"
+                                    />
+                                </div>
+
+                                <div className="modal-footer">
+                                    <button type="submit" className="save-btn" disabled={uploading}>
+                                        {uploading ? (
+                                            <span>{t('common.loading')}</span>
+                                        ) : (
+                                            <>
+                                                <Save size={18} />
+                                                <span>{editingExtra ? t('common.save') : t('common.add')}</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {freezeModalOpen && (
