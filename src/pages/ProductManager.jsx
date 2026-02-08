@@ -263,7 +263,9 @@ const ProductManager = () => {
                 price: parseFloat(formData.price),
                 loyaltyPointsPrice: formData.loyaltyPointsPrice ? parseInt(formData.loyaltyPointsPrice) : null,
                 extras: updatedExtras,
-                extraGroupId: formData.extraGroupId || null
+                extraGroupId: formData.extraGroupId || null,
+                flavors: (formData.flavors || []).filter(f => (f.nameAr && f.nameAr.trim() !== '') || (f.nameHe && f.nameHe.trim() !== '')),
+                sizes: (formData.sizes || []).filter(s => (s.nameAr && s.nameAr.trim() !== '') || (s.nameHe && s.nameHe.trim() !== ''))
             };
 
             if (editingProduct) {
@@ -942,32 +944,32 @@ const ProductManager = () => {
                                             </div>
                                         )}
                                         <div className="extras-selector-grid" style={{ animation: 'slideDown 0.3s ease' }}>
-                                        {(() => {
-                                            const selectedGroup = formData.extraGroupId ? extraGroups.find(g => g.id === formData.extraGroupId) : null;
-                                            const availableExtras = selectedGroup && Array.isArray(selectedGroup.extraIds)
-                                                ? globalExtras.filter(ex => selectedGroup.extraIds.includes(ex.id))
-                                                : globalExtras;
-                                            return availableExtras.map((gExtra) => {
-                                            const isSelected = (formData.extras || []).some(ex => ex.id === gExtra.id);
-                                            return (
-                                                <div
-                                                    key={gExtra.id}
-                                                    className={`extra-select-card ${isSelected ? 'selected' : ''}`}
-                                                    onClick={() => toggleExtraSelection(gExtra.id)}
-                                                >
-                                                    <div className="extra-select-img">
-                                                        {gExtra.image ? <img src={gExtra.image} alt={gExtra.nameAr} /> : <ImageIcon size={16} />}
-                                                    </div>
-                                                    <div className="extra-select-info">
-                                                        <span className="name">{gExtra.nameAr}</span>
-                                                        <span className="price">{gExtra.price} ₪</span>
-                                                    </div>
-                                                    {isSelected && <div className="check-badge"><Check size={12} /></div>}
-                                                </div>
-                                            );
-                                        });
-                                        })()}
-                                    </div>
+                                            {(() => {
+                                                const selectedGroup = formData.extraGroupId ? extraGroups.find(g => g.id === formData.extraGroupId) : null;
+                                                const availableExtras = selectedGroup && Array.isArray(selectedGroup.extraIds)
+                                                    ? globalExtras.filter(ex => selectedGroup.extraIds.includes(ex.id))
+                                                    : globalExtras;
+                                                return availableExtras.map((gExtra) => {
+                                                    const isSelected = (formData.extras || []).some(ex => ex.id === gExtra.id);
+                                                    return (
+                                                        <div
+                                                            key={gExtra.id}
+                                                            className={`extra-select-card ${isSelected ? 'selected' : ''}`}
+                                                            onClick={() => toggleExtraSelection(gExtra.id)}
+                                                        >
+                                                            <div className="extra-select-img">
+                                                                {gExtra.image ? <img src={gExtra.image} alt={gExtra.nameAr} /> : <ImageIcon size={16} />}
+                                                            </div>
+                                                            <div className="extra-select-info">
+                                                                <span className="name">{gExtra.nameAr}</span>
+                                                                <span className="price">{gExtra.price} ₪</span>
+                                                            </div>
+                                                            {isSelected && <div className="check-badge"><Check size={12} /></div>}
+                                                        </div>
+                                                    );
+                                                });
+                                            })()}
+                                        </div>
                                     </>
                                 )}
 

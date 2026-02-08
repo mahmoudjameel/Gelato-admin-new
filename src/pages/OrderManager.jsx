@@ -47,7 +47,9 @@ const OrderManager = () => {
         // Set up real-time listener for orders
         const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const data = snapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(order => order.status !== 'payment_draft');
             setOrders(data);
             setLoading(false);
         }, (error) => {

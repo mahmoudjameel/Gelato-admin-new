@@ -291,6 +291,8 @@
         "deliveryFeeLabel": "דמי משלוח (₪)",
         "minOrderLabel": "מינימום הזמנה (₪)",
         "detailedWorkingHours": "שעות פעילות מפורטות",
+        "am": "AM",
+        "pm": "PM",
         "closed": "סגור",
         "to": "עד",
         "storeCoords": "מיקום החנות (קואורדינטות)",

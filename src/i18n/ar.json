@@ -291,6 +291,8 @@
         "deliveryFeeLabel": "رسوم التوصيل (₪)",
         "minOrderLabel": "الحد الأدنى للطلب (₪)",
         "detailedWorkingHours": "أوقات العمل التفصيلية",
+        "am": "ص",
+        "pm": "م",
         "closed": "مغلق",
         "to": "إلى",
         "storeCoords": "موقع المتجر (الإحداثيات)",

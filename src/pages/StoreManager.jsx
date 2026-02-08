@@ -211,6 +211,62 @@ const StoreManager = () => {
         }));
     };
 
+    const formatTo12Hour = (timeStr) => {
+        if (!timeStr) return '';
+        const [hStr, mStr] = timeStr.split(':');
+        let h = parseInt(hStr, 10);
+        const m = mStr || '00';
+        const ampm = h >= 12 ? t('store.pm') : t('store.am');
+        h = h % 12;
+        h = h ? h : 12;
+        return `${h}:${m} ${ampm}`;
+    };
+
+
+    const TimeInput12h = ({ value, onChange, disabled }) => {
+        const hours = Array.from({ length: 12 }, (_, i) => i + 1);
+        const minutes = ['00', '15', '30', '45'];
+        const periods = [t('store.am'), t('store.pm')];
+
+        const parseValue = (val) => {
+            if (!val) return { h: '10', m: '00', p: t('store.am') };
+            const [h24, m] = val.split(':');
+            let h = parseInt(h24, 10);
+            const p = h >= 12 ? t('store.pm') : t('store.am');
+            h = h % 12 || 12;
+            return { h: h.toString(), m, p };
+        };
+
+        const { h, m, p } = parseValue(value);
+
+        const handleChange = (part, newVal) => {
+            let newH = part === 'h' ? newVal : h;
+            let newM = part === 'm' ? newVal : m;
+            let newP = part === 'p' ? newVal : p;
+
+            let h24 = parseInt(newH, 10);
+            if (newP === t('store.pm') && h24 !== 12) h24 += 12;
+            if (newP === t('store.am') && h24 === 12) h24 = 0;
+
+            const finalValue = `${h24.toString().padStart(2, '0')}:${newM}`;
+            onChange(finalValue);
+        };
+
+        return (
+            <div className={`time-picker-12h ${disabled ? 'disabled' : ''}`}>
+                <select value={h} onChange={(e) => handleChange('h', e.target.value)} disabled={disabled}>
+                    {hours.map(val => <option key={val} value={val}>{val}</option>)}
+                </select>
+                <select value={m} onChange={(e) => handleChange('m', e.target.value)} disabled={disabled}>
+                    {minutes.map(val => <option key={val} value={val}>{val}</option>)}
+                </select>
+                <select value={p} onChange={(e) => handleChange('p', e.target.value)} disabled={disabled}>
+                    {periods.map(val => <option key={val} value={val}>{val}</option>)}
+                </select>
+            </div>
+        );
+    };
+
     const addDeliveryRate = () => {
         setStoreData(prev => ({
             ...prev,
@@ -540,30 +596,30 @@ const StoreManager = () => {
                                 const order = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
                                 return order.indexOf(a) - order.indexOf(b);
                             }).map(day => (
-                                <div key={day} className="day-row">
-                                    <span className="day-name">{dayLabels[day]}</span>
-                                    <div className="time-inputs">
-                                        <input
-                                            type="time"
-                                            value={storeData.workingHoursWeekly[day].open}
-                                            onChange={(e) => handleWeeklyHoursChange(day, 'open', e.target.value)}
-                                            disabled={storeData.workingHoursWeekly[day].closed}
-                                        />
-                                        <span>{t('store.to')}</span>
-                                        <input
-                                            type="time"
-                                            value={storeData.workingHoursWeekly[day].close}
-                                            onChange={(e) => handleWeeklyHoursChange(day, 'close', e.target.value)}
-                                            disabled={storeData.workingHoursWeekly[day].closed}
-                                        />
-                                        <label className="closed-toggle">
-                                            <input
-                                                type="checkbox"
-                                                checked={storeData.workingHoursWeekly[day].closed}
-                                                onChange={(e) => handleWeeklyHoursChange(day, 'closed', e.target.checked)}
+                                <div className="day-row-container">
+                                    <div className="day-row">
+                                        <span className="day-name">{dayLabels[day]}</span>
+                                        <div className="time-inputs-12h">
+                                            <TimeInput12h
+                                                value={storeData.workingHoursWeekly[day].open}
+                                                onChange={(val) => handleWeeklyHoursChange(day, 'open', val)}
+                                                disabled={storeData.workingHoursWeekly[day].closed}
                                             />
-                                            {t('store.closed')}
-                                        </label>
+                                            <span className="to-label">{t('store.to')}</span>
+                                            <TimeInput12h
+                                                value={storeData.workingHoursWeekly[day].close}
+                                                onChange={(val) => handleWeeklyHoursChange(day, 'close', val)}
+                                                disabled={storeData.workingHoursWeekly[day].closed}
+                                            />
+                                            <label className="closed-toggle">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={storeData.workingHoursWeekly[day].closed}
+                                                    onChange={(e) => handleWeeklyHoursChange(day, 'closed', e.target.checked)}
+                                                />
+                                                {t('store.closed')}
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
