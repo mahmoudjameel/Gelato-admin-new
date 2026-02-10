@@ -119,6 +119,7 @@
         "extras": "الإضافات",
         "selectedExtras": "الإضافات المختارة",
         "extraGroup": "مجموعات الإضافات",
+        "freeChoices": "خيارات مجانية",
         "extraGroupsSelected": "{{count}} مجموعات مختارة",
         "selectGroupsHint": "يمكنك اختيار أكثر من مجموعة واحدة وسيتم عرضها كمراحل منفصلة في التطبيق.",
         "extraGroupAll": "كل الإضافات",

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
     Plus,
     Search,
@@ -38,6 +38,306 @@ import { seedRewards } from '../utils/seedData';
 import { seedData } from '../data/seedData';
 import './ProductManager.css';
 
+// --- Memoized Sub-Components ---
+
+const ProductRow = React.memo(({
+    product,
+    t,
+    showDeleted,
+    unfreezeProduct,
+    handleFreezeClick,
+    openModal,
+    handleDuplicate,
+    handleDelete,
+    handleRestore,
+    handlePermanentDelete
+}) => (
+    <tr>
+        <td>
+            <div className="table-product-info">
+                <img src={product.image} alt={product.name} className="table-img" />
+                <span>{product.nameAr || product.name}</span>
+            </div>
+        </td>
+        <td>{product.classification && <span className={`badge-classification badge-${product.classification.toLowerCase()}`}>{product.classification}</span>}</td>
+        <td><span className="badge-category">{product.category}</span></td>
+        <td><span className="price-tag">{product.price} ₪</span></td>
+        <td>⭐ {product.rating}</td>
+        <td>
+            <div className="table-actions">
+                {!showDeleted ? (
+                    <>
+                        {product.isFrozen ? (
+                            <button className="unfreeze-btn" title={t('products.unfreeze')} onClick={() => unfreezeProduct(product.id)}>
+                                <Snowflake size={16} color="#3B82F6" />
+                            </button>
+                        ) : (
+                            <button className="freeze-btn" title={t('products.freeze')} onClick={() => handleFreezeClick(product)}>
+                                <Clock size={16} color="#F59E0B" />
+                            </button>
+                        )}
+                        <button className="edit-btn" onClick={() => openModal(product)} title={t('products.editProduct')}><Edit2 size={16} /></button>
+                        <button className="duplicate-btn" onClick={() => handleDuplicate(product)} title={t('products.duplicate')}><Copy size={16} /></button>
+                        <button className="delete-btn" onClick={() => handleDelete(product.id)} title={t('products.delete')}><Trash2 size={16} /></button>
+                    </>
+                ) : (
+                    <>
+                        <button className="restore-btn" title={t('products.restore')} onClick={() => handleRestore(product.id)}>
+                            <RotateCcw size={16} color="#10B981" />
+                        </button>
+                        <button className="permanent-delete-btn" title={t('products.deletePermanently')} onClick={() => handlePermanentDelete(product.id)}>
+                            <Trash size={16} color="#EF4444" />
+                        </button>
+                    </>
+                )}
+            </div>
+        </td>
+    </tr>
+));
+
+const SizesSection = React.memo(({ sizes, t, addSize, updateSize, removeSize }) => (
+    <div className="dynamic-section">
+        <div className="section-header-modal">
+            <h3>{t('products.sizes')}</h3>
+            <button type="button" className="btn-icon-add" onClick={addSize}><Plus size={16} /></button>
+        </div>
+        {(sizes || []).map((size, index) => (
+            <div key={index} className="dynamic-row">
+                <input
+                    placeholder={t('products.sizeNameAr')}
+                    value={size.nameAr || size.name}
+                    onChange={(e) => updateSize(index, 'nameAr', e.target.value)}
+                />
+                <input
+                    placeholder={t('products.sizeNameHe')}
+                    value={size.nameHe || ''}
+                    onChange={(e) => updateSize(index, 'nameHe', e.target.value)}
+                    dir="rtl"
+                />
+                <input
+                    type="number"
+                    placeholder={t('products.additionalPrice')}
+                    value={size.price}
+                    onChange={(e) => updateSize(index, 'price', parseFloat(e.target.value))}
+                />
+                <label className="checkbox-label">
+                    <input
+                        type="checkbox"
+                        checked={size.isDefault}
+                        onChange={(e) => updateSize(index, 'isDefault', e.target.checked)}
+                    />
+                    <span>{t('products.default')}</span>
+                </label>
+                <button type="button" className="btn-remove" onClick={() => removeSize(index)}><Trash size={16} /></button>
+            </div>
+        ))}
+    </div>
+));
+
+const FlavorsSection = React.memo(({ flavors, t, addFlavor, updateFlavor, removeFlavor }) => (
+    <div className="dynamic-section">
+        <div className="section-header-modal">
+            <h3>{t('products.flavors')}</h3>
+            <button type="button" className="btn-icon-add" onClick={addFlavor}><Plus size={16} /></button>
+        </div>
+        <div className="flavors-grid-modal">
+            {(flavors || []).map((flavor, index) => (
+                <div key={index} className="dynamic-row">
+                    <input
+                        placeholder={t('products.flavorNameAr')}
+                        value={typeof flavor === 'string' ? flavor : flavor.nameAr}
+                        onChange={(e) => updateFlavor(index, 'nameAr', e.target.value)}
+                    />
+                    <input
+                        placeholder={t('products.flavorNameHe')}
+                        value={typeof flavor === 'string' ? '' : flavor.nameHe}
+                        onChange={(e) => updateFlavor(index, 'nameHe', e.target.value)}
+                        dir="rtl"
+                    />
+                    <button type="button" className="btn-remove" onClick={() => removeFlavor(index)}><Trash size={16} /></button>
+                </div>
+            ))}
+        </div>
+    </div>
+));
+
+const ExtrasSection = React.memo(({
+    formData,
+    extraGroups,
+    globalExtras,
+    isExtrasExpanded,
+    setIsExtrasExpanded,
+    setFormData,
+    toggleExtraSelection,
+    updateExtraOverride,
+    t
+}) => (
+    <div className="dynamic-section">
+        <div
+            className="section-header-modal clickable-header"
+            onClick={() => setIsExtrasExpanded(!isExtrasExpanded)}
+            style={{ cursor: 'pointer' }}
+        >
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {t('products.extras')}
+                <ChevronDown size={16} style={{ transform: isExtrasExpanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
+            </h3>
+            <span style={{ fontSize: '0.8rem', color: '#6B7280' }}>
+                {(formData.extras || []).length} {t('products.selectedExtras')}
+            </span>
+        </div>
+
+        {isExtrasExpanded && (
+            <>
+                {extraGroups.length > 0 && (
+                    <div className="form-group" style={{ marginBottom: '16px' }}>
+                        <label>{t('products.extraGroup')}</label>
+                        <p className="help-text" style={{ fontSize: '0.8rem', color: '#6B7280', marginBottom: '8px' }}>
+                            {t('products.selectGroupsHint')}
+                        </p>
+                        <div className="groups-checkbox-grid" style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                            gap: '10px',
+                            background: 'var(--secondary)',
+                            padding: '12px',
+                            borderRadius: '12px',
+                            border: '1px solid var(--border)'
+                        }}>
+                            {extraGroups.map((g) => {
+                                const isChecked = (formData.extraGroupIds || []).includes(g.id);
+                                return (
+                                    <label key={g.id} className={`group-check-item ${isChecked ? 'checked' : ''}`} style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'flex-start',
+                                        gap: '4px',
+                                        padding: '10px 12px',
+                                        background: isChecked ? 'rgba(143, 211, 196, 0.1)' : 'var(--card)',
+                                        borderRadius: '12px',
+                                        border: '1px solid',
+                                        borderColor: isChecked ? 'var(--primary)' : 'var(--border)',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={isChecked}
+                                            onChange={(e) => {
+                                                const currentIds = formData.extraGroupIds || [];
+                                                const nextIds = isChecked
+                                                    ? currentIds.filter(id => id !== g.id)
+                                                    : [...currentIds, g.id];
+                                                setFormData({ ...formData, extraGroupIds: nextIds });
+                                            }}
+                                            style={{ display: 'none' }}
+                                        />
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                                            <div className="check-box-ui" style={{
+                                                width: '18px',
+                                                height: '18px',
+                                                borderRadius: '4px',
+                                                border: '2px solid',
+                                                borderColor: isChecked ? 'var(--primary)' : '#D1D5DB',
+                                                background: isChecked ? 'var(--primary)' : 'transparent',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: 'white'
+                                            }}>
+                                                {isChecked && <Check size={12} strokeWidth={3} />}
+                                            </div>
+                                            <span style={{ fontSize: '0.9rem', fontWeight: isChecked ? '700' : '500' }}>{g.nameAr}</span>
+                                        </div>
+                                        {isChecked && (
+                                            <div className="group-config" onClick={(e) => e.stopPropagation()} style={{ marginTop: '8px', width: '100%' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'white', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)' }}>
+                                                    <span style={{ fontSize: '0.7rem', color: '#666' }}>{t('products.freeChoices')}</span>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        value={formData.extraGroupConfigs?.[g.id]?.freeLimit || 0}
+                                                        onChange={(e) => {
+                                                            const val = parseInt(e.target.value) || 0;
+                                                            setFormData({
+                                                                ...formData,
+                                                                extraGroupConfigs: {
+                                                                    ...formData.extraGroupConfigs,
+                                                                    [g.id]: { ...formData.extraGroupConfigs?.[g.id], freeLimit: val }
+                                                                }
+                                                            });
+                                                        }}
+                                                        style={{ width: '50px', padding: '2px 4px', fontSize: '0.8rem', border: 'none', background: '#f5f5f5', textAlign: 'center', borderRadius: '4px' }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </label>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+                <div className="extras-selector-header" style={{ marginTop: '16px', marginBottom: '8px' }}>
+                    <label>{t('products.individualExtras')}</label>
+                    <p className="help-text" style={{ fontSize: '0.8rem', color: '#6B7280' }}>
+                        {t('products.individualExtrasHint')}
+                    </p>
+                </div>
+                <div className="extras-selector-grid" style={{ animation: 'slideDown 0.3s ease' }}>
+                    {(() => {
+                        let availableExtras = globalExtras;
+                        if (formData.extraGroupIds && formData.extraGroupIds.length > 0) {
+                            const selectedGroupExtras = extraGroups
+                                .filter(g => formData.extraGroupIds.includes(g.id))
+                                .flatMap(g => g.extraIds || []);
+                            availableExtras = globalExtras.filter(ex => selectedGroupExtras.includes(ex.id));
+                        }
+                        return availableExtras.map((gExtra) => {
+                            const isSelected = (formData.extras || []).some(ex => ex.id === gExtra.id);
+                            return (
+                                <div
+                                    key={gExtra.id}
+                                    className={`extra-select-card ${isSelected ? 'selected' : ''}`}
+                                    onClick={() => toggleExtraSelection(gExtra.id)}
+                                >
+                                    <div className="extra-select-img">
+                                        {gExtra.image ? <img src={gExtra.image} alt={gExtra.nameAr} /> : <ImageIcon size={16} />}
+                                    </div>
+                                    <div className="extra-select-info">
+                                        <span className="name">{gExtra.nameAr}</span>
+                                        <span className="price">{gExtra.price} ₪</span>
+                                    </div>
+                                    {isSelected && <div className="check-badge"><Check size={12} /></div>}
+                                </div>
+                            );
+                        });
+                    })()}
+                </div>
+            </>
+        )}
+
+        {formData.extras && formData.extras.length > 0 && (
+            <div className="selected-extras-preview">
+                <h4>{t('products.selectedExtras')} ({(formData.extras || []).length})</h4>
+                {(formData.extras || []).map((extra, index) => (
+                    <div key={index} className="selected-extra-row">
+                        <span>{extra.nameAr}</span>
+                        <label className="checkbox-label">
+                            <input
+                                type="checkbox"
+                                checked={extra.isDefault}
+                                onChange={(e) => updateExtraOverride(index, 'isDefault', e.target.checked)}
+                            />
+                            <span>{t('products.default')}</span>
+                        </label>
+                    </div>
+                ))}
+            </div>
+        )}
+    </div>
+));
+
 const ProductManager = () => {
     const { t } = useTranslation();
     const [products, setProducts] = useState([]);
@@ -73,6 +373,7 @@ const ProductManager = () => {
         flavors: [],
         extras: [],
         extraGroupIds: [], // مجموعات الإضافات (اختياري)
+        extraGroupConfigs: {}, // إعدادات المجموعات (الحد المجاني)
         loyaltyPointsPrice: ''
     });
 
@@ -264,6 +565,7 @@ const ProductManager = () => {
                 loyaltyPointsPrice: formData.loyaltyPointsPrice ? parseInt(formData.loyaltyPointsPrice) : null,
                 extras: updatedExtras,
                 extraGroupIds: formData.extraGroupIds || [],
+                extraGroupConfigs: formData.extraGroupConfigs || {},
                 flavors: (formData.flavors || []).filter(f => (f.nameAr && f.nameAr.trim() !== '') || (f.nameHe && f.nameHe.trim() !== '')),
                 sizes: (formData.sizes || []).filter(s => (s.nameAr && s.nameAr.trim() !== '') || (s.nameHe && s.nameHe.trim() !== ''))
             };
@@ -383,6 +685,7 @@ const ProductManager = () => {
             flavors: [],
             extras: [],
             extraGroupIds: [],
+            extraGroupConfigs: {},
             loyaltyPointsPrice: ''
         });
     };
@@ -408,6 +711,7 @@ const ProductManager = () => {
                 flavors: product.flavors || [],
                 extras: product.extras || [],
                 extraGroupIds: product.extraGroupIds || (product.extraGroupId ? [product.extraGroupId] : []),
+                extraGroupConfigs: product.extraGroupConfigs || {},
                 loyaltyPointsPrice: product.loyaltyPointsPrice ? product.loyaltyPointsPrice.toString() : ''
             });
             setImagePreview(product.image);
@@ -435,6 +739,7 @@ const ProductManager = () => {
             flavors: Array.isArray(product.flavors) ? product.flavors.map(f => typeof f === 'string' ? { nameAr: f, nameHe: '' } : { ...f }) : [],
             extras: Array.isArray(product.extras) ? product.extras.map(e => ({ ...e })) : [],
             extraGroupIds: Array.isArray(product.extraGroupIds) ? [...product.extraGroupIds] : (product.extraGroupId ? [product.extraGroupId] : []),
+            extraGroupConfigs: product.extraGroupConfigs ? { ...product.extraGroupConfigs } : {},
             loyaltyPointsPrice: product.loyaltyPointsPrice != null ? String(product.loyaltyPointsPrice) : ''
         });
         setImagePreview(product.image || null);
@@ -531,10 +836,100 @@ const ProductManager = () => {
         }
     };
 
-    const filteredProducts = products.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredProducts = useMemo(() => {
+        return products.filter(p =>
+            (p.nameAr || p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (p.category || '').toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [products, searchTerm]);
+
+    // --- Memoized Handlers ---
+
+    const handleAddSize = useCallback(() => {
+        setFormData(prev => ({
+            ...prev,
+            sizes: [...(prev.sizes || []), { nameAr: '', nameHe: '', price: 0, isDefault: (prev.sizes || []).length === 0 }]
+        }));
+    }, []);
+
+    const handleRemoveSize = useCallback((index) => {
+        setFormData(prev => ({
+            ...prev,
+            sizes: (prev.sizes || []).filter((_, i) => i !== index)
+        }));
+    }, []);
+
+    const handleUpdateSize = useCallback((index, field, value) => {
+        setFormData(prev => {
+            const newSizes = [...(prev.sizes || [])];
+            if (field === 'isDefault' && value === true) {
+                newSizes.forEach((s, i) => s.isDefault = i === index);
+            } else {
+                newSizes[index][field] = value;
+            }
+            return { ...prev, sizes: newSizes };
+        });
+    }, []);
+
+    const handleAddFlavor = useCallback(() => {
+        setFormData(prev => ({
+            ...prev,
+            flavors: [...(prev.flavors || []), { nameAr: '', nameHe: '' }]
+        }));
+    }, []);
+
+    const handleRemoveFlavor = useCallback((index) => {
+        setFormData(prev => ({
+            ...prev,
+            flavors: (prev.flavors || []).filter((_, i) => i !== index)
+        }));
+    }, []);
+
+    const handleUpdateFlavor = useCallback((index, field, value) => {
+        setFormData(prev => {
+            const newFlavors = [...(prev.flavors || [])];
+            if (typeof newFlavors[index] === 'string') {
+                newFlavors[index] = { nameAr: field === 'nameAr' ? value : '', nameHe: field === 'nameHe' ? value : '' };
+            } else {
+                newFlavors[index][field] = value;
+            }
+            return { ...prev, flavors: newFlavors };
+        });
+    }, []);
+
+    const handleToggleExtraSelection = useCallback((extraId) => {
+        setFormData(prev => {
+            const currentExtras = prev.extras || [];
+            const exists = currentExtras.find(ex => ex.id === extraId);
+            if (exists) {
+                return { ...prev, extras: currentExtras.filter(ex => ex.id !== extraId) };
+            } else {
+                const original = globalExtras.find(ex => ex.id === extraId);
+                if (original) {
+                    return {
+                        ...prev,
+                        extras: [...currentExtras, {
+                            id: original.id,
+                            nameAr: original.nameAr,
+                            nameHe: original.nameHe,
+                            price: original.price,
+                            image: original.image,
+                            isDefault: false
+                        }]
+                    };
+                }
+            }
+            return prev;
+        });
+    }, [globalExtras]);
+
+    const handleUpdateExtraOverride = useCallback((index, field, value) => {
+        setFormData(prev => {
+            const newExtras = [...(prev.extras || [])];
+            newExtras[index][field] = value;
+            return { ...prev, extras: newExtras };
+        });
+    }, []);
 
     return (
         <div className="product-manager">
@@ -648,52 +1043,20 @@ const ProductManager = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {loading ? (
-                            <tr><td colSpan="6" className="loading">{t('common.loading')}</td></tr>
-                        ) : filteredProducts.length === 0 ? (
-                            <tr><td colSpan="6" className="empty">{t('common.noData')}</td></tr>
-                        ) : filteredProducts.map((product) => (
-                            <tr key={product.id}>
-                                <td>
-                                    <div className="table-product-info">
-                                        <img src={product.image} alt={product.name} className="table-img" />
-                                        <span>{product.nameAr || product.name}</span>
-                                    </div>
-                                </td>
-                                <td>{product.classification && <span className={`badge-classification badge-${product.classification.toLowerCase()}`}>{product.classification}</span>}</td>
-                                <td><span className="badge-category">{product.category}</span></td>
-                                <td><span className="price-tag">{product.price} ₪</span></td>
-                                <td>⭐ {product.rating}</td>
-                                <td>
-                                    <div className="table-actions">
-                                        {!showDeleted ? (
-                                            <>
-                                                {product.isFrozen ? (
-                                                    <button className="unfreeze-btn" title={t('products.unfreeze')} onClick={() => unfreezeProduct(product.id)}>
-                                                        <Snowflake size={16} color="#3B82F6" />
-                                                    </button>
-                                                ) : (
-                                                    <button className="freeze-btn" title={t('products.freeze')} onClick={() => handleFreezeClick(product)}>
-                                                        <Clock size={16} color="#F59E0B" />
-                                                    </button>
-                                                )}
-                                                <button className="edit-btn" onClick={() => openModal(product)} title={t('products.editProduct')}><Edit2 size={16} /></button>
-                                                <button className="duplicate-btn" onClick={() => handleDuplicate(product)} title={t('products.duplicate')}><Copy size={16} /></button>
-                                                <button className="delete-btn" onClick={() => handleDelete(product.id)} title={t('products.delete')}><Trash2 size={16} /></button>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <button className="restore-btn" title={t('products.restore')} onClick={() => handleRestore(product.id)}>
-                                                    <RotateCcw size={16} color="#10B981" />
-                                                </button>
-                                                <button className="permanent-delete-btn" title={t('products.deletePermanently')} onClick={() => handlePermanentDelete(product.id)}>
-                                                    <Trash size={16} color="#EF4444" />
-                                                </button>
-                                            </>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
+                        {filteredProducts.map((product) => (
+                            <ProductRow
+                                key={product.id}
+                                product={product}
+                                t={t}
+                                showDeleted={showDeleted}
+                                unfreezeProduct={unfreezeProduct}
+                                handleFreezeClick={handleFreezeClick}
+                                openModal={openModal}
+                                handleDuplicate={handleDuplicate}
+                                handleDelete={handleDelete}
+                                handleRestore={handleRestore}
+                                handlePermanentDelete={handlePermanentDelete}
+                            />
                         ))}
                     </tbody>
                 </table>
@@ -841,207 +1204,33 @@ const ProductManager = () => {
                             <hr className="form-divider" />
 
                             {/* Dynamic Options Sections */}
-                            <div className="dynamic-section">
-                                <div className="section-header-modal">
-                                    <h3>{t('products.sizes')}</h3>
-                                    <button type="button" className="btn-icon-add" onClick={addSize}><Plus size={16} /></button>
-                                </div>
-                                {(formData.sizes || []).map((size, index) => (
-                                    <div key={index} className="dynamic-row">
-                                        <input
-                                            placeholder={t('products.sizeNameAr')}
-                                            value={size.nameAr || size.name}
-                                            onChange={(e) => updateSize(index, 'nameAr', e.target.value)}
-                                        />
-                                        <input
-                                            placeholder={t('products.sizeNameHe')}
-                                            value={size.nameHe || ''}
-                                            onChange={(e) => updateSize(index, 'nameHe', e.target.value)}
-                                            dir="rtl"
-                                        />
-                                        <input
-                                            type="number"
-                                            placeholder={t('products.additionalPrice')}
-                                            value={size.price}
-                                            onChange={(e) => updateSize(index, 'price', parseFloat(e.target.value))}
-                                        />
-                                        <label className="checkbox-label">
-                                            <input
-                                                type="checkbox"
-                                                checked={size.isDefault}
-                                                onChange={(e) => updateSize(index, 'isDefault', e.target.checked)}
-                                            />
-                                            <span>{t('products.default')}</span>
-                                        </label>
-                                        <button type="button" className="btn-remove" onClick={() => removeSize(index)}><Trash size={16} /></button>
-                                    </div>
-                                ))}
-                            </div>
+                            <SizesSection
+                                sizes={formData.sizes}
+                                t={t}
+                                addSize={handleAddSize}
+                                updateSize={handleUpdateSize}
+                                removeSize={handleRemoveSize}
+                            />
 
-                            <div className="dynamic-section">
-                                <div className="section-header-modal">
-                                    <h3>{t('products.flavors')}</h3>
-                                    <button type="button" className="btn-icon-add" onClick={addFlavor}><Plus size={16} /></button>
-                                </div>
-                                <div className="flavors-grid-modal">
-                                    {(formData.flavors || []).map((flavor, index) => (
-                                        <div key={index} className="dynamic-row">
-                                            <input
-                                                placeholder={t('products.flavorNameAr')}
-                                                value={typeof flavor === 'string' ? flavor : flavor.nameAr}
-                                                onChange={(e) => updateFlavor(index, 'nameAr', e.target.value)}
-                                            />
-                                            <input
-                                                placeholder={t('products.flavorNameHe')}
-                                                value={typeof flavor === 'string' ? '' : flavor.nameHe}
-                                                onChange={(e) => updateFlavor(index, 'nameHe', e.target.value)}
-                                                dir="rtl"
-                                            />
-                                            <button type="button" className="btn-remove" onClick={() => removeFlavor(index)}><Trash size={16} /></button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                            <FlavorsSection
+                                flavors={formData.flavors}
+                                t={t}
+                                addFlavor={handleAddFlavor}
+                                updateFlavor={handleUpdateFlavor}
+                                removeFlavor={handleRemoveFlavor}
+                            />
 
-                            <div className="dynamic-section">
-                                <div
-                                    className="section-header-modal clickable-header"
-                                    onClick={() => setIsExtrasExpanded(!isExtrasExpanded)}
-                                    style={{ cursor: 'pointer' }}
-                                >
-                                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        {t('products.extras')}
-                                        <ChevronDown size={16} style={{ transform: isExtrasExpanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
-                                    </h3>
-                                    <span style={{ fontSize: '0.8rem', color: '#6B7280' }}>
-                                        {(formData.extras || []).length} {t('products.selectedExtras')}
-                                    </span>
-                                </div>
-
-                                {isExtrasExpanded && (
-                                    <>
-                                        {extraGroups.length > 0 && (
-                                            <div className="form-group" style={{ marginBottom: '16px' }}>
-                                                <label>{t('products.extraGroup')}</label>
-                                                <p className="help-text" style={{ fontSize: '0.8rem', color: '#6B7280', marginBottom: '8px' }}>
-                                                    {t('products.selectGroupsHint')}
-                                                </p>
-                                                <div className="groups-checkbox-grid" style={{
-                                                    display: 'grid',
-                                                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                                                    gap: '10px',
-                                                    background: 'var(--secondary)',
-                                                    padding: '12px',
-                                                    borderRadius: '12px',
-                                                    border: '1px solid var(--border)'
-                                                }}>
-                                                    {extraGroups.map((g) => {
-                                                        const isChecked = (formData.extraGroupIds || []).includes(g.id);
-                                                        return (
-                                                            <label key={g.id} className={`group-check-item ${isChecked ? 'checked' : ''}`} style={{
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: '8px',
-                                                                padding: '8px 12px',
-                                                                background: isChecked ? 'rgba(143, 211, 196, 0.1)' : 'var(--card)',
-                                                                borderRadius: '8px',
-                                                                border: '1px solid',
-                                                                borderColor: isChecked ? 'var(--primary)' : 'var(--border)',
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.2s'
-                                                            }}>
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={isChecked}
-                                                                    onChange={(e) => {
-                                                                        const currentIds = formData.extraGroupIds || [];
-                                                                        const nextIds = isChecked
-                                                                            ? currentIds.filter(id => id !== g.id)
-                                                                            : [...currentIds, g.id];
-                                                                        setFormData({ ...formData, extraGroupIds: nextIds });
-                                                                    }}
-                                                                    style={{ display: 'none' }}
-                                                                />
-                                                                <div className="check-box-ui" style={{
-                                                                    width: '18px',
-                                                                    height: '18px',
-                                                                    borderRadius: '4px',
-                                                                    border: '2px solid',
-                                                                    borderColor: isChecked ? 'var(--primary)' : '#D1D5DB',
-                                                                    background: isChecked ? 'var(--primary)' : 'transparent',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    color: 'white'
-                                                                }}>
-                                                                    {isChecked && <Check size={12} strokeWidth={3} />}
-                                                                </div>
-                                                                <span style={{ fontSize: '0.9rem', fontWeight: isChecked ? '700' : '500' }}>{g.nameAr}</span>
-                                                            </label>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )}
-                                        <div className="extras-selector-header" style={{ marginTop: '16px', marginBottom: '8px' }}>
-                                            <label>{t('products.individualExtras')}</label>
-                                            <p className="help-text" style={{ fontSize: '0.8rem', color: '#6B7280' }}>
-                                                {t('products.individualExtrasHint')}
-                                            </p>
-                                        </div>
-                                        <div className="extras-selector-grid" style={{ animation: 'slideDown 0.3s ease' }}>
-                                            {(() => {
-                                                // For the individual selector, combine all extras from selected groups or show all if none
-                                                let availableExtras = globalExtras;
-                                                if (formData.extraGroupIds && formData.extraGroupIds.length > 0) {
-                                                    const selectedGroupExtras = extraGroups
-                                                        .filter(g => formData.extraGroupIds.includes(g.id))
-                                                        .flatMap(g => g.extraIds || []);
-                                                    availableExtras = globalExtras.filter(ex => selectedGroupExtras.includes(ex.id));
-                                                }
-                                                return availableExtras.map((gExtra) => {
-                                                    const isSelected = (formData.extras || []).some(ex => ex.id === gExtra.id);
-                                                    return (
-                                                        <div
-                                                            key={gExtra.id}
-                                                            className={`extra-select-card ${isSelected ? 'selected' : ''}`}
-                                                            onClick={() => toggleExtraSelection(gExtra.id)}
-                                                        >
-                                                            <div className="extra-select-img">
-                                                                {gExtra.image ? <img src={gExtra.image} alt={gExtra.nameAr} /> : <ImageIcon size={16} />}
-                                                            </div>
-                                                            <div className="extra-select-info">
-                                                                <span className="name">{gExtra.nameAr}</span>
-                                                                <span className="price">{gExtra.price} ₪</span>
-                                                            </div>
-                                                            {isSelected && <div className="check-badge"><Check size={12} /></div>}
-                                                        </div>
-                                                    );
-                                                });
-                                            })()}
-                                        </div>
-                                    </>
-                                )}
-
-                                {formData.extras && formData.extras.length > 0 && (
-                                    <div className="selected-extras-preview">
-                                        <h4>{t('products.selectedExtras')} ({(formData.extras || []).length})</h4>
-                                        {(formData.extras || []).map((extra, index) => (
-                                            <div key={index} className="selected-extra-row">
-                                                <span>{extra.nameAr}</span>
-                                                <label className="checkbox-label">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={extra.isDefault}
-                                                        onChange={(e) => updateExtraOverride(index, 'isDefault', e.target.checked)}
-                                                    />
-                                                    <span>{t('products.default')}</span>
-                                                </label>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                            <ExtrasSection
+                                formData={formData}
+                                extraGroups={extraGroups}
+                                globalExtras={globalExtras}
+                                isExtrasExpanded={isExtrasExpanded}
+                                setIsExtrasExpanded={setIsExtrasExpanded}
+                                setFormData={setFormData}
+                                toggleExtraSelection={handleToggleExtraSelection}
+                                updateExtraOverride={handleUpdateExtraOverride}
+                                t={t}
+                            />
 
                             <div className="modal-footer">
                                 <button type="submit" className="save-btn" disabled={uploading}>
