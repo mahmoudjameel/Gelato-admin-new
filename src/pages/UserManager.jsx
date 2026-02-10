@@ -67,8 +67,8 @@ const UserManager = () => {
             const snapshot = await getDocs(q);
 
             const usersList = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
+                ...doc.data(),
+                id: doc.id
             }));
 
             // Client-side sorting by createdAt desc for now

@@ -45,6 +45,27 @@
     flex-wrap: wrap;
 }
 
+.delete-all-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.25rem;
+    background: #FEE2E2;
+    color: #EF4444;
+    border: 1px solid #FECACA;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.delete-all-btn:hover {
+    background: #EF4444;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
 .order-manager .search-bar.glass {
     display: flex;
     align-items: center;

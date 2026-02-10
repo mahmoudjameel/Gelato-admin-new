@@ -48,8 +48,8 @@ const PromoCodeManager = () => {
     useEffect(() => {
         const unsubscribe = onSnapshot(collection(db, 'promo_codes'), (snapshot) => {
             const promoList = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
+                ...doc.data(),
+                id: doc.id
             }));
             setPromos(promoList);
             setLoading(false);

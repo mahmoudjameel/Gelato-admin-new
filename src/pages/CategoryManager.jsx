@@ -40,7 +40,7 @@ const CategoryManager = () => {
         try {
             const q = query(collection(db, 'categories'), orderBy('name'));
             const querySnapshot = await getDocs(q);
-            const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const data = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
             setCategories(data);
         } catch (error) {
             console.error("Error fetching categories: ", error);
@@ -53,8 +53,10 @@ const CategoryManager = () => {
         e.preventDefault();
         try {
             const categoryData = {
-                ...formData,
-                name: formData.nameAr // Keep 'name' for compatibility
+                nameAr: formData.nameAr || '',
+                nameHe: formData.nameHe || '',
+                icon: formData.icon || '',
+                name: formData.nameAr || '' // Keep 'name' for compatibility
             };
 
             if (editingCategory) {
@@ -64,12 +66,12 @@ const CategoryManager = () => {
             }
             setIsModalOpen(false);
             setEditingCategory(null);
-            setIsModalOpen(false);
-            setEditingCategory(null);
             setFormData({ nameAr: '', nameHe: '', icon: '' });
             fetchCategories();
+            alert(t('common.successSave') || 'Category saved successfully');
         } catch (error) {
             console.error("Error saving category: ", error);
+            alert(t('common.errorSave') || 'Error saving category');
         }
     };
 
@@ -78,8 +80,10 @@ const CategoryManager = () => {
             try {
                 await deleteDoc(doc(db, 'categories', id));
                 fetchCategories();
+                alert(t('common.successDelete') || 'Category deleted successfully');
             } catch (error) {
                 console.error("Error deleting category: ", error);
+                alert(t('common.errorDelete') || 'Error deleting category');
             }
         }
     };
@@ -90,7 +94,7 @@ const CategoryManager = () => {
             setFormData({
                 nameAr: category.nameAr || category.name || '',
                 nameHe: category.nameHe || '',
-                icon: category.icon
+                icon: category.icon || ''
             });
         } else {
             setEditingCategory(null);
@@ -99,9 +103,10 @@ const CategoryManager = () => {
         setIsModalOpen(true);
     };
 
-    const filteredCategories = categories.filter(cat =>
-        cat.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredCategories = categories.filter(cat => {
+        const name = cat.nameAr || cat.name || '';
+        return name.toLowerCase().includes(searchTerm.toLowerCase());
+    });
 
     return (
         <div className="category-manager">

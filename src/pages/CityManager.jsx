@@ -49,7 +49,7 @@ const CityManager = () => {
         try {
             const q = query(collection(db, 'cities'), orderBy('order', 'asc'));
             const snapshot = await getDocs(q);
-            const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const list = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
             setCities(list);
         } catch (error) {
             console.error('Error fetching cities:', error);

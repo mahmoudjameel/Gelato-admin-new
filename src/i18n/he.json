@@ -18,7 +18,9 @@
         "back": "חזור",
         "logout": "התנתק",
         "ar": "ערבית",
-        "he": "עברית"
+        "he": "עברית",
+        "successDelete": "נמחק בהצלחה",
+        "errorDelete": "שגיאה במחיקה"
     },
     "cities": {
         "title": "ניהול ערים",
@@ -116,8 +118,12 @@
         "flavors": "טעמים",
         "extras": "תוספות",
         "selectedExtras": "תוספות נבחרות",
-        "extraGroup": "קבוצת תוספות",
+        "extraGroup": "קבוצות תוספות",
+        "extraGroupsSelected": "{{count}} קבוצות נבחרו",
+        "selectGroupsHint": "ניתן לבחור יותר מקבוצה אחת והן יוצגו כשלבים נפרדים באפליקציה.",
         "extraGroupAll": "כל התוספות",
+        "individualExtras": "תוספות אישיות",
+        "individualExtrasHint": "ניתן לבחור תוספות ספציפיות מהקבוצות לעיל שיופיעו במוצר זה.",
         "sizeNameAr": "שם גודל (ערבית)",
         "sizeNameHe": "שם גודל (עברית)",
         "additionalPrice": "מחיר נוסף",
@@ -462,7 +468,10 @@
         "filterByStatus": "סנן לפי סטטוס",
         "scheduledBadge": "מוזמן לזמן",
         "scheduledOrder": "הזמנה מתוזמנת",
-        "scheduledForTime": "שעת איסוף/משלוח מבוקשת"
+        "scheduledForTime": "שעת איסוף/משלוח מבוקשת",
+        "deleteAll": "מחק את כל ההזמנות",
+        "deleteAllConfirm": "אזהרה: האם אתה בטוח שברצונך למחוק את כל ההזמנות לצמיתות? לא ניתן לבטל פעולה זו.",
+        "deleteAllSuccess": "כל ההזמנות נמחקו בהצלחה"
     },
     "notifications": {
         "title": "ניהול התראות",

@@ -72,7 +72,7 @@ const ProductManager = () => {
         sizes: [],
         flavors: [],
         extras: [],
-        extraGroupId: '', // مجموعة الإضافات (اختياري)
+        extraGroupIds: [], // مجموعات الإضافات (اختياري)
         loyaltyPointsPrice: ''
     });
 
@@ -105,8 +105,8 @@ const ProductManager = () => {
             const [pSnapshot, cSnapshot, eSnapshot, gSnapshot] = await Promise.all([getDocs(pQ), getDocs(cQ), getDocs(eQ), getDocs(gQ)]);
 
             const allProducts = pSnapshot.docs.map(doc => ({
-                id: doc.id,
                 ...doc.data(),
+                id: doc.id,
                 isDeleted: doc.data().isDeleted || false,
                 isFrozen: doc.data().isFrozen || false
             }));
@@ -115,9 +115,9 @@ const ProductManager = () => {
             const visibleProducts = allProducts.filter(p => p.isDeleted === showDeleted);
 
             setProducts(visibleProducts);
-            setCategories(cSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            setGlobalExtras(eSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            setExtraGroups(gSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            setCategories(cSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+            setGlobalExtras(eSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+            setExtraGroups(gSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
         } catch (error) {
             console.error("Error fetching data: ", error);
         } finally {
@@ -263,7 +263,7 @@ const ProductManager = () => {
                 price: parseFloat(formData.price),
                 loyaltyPointsPrice: formData.loyaltyPointsPrice ? parseInt(formData.loyaltyPointsPrice) : null,
                 extras: updatedExtras,
-                extraGroupId: formData.extraGroupId || null,
+                extraGroupIds: formData.extraGroupIds || [],
                 flavors: (formData.flavors || []).filter(f => (f.nameAr && f.nameAr.trim() !== '') || (f.nameHe && f.nameHe.trim() !== '')),
                 sizes: (formData.sizes || []).filter(s => (s.nameAr && s.nameAr.trim() !== '') || (s.nameHe && s.nameHe.trim() !== ''))
             };
@@ -382,7 +382,7 @@ const ProductManager = () => {
             sizes: [],
             flavors: [],
             extras: [],
-            extraGroupId: '',
+            extraGroupIds: [],
             loyaltyPointsPrice: ''
         });
     };
@@ -407,7 +407,7 @@ const ProductManager = () => {
                 sizes: product.sizes || [],
                 flavors: product.flavors || [],
                 extras: product.extras || [],
-                extraGroupId: product.extraGroupId || '',
+                extraGroupIds: product.extraGroupIds || (product.extraGroupId ? [product.extraGroupId] : []),
                 loyaltyPointsPrice: product.loyaltyPointsPrice ? product.loyaltyPointsPrice.toString() : ''
             });
             setImagePreview(product.image);
@@ -434,7 +434,7 @@ const ProductManager = () => {
             sizes: Array.isArray(product.sizes) ? product.sizes.map(s => ({ ...s })) : [],
             flavors: Array.isArray(product.flavors) ? product.flavors.map(f => typeof f === 'string' ? { nameAr: f, nameHe: '' } : { ...f }) : [],
             extras: Array.isArray(product.extras) ? product.extras.map(e => ({ ...e })) : [],
-            extraGroupId: product.extraGroupId || '',
+            extraGroupIds: Array.isArray(product.extraGroupIds) ? [...product.extraGroupIds] : (product.extraGroupId ? [product.extraGroupId] : []),
             loyaltyPointsPrice: product.loyaltyPointsPrice != null ? String(product.loyaltyPointsPrice) : ''
         });
         setImagePreview(product.image || null);
@@ -921,34 +921,84 @@ const ProductManager = () => {
                                 {isExtrasExpanded && (
                                     <>
                                         {extraGroups.length > 0 && (
-                                            <div className="form-group" style={{ marginBottom: '12px' }}>
+                                            <div className="form-group" style={{ marginBottom: '16px' }}>
                                                 <label>{t('products.extraGroup')}</label>
-                                                <select
-                                                    value={formData.extraGroupId || ''}
-                                                    onChange={(e) => {
-                                                        const newGroupId = e.target.value || '';
-                                                        const selectedGroup = newGroupId ? extraGroups.find(g => g.id === newGroupId) : null;
-                                                        let newExtras = formData.extras || [];
-                                                        if (selectedGroup && Array.isArray(selectedGroup.extraIds)) {
-                                                            newExtras = newExtras.filter(ex => selectedGroup.extraIds.includes(ex.id));
-                                                        }
-                                                        setFormData({ ...formData, extraGroupId: newGroupId, extras: newExtras });
-                                                    }}
-                                                    className="form-select"
-                                                >
-                                                    <option value="">{t('products.extraGroupAll')}</option>
-                                                    {extraGroups.map((g) => (
-                                                        <option key={g.id} value={g.id}>{g.nameAr}</option>
-                                                    ))}
-                                                </select>
+                                                <p className="help-text" style={{ fontSize: '0.8rem', color: '#6B7280', marginBottom: '8px' }}>
+                                                    {t('products.selectGroupsHint')}
+                                                </p>
+                                                <div className="groups-checkbox-grid" style={{
+                                                    display: 'grid',
+                                                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                                                    gap: '10px',
+                                                    background: 'var(--secondary)',
+                                                    padding: '12px',
+                                                    borderRadius: '12px',
+                                                    border: '1px solid var(--border)'
+                                                }}>
+                                                    {extraGroups.map((g) => {
+                                                        const isChecked = (formData.extraGroupIds || []).includes(g.id);
+                                                        return (
+                                                            <label key={g.id} className={`group-check-item ${isChecked ? 'checked' : ''}`} style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '8px',
+                                                                padding: '8px 12px',
+                                                                background: isChecked ? 'rgba(143, 211, 196, 0.1)' : 'var(--card)',
+                                                                borderRadius: '8px',
+                                                                border: '1px solid',
+                                                                borderColor: isChecked ? 'var(--primary)' : 'var(--border)',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s'
+                                                            }}>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={isChecked}
+                                                                    onChange={(e) => {
+                                                                        const currentIds = formData.extraGroupIds || [];
+                                                                        const nextIds = isChecked
+                                                                            ? currentIds.filter(id => id !== g.id)
+                                                                            : [...currentIds, g.id];
+                                                                        setFormData({ ...formData, extraGroupIds: nextIds });
+                                                                    }}
+                                                                    style={{ display: 'none' }}
+                                                                />
+                                                                <div className="check-box-ui" style={{
+                                                                    width: '18px',
+                                                                    height: '18px',
+                                                                    borderRadius: '4px',
+                                                                    border: '2px solid',
+                                                                    borderColor: isChecked ? 'var(--primary)' : '#D1D5DB',
+                                                                    background: isChecked ? 'var(--primary)' : 'transparent',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    color: 'white'
+                                                                }}>
+                                                                    {isChecked && <Check size={12} strokeWidth={3} />}
+                                                                </div>
+                                                                <span style={{ fontSize: '0.9rem', fontWeight: isChecked ? '700' : '500' }}>{g.nameAr}</span>
+                                                            </label>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
                                         )}
+                                        <div className="extras-selector-header" style={{ marginTop: '16px', marginBottom: '8px' }}>
+                                            <label>{t('products.individualExtras')}</label>
+                                            <p className="help-text" style={{ fontSize: '0.8rem', color: '#6B7280' }}>
+                                                {t('products.individualExtrasHint')}
+                                            </p>
+                                        </div>
                                         <div className="extras-selector-grid" style={{ animation: 'slideDown 0.3s ease' }}>
                                             {(() => {
-                                                const selectedGroup = formData.extraGroupId ? extraGroups.find(g => g.id === formData.extraGroupId) : null;
-                                                const availableExtras = selectedGroup && Array.isArray(selectedGroup.extraIds)
-                                                    ? globalExtras.filter(ex => selectedGroup.extraIds.includes(ex.id))
-                                                    : globalExtras;
+                                                // For the individual selector, combine all extras from selected groups or show all if none
+                                                let availableExtras = globalExtras;
+                                                if (formData.extraGroupIds && formData.extraGroupIds.length > 0) {
+                                                    const selectedGroupExtras = extraGroups
+                                                        .filter(g => formData.extraGroupIds.includes(g.id))
+                                                        .flatMap(g => g.extraIds || []);
+                                                    availableExtras = globalExtras.filter(ex => selectedGroupExtras.includes(ex.id));
+                                                }
                                                 return availableExtras.map((gExtra) => {
                                                     const isSelected = (formData.extras || []).some(ex => ex.id === gExtra.id);
                                                     return (

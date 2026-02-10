@@ -32,8 +32,8 @@ const DriverManager = () => {
             const driversRef = collection(db, 'drivers');
             const snapshot = await getDocs(query(driversRef));
             const driversList = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
+                ...doc.data(),
+                id: doc.id
             }));
 
             // Sort by createdAt desc

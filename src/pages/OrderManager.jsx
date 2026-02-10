@@ -29,7 +29,9 @@ import {
     orderBy,
     onSnapshot,
     addDoc,
-    where
+    where,
+    deleteDoc,
+    writeBatch
 } from 'firebase/firestore';
 import './OrderManager.css';
 
@@ -48,7 +50,7 @@ const OrderManager = () => {
         const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const data = snapshot.docs
-                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .map(doc => ({ ...doc.data(), id: doc.id }))
                 .filter(order => order.status !== 'payment_draft');
             setOrders(data);
             setLoading(false);
@@ -213,6 +215,38 @@ const OrderManager = () => {
         }
     };
 
+    const handleDeleteAll = async () => {
+        if (window.confirm(t('orders.deleteAllConfirm'))) {
+            try {
+                setLoading(true);
+                const q = query(collection(db, 'orders'));
+                const snapshot = await getDocs(q);
+
+                const batchSize = 500;
+                let processed = 0;
+
+                while (processed < snapshot.docs.length) {
+                    const batch = writeBatch(db);
+                    const chunk = snapshot.docs.slice(processed, processed + batchSize);
+
+                    chunk.forEach((doc) => {
+                        batch.delete(doc.ref);
+                    });
+
+                    await batch.commit();
+                    processed += chunk.length;
+                }
+
+                alert(t('orders.deleteAllSuccess'));
+            } catch (error) {
+                console.error("Error deleting all orders:", error);
+                alert(t('common.errorDelete') || "Error deleting all orders");
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
     const getStatusInfo = (status, orderType) => {
         const isPickup = orderType === 'pickup';
         switch (status) {
@@ -293,6 +327,13 @@ const OrderManager = () => {
                     <p>{t('orders.subtitle')}</p>
                 </div>
                 <div className="header-right">
+                    <button
+                        className="delete-all-btn glass"
+                        onClick={handleDeleteAll}
+                    >
+                        <XCircle size={18} />
+                        <span>{t('orders.deleteAll')}</span>
+                    </button>
                     <select
                         className="status-filter-select glass"
                         value={statusFilter}
@@ -456,7 +497,7 @@ const OrderManager = () => {
                                                         {item.selectedFlavors && item.selectedFlavors.length > 0 && (
                                                             <div className="detail-tag flavors">
                                                                 <span className="detail-label">{t('orders.flavors')}:</span>
-                                                                <span className="detail-value">{item.selectedFlavors.join('، ')}</span>
+                                                                {item.selectedFlavors.map(f => typeof f === 'object' ? (i18n.language === 'ar' ? (f.nameAr || f.name) : (f.nameHe || f.name)) : f).join('، ')}
                                                             </div>
                                                         )}
                                                         {item.selectedExtras && item.selectedExtras.length > 0 && (

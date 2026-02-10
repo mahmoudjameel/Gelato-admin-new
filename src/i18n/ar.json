@@ -18,7 +18,9 @@
         "back": "رجوع",
         "logout": "تسجيل الخروج",
         "ar": "العربية",
-        "he": "العبرية"
+        "he": "العبرية",
+        "successDelete": "تم الحذف بنجاح",
+        "errorDelete": "حدث خطأ أثناء الحذف"
     },
     "cities": {
         "title": "إدارة المدن",
@@ -116,8 +118,12 @@
         "flavors": "النكهات",
         "extras": "الإضافات",
         "selectedExtras": "الإضافات المختارة",
-        "extraGroup": "مجموعة الإضافات",
+        "extraGroup": "مجموعات الإضافات",
+        "extraGroupsSelected": "{{count}} مجموعات مختارة",
+        "selectGroupsHint": "يمكنك اختيار أكثر من مجموعة واحدة وسيتم عرضها كمراحل منفصلة في التطبيق.",
         "extraGroupAll": "كل الإضافات",
+        "individualExtras": "الإضافات الفردية",
+        "individualExtrasHint": "يمكنك اختيار إضافات محددة من المجموعات أعلاه لتظهر في هذا المنتج.",
         "sizeNameAr": "الحجم (عربي)",
         "sizeNameHe": "الحجم (عبري)",
         "additionalPrice": "السعر الإضافي",
@@ -462,7 +468,10 @@
         "filterByStatus": "تصفية حسب الحالة",
         "scheduledBadge": "محدد بوقت",
         "scheduledOrder": "طلب محدد بوقت",
-        "scheduledForTime": "وقت الاستلام/التوصيل المطلوب"
+        "scheduledForTime": "وقت الاستلام/التوصيل المطلوب",
+        "deleteAll": "حذف جميع الطلبات",
+        "deleteAllConfirm": "تحذير: هل أنت متأكد من حذف جميع الطلبات نهائياً؟ لا يمكن التراجع عن هذا الإجراء.",
+        "deleteAllSuccess": "تم حذف جميع الطلبات بنجاح"
     },
     "notifications": {
         "title": "إدارة الإشعارات",
