@@ -155,7 +155,7 @@
     color: var(--foreground);
     font-size: 1rem;
     font-family: inherit;
-    transition: all 0.2s;
+    transition: all 0.1s;
 }
 
 .form-group input:focus,
@@ -177,7 +177,7 @@
     font-size: 1rem;
     border: none;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.1s;
     box-shadow: 0 4px 12px rgba(143, 211, 196, 0.3);
 }
 

@@ -64,7 +64,7 @@
     border-radius: 6px;
     font-size: 14px;
     font-family: inherit;
-    transition: all 0.2s;
+    transition: all 0.1s;
 }
 
 .form-textarea {
@@ -152,7 +152,7 @@
     border-radius: 6px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.1s;
     white-space: nowrap;
     margin-left: 16px;
 }

@@ -58,7 +58,7 @@
     border-radius: var(--radius);
     background: var(--card);
     border: 1px solid var(--border);
-    transition: all 0.3s ease;
+    transition: all 0.15s ease-out;
 }
 
 .category-card:hover {
@@ -111,7 +111,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: all 0.1s ease;
     border: none;
 }
 
@@ -147,7 +147,7 @@
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(2px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -200,7 +200,7 @@
     border: 1px solid var(--border);
     background: var(--background);
     color: var(--foreground);
-    transition: all 0.2s;
+    transition: all 0.1s;
 }
 
 .form-group input:focus {

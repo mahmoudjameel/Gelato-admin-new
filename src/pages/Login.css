@@ -166,7 +166,7 @@
     font-weight: 800;
     border: none;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.1s ease;
     margin-top: 1rem;
     box-shadow: 0 10px 20px -5px rgba(143, 211, 196, 0.4);
 }

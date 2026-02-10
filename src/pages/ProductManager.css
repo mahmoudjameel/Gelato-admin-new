@@ -35,9 +35,7 @@
     border: none;
     border-radius: var(--radius);
     font-weight: 700;
-    font-size: 0.9375rem;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.1s, box-shadow 0.1s;
 }
 
 .add-btn:hover {
@@ -214,8 +212,8 @@
     padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
     overflow-y: auto;
     background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
 }
 
 .product-modal {
@@ -303,8 +301,8 @@
     justify-content: center;
     padding: 1rem;
     background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
 }
 
 .freeze-modal {
@@ -656,7 +654,7 @@
     background: var(--background);
     color: var(--foreground);
     appearance: none;
-    transition: all 0.2s;
+    transition: all 0.1s;
 }
 
 .select-container select:focus {
@@ -685,7 +683,7 @@
     text-align: center;
     cursor: pointer;
     background: var(--background);
-    transition: all 0.2s ease;
+    transition: all 0.1s ease;
     min-height: 180px;
     display: flex;
     align-items: center;
@@ -777,7 +775,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.1s;
 }
 
 .btn-icon-add:hover {
@@ -790,7 +788,7 @@
     gap: 1rem;
     align-items: center;
     margin-bottom: 0.75rem;
-    animation: slideIn 0.3s ease;
+    animation: slideIn 0.1s ease-out;
 }
 
 @keyframes slideIn {
@@ -812,7 +810,7 @@
     border: 1px solid var(--border);
     background: var(--background);
     color: var(--foreground);
-    transition: all 0.2s;
+    transition: all 0.1s;
 }
 
 .dynamic-row input:focus {
@@ -892,7 +890,7 @@
     cursor: pointer;
     overflow: hidden;
     border: 1px solid var(--border);
-    transition: all 0.2s;
+    transition: all 0.1s;
 }
 
 .extra-img-label:hover {
@@ -1081,7 +1079,7 @@
     background: var(--card);
     border-radius: 12px;
     border: 1px solid var(--border);
-    transition: all 0.2s;
+    transition: all 0.1s;
 }
 
 .selected-extra-row:hover {

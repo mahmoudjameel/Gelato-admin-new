@@ -29,7 +29,7 @@
     border-radius: var(--radius);
     color: var(--muted-foreground);
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: all 0.1s ease;
 }
 
 .product-layout-tab:hover {

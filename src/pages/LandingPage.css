@@ -149,7 +149,7 @@
     background: var(--card);
     color: var(--muted-foreground);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.1s;
 }
 
 .lang-btn {
@@ -181,7 +181,7 @@
     font-size: 0.9rem;
     border: none;
     box-shadow: 0 4px 12px rgba(143, 211, 196, 0.3);
-    transition: all 0.2s;
+    transition: all 0.1s;
 }
 
 .login-link-btn:hover {
@@ -476,8 +476,8 @@ section {
     position: absolute;
     padding: 0.8rem 1.2rem;
     background: var(--card);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     border-radius: 16px;
     box-shadow: var(--shadow);
     display: flex;
@@ -822,7 +822,7 @@ section {
 .footer-link {
     color: var(--muted-foreground);
     text-decoration: none;
-    transition: all 0.2s;
+    transition: all 0.1s;
     font-size: 0.9rem;
     display: inline-block;
 }
@@ -851,7 +851,7 @@ section {
     justify-content: center;
     text-decoration: none;
     color: var(--muted-foreground);
-    transition: all 0.2s;
+    transition: all 0.1s;
     border: 1px solid var(--border);
 }
 
@@ -1297,7 +1297,7 @@ section {
     color: var(--foreground);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.1s;
 }
 
 .drawer-btn:hover {
