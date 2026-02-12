@@ -7,7 +7,8 @@ import {
     Tag as TagIcon,
     X,
     Save,
-    Image as ImageIcon
+    Image as ImageIcon,
+    GripVertical
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { db } from '../firebase/config';
@@ -19,8 +20,10 @@ import {
     deleteDoc,
     doc,
     query,
-    orderBy
+    orderBy,
+    writeBatch
 } from 'firebase/firestore';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import './CategoryManager.css';
 
 const CategoryManager = () => {
@@ -38,14 +41,65 @@ const CategoryManager = () => {
 
     const fetchCategories = async () => {
         try {
-            const q = query(collection(db, 'categories'), orderBy('name'));
-            const querySnapshot = await getDocs(q);
-            const data = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            // First attempt to fetch ordered by 'order'
+            let q = query(collection(db, 'categories'), orderBy('order'));
+            let querySnapshot = await getDocs(q);
+            let data = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+
+            // Check if any categories are missing the 'order' field
+            // (Firestore orderBy skips documents missing the field)
+            const allSnap = await getDocs(collection(db, 'categories'));
+            if (allSnap.size !== querySnapshot.size) {
+                const allData = allSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                const missingOrder = allData.filter(cat => cat.order === undefined);
+
+                if (missingOrder.length > 0) {
+                    const batch = writeBatch(db);
+                    const existingMaxOrder = data.length > 0 ? Math.max(...data.map(c => c.order || 0)) : -1;
+
+                    missingOrder.forEach((cat, index) => {
+                        const newOrder = existingMaxOrder + 1 + index;
+                        batch.update(doc(db, 'categories', cat.id), { order: newOrder });
+                    });
+
+                    await batch.commit();
+                    // Refetch after batch update
+                    q = query(collection(db, 'categories'), orderBy('order'));
+                    querySnapshot = await getDocs(q);
+                    data = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                }
+            }
+
             setCategories(data);
         } catch (error) {
             console.error("Error fetching categories: ", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const onDragEnd = async (result) => {
+        if (!result.destination) return;
+
+        const items = Array.from(categories);
+        const [reorderedItem] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reorderedItem);
+
+        // Update local state first for responsiveness
+        const updatedItems = items.map((item, index) => ({ ...item, order: index }));
+        setCategories(updatedItems);
+
+        try {
+            const batch = writeBatch(db);
+            updatedItems.forEach((item, index) => {
+                const docRef = doc(db, 'categories', item.id);
+                batch.update(docRef, { order: index });
+            });
+            await batch.commit();
+        } catch (error) {
+            console.error("Error updating category order: ", error);
+            alert(t('common.errorSave') || 'Error updating order');
+            fetchCategories(); // Revert to server state on error
         }
     };
 
@@ -62,6 +116,11 @@ const CategoryManager = () => {
             if (editingCategory) {
                 await updateDoc(doc(db, 'categories', editingCategory.id), categoryData);
             } else {
+                // Assign order to new category (at the end)
+                const maxOrder = categories.length > 0
+                    ? Math.max(...categories.map(c => c.order || 0))
+                    : -1;
+                categoryData.order = maxOrder + 1;
                 await addDoc(collection(db, 'categories'), categoryData);
             }
             setIsModalOpen(false);
@@ -130,29 +189,62 @@ const CategoryManager = () => {
                 </div>
             </div>
 
-            <div className="category-grid">
-                {loading ? (
-                    <div className="loading">{t('common.loading')}</div>
-                ) : filteredCategories.map((category) => (
-                    <div key={category.id} className="category-card glass">
-                        <div className="category-icon-box">
-                            <span className="cat-emoji">{category.icon || <TagIcon size={24} />}</span>
+            <DragDropContext onDragEnd={onDragEnd}>
+                <Droppable droppableId="categories-list" direction="vertical">
+                    {(provided) => (
+                        <div
+                            {...provided.droppableProps}
+                            ref={provided.innerRef}
+                            className="category-grid"
+                        >
+                            {loading ? (
+                                <div className="loading">{t('common.loading')}</div>
+                            ) : filteredCategories.map((category, index) => (
+                                <Draggable
+                                    key={category.id}
+                                    draggableId={category.id}
+                                    index={index}
+                                    isDragDisabled={!!searchTerm} // Disable drag when searching
+                                >
+                                    {(provided, snapshot) => (
+                                        <div
+                                            ref={provided.innerRef}
+                                            {...provided.draggableProps}
+                                            className={`category-card glass ${snapshot.isDragging ? 'dragging' : ''}`}
+                                        >
+                                            <div className="category-card-header">
+                                                <div
+                                                    {...provided.dragHandleProps}
+                                                    className="drag-handle"
+                                                    title={t('categories.reorder')}
+                                                >
+                                                    <GripVertical size={20} color="#9CA3AF" />
+                                                </div>
+                                                <div className="category-icon-box">
+                                                    <span className="cat-emoji">{category.icon || <TagIcon size={24} />}</span>
+                                                </div>
+                                            </div>
+                                            <div className="category-info">
+                                                <h3>{category.nameAr || category.name}</h3>
+                                                <p>{t('categories.browseProducts')}</p>
+                                            </div>
+                                            <div className="category-actions">
+                                                <button className="edit-btn" onClick={() => openModal(category)}>
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button className="delete-btn" onClick={() => handleDelete(category.id)}>
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </Draggable>
+                            ))}
+                            {provided.placeholder}
                         </div>
-                        <div className="category-info">
-                            <h3>{category.nameAr || category.name}</h3>
-                            <p>{t('categories.browseProducts')}</p>
-                        </div>
-                        <div className="category-actions">
-                            <button className="edit-btn" onClick={() => openModal(category)}>
-                                <Edit2 size={16} />
-                            </button>
-                            <button className="delete-btn" onClick={() => handleDelete(category.id)}>
-                                <Trash2 size={16} />
-                            </button>
-                        </div>
-                    </div>
-                ))}
-            </div>
+                    )}
+                </Droppable>
+            </DragDropContext>
 
             {isModalOpen && (
                 <div className="modal-overlay">
@@ -206,3 +298,4 @@ const CategoryManager = () => {
 };
 
 export default CategoryManager;
+
