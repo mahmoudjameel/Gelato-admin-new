@@ -36,7 +36,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
         { title: t('sidebar.notifications'), icon: <Bell size={20} />, path: 'alerts' },
         { title: t('sidebar.cities'), icon: <MapPin size={20} />, path: 'cities' },
-        { title: t('sidebar.analytics'), icon: <ImageIcon size={20} />, path: 'banner' },
+        { title: t('sidebar.banners'), icon: <ImageIcon size={20} />, path: 'banner' },
         { title: t('sidebar.store'), icon: <Store size={20} />, path: 'store' },
     ];
 

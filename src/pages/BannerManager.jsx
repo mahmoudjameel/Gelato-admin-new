@@ -16,6 +16,7 @@ import {
     collection,
     addDoc,
     getDocs,
+    getDoc,
     updateDoc,
     deleteDoc,
     doc,
@@ -58,16 +59,10 @@ const BannerManager = () => {
     const fetchSettings = async () => {
         try {
             const docRef = doc(db, 'banners', 'config');
-            const docSnap = await getDocs(query(collection(db, 'banners')));
-            // Better approach for single config doc:
-            // Since we might not have the collection yet, let's use setDoc to ensure it exists or get it.
-            // Actually, simply reading the doc is better.
-            const settingsSnapshot = await getDocs(collection(db, 'banners'));
-            settingsSnapshot.forEach(doc => {
-                if (doc.id === 'config') {
-                    setBannerSettings(prev => ({ ...prev, ...doc.data() }));
-                }
-            });
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                setBannerSettings(prev => ({ ...prev, ...docSnap.data() }));
+            }
         } catch (error) {
             console.error("Error fetching settings:", error);
         }

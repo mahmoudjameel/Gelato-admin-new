@@ -18,7 +18,9 @@ import {
     RotateCcw,
     Clock,
     Calendar,
-    AlertTriangle
+    AlertTriangle,
+    ArrowUp,
+    ArrowDown
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { db, storage } from '../firebase/config';
@@ -43,6 +45,7 @@ import './ProductManager.css';
 const ProductRow = React.memo(({
     product,
     t,
+    categories,
     showDeleted,
     unfreezeProduct,
     handleFreezeClick,
@@ -50,50 +53,61 @@ const ProductRow = React.memo(({
     handleDuplicate,
     handleDelete,
     handleRestore,
-    handlePermanentDelete
-}) => (
-    <tr>
-        <td>
-            <div className="table-product-info">
-                <img src={product.image} alt={product.name} className="table-img" />
-                <span>{product.nameAr || product.name}</span>
-            </div>
-        </td>
-        <td>{product.classification && <span className={`badge-classification badge-${product.classification.toLowerCase()}`}>{product.classification}</span>}</td>
-        <td><span className="badge-category">{product.category}</span></td>
-        <td><span className="price-tag">{product.price} ₪</span></td>
-        <td>⭐ {product.rating}</td>
-        <td>
-            <div className="table-actions">
-                {!showDeleted ? (
-                    <>
-                        {product.isFrozen ? (
-                            <button className="unfreeze-btn" title={t('products.unfreeze')} onClick={() => unfreezeProduct(product.id)}>
-                                <Snowflake size={16} color="#3B82F6" />
+    handlePermanentDelete,
+    i18n // Assuming i18n is passed down from the parent component
+}) => {
+    const categoryName = useMemo(() => {
+        const cat = categories.find(c => c.id === product.category);
+        if (!cat) return product.category; // Fallback to raw value (names for old seeded data)
+        const currentLang = i18n.language;
+        if (currentLang === 'he') return cat.nameHe || cat.nameAr || cat.name;
+        return cat.nameAr || cat.name;
+    }, [product.category, categories, i18n.language]);
+
+    return (
+        <tr>
+            <td>
+                <div className="table-product-info">
+                    <img src={product.image || null} alt={product.name} className="table-img" />
+                    <span>{product.nameAr || product.name}</span>
+                </div>
+            </td>
+            <td>{product.classification && <span className={`badge-classification badge-${product.classification.toLowerCase()}`}>{product.classification}</span>}</td>
+            <td><span className="badge-category">{categoryName}</span></td>
+            <td><span className="price-tag">{product.price} ₪</span></td>
+            <td>⭐ {product.rating}</td>
+            <td>
+                <div className="table-actions">
+                    {!showDeleted ? (
+                        <>
+                            {product.isFrozen ? (
+                                <button className="unfreeze-btn" title={t('products.unfreeze')} onClick={() => unfreezeProduct(product.id)}>
+                                    <Snowflake size={16} color="#3B82F6" />
+                                </button>
+                            ) : (
+                                <button className="freeze-btn" title={t('products.freeze')} onClick={() => handleFreezeClick(product)}>
+                                    <Clock size={16} color="#F59E0B" />
+                                </button>
+                            )}
+                            <button className="edit-btn" onClick={() => openModal(product)} title={t('products.editProduct')}><Edit2 size={16} /></button>
+                            <button className="duplicate-btn" onClick={() => handleDuplicate(product)} title={t('products.duplicate')}><Copy size={16} /></button>
+                            <button className="delete-btn" onClick={() => handleDelete(product.id)} title={t('products.delete')}><Trash2 size={16} /></button>
+                        </>
+                    ) : (
+                        <>
+                            <button className="restore-btn" title={t('products.restore')} onClick={() => handleRestore(product.id)}>
+                                <RotateCcw size={16} color="#10B981" />
                             </button>
-                        ) : (
-                            <button className="freeze-btn" title={t('products.freeze')} onClick={() => handleFreezeClick(product)}>
-                                <Clock size={16} color="#F59E0B" />
+                            <button className="permanent-delete-btn" title={t('products.deletePermanently')} onClick={() => handlePermanentDelete(product.id)}>
+                                <Trash size={16} color="#EF4444" />
                             </button>
-                        )}
-                        <button className="edit-btn" onClick={() => openModal(product)} title={t('products.editProduct')}><Edit2 size={16} /></button>
-                        <button className="duplicate-btn" onClick={() => handleDuplicate(product)} title={t('products.duplicate')}><Copy size={16} /></button>
-                        <button className="delete-btn" onClick={() => handleDelete(product.id)} title={t('products.delete')}><Trash2 size={16} /></button>
-                    </>
-                ) : (
-                    <>
-                        <button className="restore-btn" title={t('products.restore')} onClick={() => handleRestore(product.id)}>
-                            <RotateCcw size={16} color="#10B981" />
-                        </button>
-                        <button className="permanent-delete-btn" title={t('products.deletePermanently')} onClick={() => handlePermanentDelete(product.id)}>
-                            <Trash size={16} color="#EF4444" />
-                        </button>
-                    </>
-                )}
-            </div>
-        </td>
-    </tr>
-));
+                        </>
+                    )}
+                </div>
+            </td>
+        </tr>
+    );
+});
 
 const SizesSection = React.memo(({ sizes, t, addSize, updateSize, removeSize }) => (
     <div className="dynamic-section">
@@ -162,14 +176,20 @@ const FlavorsSection = React.memo(({ flavors, t, addFlavor, updateFlavor, remove
 ));
 
 const ExtrasSection = React.memo(({
-    formData,
+    // Granular props to prevent re-renders on name/price change
+    extraGroupIds,
+    extraGroupConfigs,
+    selectedExtras,
+    onGroupChange,
+    onGroupConfigChange,
+
     extraGroups,
     globalExtras,
     isExtrasExpanded,
     setIsExtrasExpanded,
-    setFormData,
-    toggleExtraSelection,
-    updateExtraOverride,
+    toggleExtraConfig,
+    expandedConfigGroups,
+    toggleConfigGroup,
     t
 }) => (
     <div className="dynamic-section">
@@ -182,9 +202,6 @@ const ExtrasSection = React.memo(({
                 {t('products.extras')}
                 <ChevronDown size={16} style={{ transform: isExtrasExpanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
             </h3>
-            <span style={{ fontSize: '0.8rem', color: '#6B7280' }}>
-                {(formData.extras || []).length} {t('products.selectedExtras')}
-            </span>
         </div>
 
         {isExtrasExpanded && (
@@ -205,7 +222,7 @@ const ExtrasSection = React.memo(({
                             border: '1px solid var(--border)'
                         }}>
                             {extraGroups.map((g) => {
-                                const isChecked = (formData.extraGroupIds || []).includes(g.id);
+                                const isChecked = (extraGroupIds || []).includes(g.id);
                                 return (
                                     <label key={g.id} className={`group-check-item ${isChecked ? 'checked' : ''}`} style={{
                                         display: 'flex',
@@ -224,11 +241,11 @@ const ExtrasSection = React.memo(({
                                             type="checkbox"
                                             checked={isChecked}
                                             onChange={(e) => {
-                                                const currentIds = formData.extraGroupIds || [];
+                                                const currentIds = extraGroupIds || [];
                                                 const nextIds = isChecked
                                                     ? currentIds.filter(id => id !== g.id)
                                                     : [...currentIds, g.id];
-                                                setFormData({ ...formData, extraGroupIds: nextIds });
+                                                onGroupChange(nextIds);
                                             }}
                                             style={{ display: 'none' }}
                                         />
@@ -256,18 +273,21 @@ const ExtrasSection = React.memo(({
                                                     <input
                                                         type="number"
                                                         min="0"
-                                                        value={formData.extraGroupConfigs?.[g.id]?.freeLimit || 0}
+                                                        value={extraGroupConfigs?.[g.id]?.freeLimit || 0}
                                                         onChange={(e) => {
                                                             const val = parseInt(e.target.value) || 0;
-                                                            setFormData({
-                                                                ...formData,
-                                                                extraGroupConfigs: {
-                                                                    ...formData.extraGroupConfigs,
-                                                                    [g.id]: { ...formData.extraGroupConfigs?.[g.id], freeLimit: val }
-                                                                }
-                                                            });
+                                                            onGroupConfigChange(g.id, val);
                                                         }}
-                                                        style={{ width: '50px', padding: '2px 4px', fontSize: '0.8rem', border: 'none', background: '#f5f5f5', textAlign: 'center', borderRadius: '4px' }}
+                                                        style={{
+                                                            width: '50px',
+                                                            padding: '2px 4px',
+                                                            fontSize: '0.8rem',
+                                                            border: '1px solid var(--border)',
+                                                            background: 'var(--background)',
+                                                            color: 'var(--foreground)',
+                                                            textAlign: 'center',
+                                                            borderRadius: '4px'
+                                                        }}
                                                     />
                                                 </div>
                                             </div>
@@ -276,70 +296,194 @@ const ExtrasSection = React.memo(({
                                 );
                             })}
                         </div>
+
+                        {/* Reorder Section */}
+                        {extraGroupIds && extraGroupIds.length > 1 && (
+                            <div style={{ marginTop: '16px' }}>
+                                <label style={{ fontSize: '0.9rem', fontWeight: '600' }}>ترتيب المجموعات (يظهر في التطبيق)</label>
+                                <div style={{
+                                    marginTop: '8px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '8px',
+                                    background: 'var(--secondary)',
+                                    padding: '12px',
+                                    borderRadius: '12px',
+                                }}>
+                                    {extraGroupIds.map((groupId, index) => {
+                                        const group = extraGroups.find(g => g.id === groupId);
+                                        if (!group) return null;
+                                        return (
+                                            <div key={groupId} style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                background: 'white',
+                                                padding: '8px 12px',
+                                                borderRadius: '8px',
+                                                border: '1px solid var(--border)'
+                                            }}>
+                                                <span>{index + 1}. {group.nameAr}</span>
+                                                <div style={{ display: 'flex', gap: '4px' }}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => moveGroup(index, 'up')}
+                                                        disabled={index === 0}
+                                                        style={{
+                                                            padding: '4px',
+                                                            borderRadius: '4px',
+                                                            border: 'none',
+                                                            background: index === 0 ? '#f3f4f6' : '#e5e7eb',
+                                                            cursor: index === 0 ? 'default' : 'pointer'
+                                                        }}
+                                                    >
+                                                        <ArrowUp size={16} color={index === 0 ? '#9ca3af' : '#374151'} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => moveGroup(index, 'down')}
+                                                        disabled={index === extraGroupIds.length - 1}
+                                                        style={{
+                                                            padding: '4px',
+                                                            borderRadius: '4px',
+                                                            border: 'none',
+                                                            background: index === extraGroupIds.length - 1 ? '#f3f4f6' : '#e5e7eb',
+                                                            cursor: index === extraGroupIds.length - 1 ? 'default' : 'pointer'
+                                                        }}
+                                                    >
+                                                        <ArrowDown size={16} color={index === extraGroupIds.length - 1 ? '#9ca3af' : '#374151'} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
-                <div className="extras-selector-header" style={{ marginTop: '16px', marginBottom: '8px' }}>
-                    <label>{t('products.individualExtras')}</label>
-                    <p className="help-text" style={{ fontSize: '0.8rem', color: '#6B7280' }}>
-                        {t('products.individualExtrasHint')}
-                    </p>
-                </div>
-                <div className="extras-selector-grid" style={{ animation: 'slideDown 0.3s ease' }}>
-                    {(() => {
-                        let availableExtras = globalExtras;
-                        if (formData.extraGroupIds && formData.extraGroupIds.length > 0) {
-                            const selectedGroupExtras = extraGroups
-                                .filter(g => formData.extraGroupIds.includes(g.id))
-                                .flatMap(g => g.extraIds || []);
-                            availableExtras = globalExtras.filter(ex => selectedGroupExtras.includes(ex.id));
-                        }
-                        return availableExtras.map((gExtra) => {
-                            const isSelected = (formData.extras || []).some(ex => ex.id === gExtra.id);
+                {/* Group Details Configuration */}
+                {extraGroupIds && extraGroupIds.length > 0 && (
+                    <div style={{ marginTop: '24px' }}>
+                        <h4 style={{ marginBottom: '12px', fontSize: '1rem', fontWeight: 'bold' }}>{t('products.extrasConfiguration')}</h4>
+                        <p className="help-text" style={{ fontSize: '0.8rem', color: '#666', marginBottom: '16px' }}>
+                            قم بتخصيص الإضافات داخل المجموعات لهذا المنتج (السعر، الافتراضي، الإخفاء). الإضافات غير المعدلة ستظهر بسعرها الأصلي.
+                        </p>
+
+                        {extraGroupIds.map(groupId => {
+                            const group = extraGroups.find(g => g.id === groupId);
+                            if (!group) return null;
+
+                            // Get extras for this group
+                            const groupExtras = globalExtras.filter(ex => (group.extraIds || []).includes(ex.id));
+
+                            if (groupExtras.length === 0) return null;
+
+                            const isExpanded = expandedConfigGroups ? !!expandedConfigGroups[groupId] : false;
+
                             return (
-                                <div
-                                    key={gExtra.id}
-                                    className={`extra-select-card ${isSelected ? 'selected' : ''}`}
-                                    onClick={() => toggleExtraSelection(gExtra.id)}
-                                >
-                                    <div className="extra-select-img">
-                                        {gExtra.image ? <img src={gExtra.image} alt={gExtra.nameAr} /> : <ImageIcon size={16} />}
+                                <div key={groupId} style={{ marginBottom: '12px', background: '#fff', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                                    <div
+                                        onClick={() => toggleConfigGroup(groupId)}
+                                        style={{
+                                            padding: '12px 16px',
+                                            background: 'var(--muted)',
+                                            borderBottom: isExpanded ? '1px solid var(--border)' : 'none',
+                                            fontWeight: 'bold',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            cursor: 'pointer',
+                                            userSelect: 'none'
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <ChevronDown size={16} style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
+                                            <span>{group.nameAr}</span>
+                                        </div>
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 'normal', color: 'var(--muted-foreground)' }}>{groupExtras.length} إضافات</span>
                                     </div>
-                                    <div className="extra-select-info">
-                                        <span className="name">{gExtra.nameAr}</span>
-                                        <span className="price">{gExtra.price} ₪</span>
-                                    </div>
-                                    {isSelected && <div className="check-badge"><Check size={12} /></div>}
+
+                                    {isExpanded && (
+                                        <div className="group-extras-table" style={{ overflowX: 'auto' }}>
+                                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                                <thead>
+                                                    <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--secondary-bg)' }}>
+                                                        <th style={{ padding: '10px', textAlign: 'right' }}>الإضافة</th>
+                                                        <th style={{ padding: '10px', textAlign: 'center', width: '100px' }}>السعر الأساسي</th>
+                                                        <th style={{ padding: '10px', textAlign: 'center', width: '120px' }}>تعديل السعر</th>
+                                                        <th style={{ padding: '10px', textAlign: 'center', width: '80px' }}>افتراضي</th>
+                                                        <th style={{ padding: '10px', textAlign: 'center', width: '80px' }}>إخفاء</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {groupExtras.map(extra => {
+                                                        // Find if this extra is already configured in selectedExtras
+                                                        const config = (selectedExtras || []).find(e => e.id === extra.id) || {};
+
+                                                        return (
+                                                            <tr key={extra.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                                                                <td style={{ padding: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                    <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: '#f3f4f6', overflow: 'hidden' }}>
+                                                                        {extra.image ? <img src={extra.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <ImageIcon size={16} color="#ccc" />}
+                                                                    </div>
+                                                                    <span>{extra.nameAr}</span>
+                                                                </td>
+                                                                <td style={{ padding: '10px', textAlign: 'center', color: '#666' }}>
+                                                                    {extra.price}
+                                                                </td>
+                                                                <td style={{ padding: '10px', textAlign: 'center' }}>
+                                                                    <input
+                                                                        type="number"
+                                                                        placeholder={extra.price}
+                                                                        value={config.price !== undefined ? config.price : ''}
+                                                                        onChange={(e) => toggleExtraConfig(extra, 'price', e.target.value)}
+                                                                        style={{
+                                                                            width: '80px',
+                                                                            padding: '6px',
+                                                                            borderRadius: '6px',
+                                                                            border: '1px solid var(--border)',
+                                                                            textAlign: 'center',
+                                                                            background: 'var(--background)',
+                                                                            color: 'var(--foreground)'
+                                                                        }}
+                                                                    />
+                                                                </td>
+                                                                <td style={{ padding: '10px', textAlign: 'center' }}>
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={!!config.isDefault}
+                                                                        onChange={(e) => toggleExtraConfig(extra, 'isDefault', e.target.checked)}
+                                                                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                                                    />
+                                                                </td>
+                                                                <td style={{ padding: '10px', textAlign: 'center' }}>
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={!!config.isHidden}
+                                                                        onChange={(e) => toggleExtraConfig(extra, 'isHidden', e.target.checked)}
+                                                                        style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#ef4444' }}
+                                                                    />
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
                                 </div>
                             );
-                        });
-                    })()}
-                </div>
-            </>
-        )}
-
-        {formData.extras && formData.extras.length > 0 && (
-            <div className="selected-extras-preview">
-                <h4>{t('products.selectedExtras')} ({(formData.extras || []).length})</h4>
-                {(formData.extras || []).map((extra, index) => (
-                    <div key={index} className="selected-extra-row">
-                        <span>{extra.nameAr}</span>
-                        <label className="checkbox-label">
-                            <input
-                                type="checkbox"
-                                checked={extra.isDefault}
-                                onChange={(e) => updateExtraOverride(index, 'isDefault', e.target.checked)}
-                            />
-                            <span>{t('products.default')}</span>
-                        </label>
+                        })}
                     </div>
-                ))}
-            </div>
+                )}
+            </>
         )}
     </div>
 ));
 
 const ProductManager = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [globalExtras, setGlobalExtras] = useState([]);
@@ -380,6 +524,7 @@ const ProductManager = () => {
     // [NEW] Collapsible state for extras picker
     const [isExtrasExpanded, setIsExtrasExpanded] = useState(false);
     const [isDuplicateMode, setIsDuplicateMode] = useState(false);
+    const [expandedConfigGroups, setExpandedConfigGroups] = useState({}); // State for collapsible group configs
 
     useEffect(() => {
         fetchData();
@@ -432,11 +577,12 @@ const ProductManager = () => {
 
         setSeeding(true);
         try {
-            // 1. Add Categories
+            // 1. Add Categories and map IDs
             console.log("Seeding Categories...");
+            const categoryMap = {}; // name -> firestoreID
             for (const cat of seedData.categories) {
-                // Check duplicate if needed, or just add
-                await addDoc(collection(db, 'categories'), { ...cat, createdAt: new Date() });
+                const docRef = await addDoc(collection(db, 'categories'), { ...cat, createdAt: new Date() });
+                categoryMap[cat.name] = docRef.id;
             }
 
             // 2. Add Extras and map IDs
@@ -451,19 +597,13 @@ const ProductManager = () => {
             // 3. Add Products
             console.log("Seeding Products...");
             for (const prod of seedData.products) {
-                const { linkedExtras, ...prodData } = prod;
+                const { linkedExtras, category: catName, ...prodData } = prod;
 
                 // Map extras if any
                 let finalExtras = [];
                 if (linkedExtras && linkedExtras.length > 0) {
                     finalExtras = linkedExtras.map(seedExtraId => {
                         const firestoreId = extrasMap[seedExtraId];
-                        // We also need the extra details embedded in product sometimes, 
-                        // but the new system references by ID mainly.
-                        // However, EditProductScreen expects full objects in the 'extras' array often.
-                        // Let's attach at least the ID. 
-                        // Actually, looking at the code, we save array of objects in product.extras usually.
-                        // Let's fetch the data we just saved or use the seed data.
                         const extraSeedData = seedData.extras.find(e => e.id === seedExtraId);
                         if (extraSeedData && firestoreId) {
                             const { id, ...data } = extraSeedData;
@@ -475,6 +615,7 @@ const ProductManager = () => {
 
                 await addDoc(collection(db, 'products'), {
                     ...prodData,
+                    category: categoryMap[catName] || catName,
                     extras: finalExtras,
                     createdAt: new Date()
                 });
@@ -488,6 +629,13 @@ const ProductManager = () => {
         } finally {
             setSeeding(false);
         }
+    };
+
+    const toggleConfigGroup = (groupId) => {
+        setExpandedConfigGroups(prev => ({
+            ...prev,
+            [groupId]: !prev[groupId]
+        }));
     };
 
     const handleClearSeed = async () => {
@@ -634,36 +782,31 @@ const ProductManager = () => {
         // Logic handled by selecting from list.
     };
 
-    const toggleExtraSelection = (extraId) => {
-        const currentExtras = formData.extras || [];
-        const exists = currentExtras.find(ex => ex.id === extraId);
+    // Callback handlers for ExtrasSection granular props
+    const handleGroupChange = useCallback((newGroupIds) => {
+        setFormData(prev => ({ ...prev, extraGroupIds: newGroupIds }));
+    }, []);
 
-        let newExtras;
-        if (exists) {
-            newExtras = currentExtras.filter(ex => ex.id !== extraId);
-        } else {
-            // Find original extra
-            const original = globalExtras.find(ex => ex.id === extraId);
-            if (original) {
-                newExtras = [...currentExtras, {
-                    id: original.id,
-                    nameAr: original.nameAr,
-                    nameHe: original.nameHe,
-                    price: original.price,
-                    image: original.image,
-                    isDefault: false
-                }];
+    const handleGroupConfigChange = useCallback((groupId, freeLimit) => {
+        setFormData(prev => ({
+            ...prev,
+            extraGroupConfigs: {
+                ...(prev.extraGroupConfigs || {}),
+                [groupId]: { freeLimit }
             }
-        }
-        setFormData({ ...formData, extras: newExtras });
-    };
+        }));
+    }, []);
 
-    const updateExtraOverride = (index, field, value) => {
-        // Allow overriding price or default status per product if needed? 
-        // For now, let's stick to global properties mainly, but 'isDefault' is per product.
-        const newExtras = [...(formData.extras || [])];
-        newExtras[index][field] = value;
-        setFormData({ ...formData, extras: newExtras });
+
+
+    const moveGroup = (index, direction) => {
+        const currentIds = [...(formData.extraGroupIds || [])];
+        if (direction === 'up' && index > 0) {
+            [currentIds[index], currentIds[index - 1]] = [currentIds[index - 1], currentIds[index]];
+        } else if (direction === 'down' && index < currentIds.length - 1) {
+            [currentIds[index], currentIds[index + 1]] = [currentIds[index + 1], currentIds[index]];
+        }
+        setFormData({ ...formData, extraGroupIds: currentIds });
     };
 
     const resetForm = () => {
@@ -923,10 +1066,34 @@ const ProductManager = () => {
         });
     }, [globalExtras]);
 
-    const handleUpdateExtraOverride = useCallback((index, field, value) => {
+    const toggleExtraConfig = useCallback((extra, field, value) => {
         setFormData(prev => {
-            const newExtras = [...(prev.extras || [])];
-            newExtras[index][field] = value;
+            let newExtras = [...(prev.extras || [])];
+            const index = newExtras.findIndex(e => e.id === extra.id);
+
+            let targetExtra = index !== -1 ? { ...newExtras[index] } : {
+                id: extra.id,
+                nameAr: extra.nameAr,
+                nameHe: extra.nameHe,
+                price: extra.price,
+                image: extra.image
+            };
+
+            if (field === 'price') {
+                if (value === '' || value === null) {
+                    delete targetExtra.price; // Revert to global if cleared
+                } else {
+                    targetExtra.price = parseFloat(value);
+                }
+            } else {
+                targetExtra[field] = value;
+            }
+
+            if (index !== -1) {
+                newExtras[index] = targetExtra;
+            } else {
+                newExtras.push(targetExtra);
+            }
             return { ...prev, extras: newExtras };
         });
     }, []);
@@ -1048,6 +1215,8 @@ const ProductManager = () => {
                                 key={product.id}
                                 product={product}
                                 t={t}
+                                i18n={i18n}
+                                categories={categories}
                                 showDeleted={showDeleted}
                                 unfreezeProduct={unfreezeProduct}
                                 handleFreezeClick={handleFreezeClick}
@@ -1126,7 +1295,7 @@ const ProductManager = () => {
                                         >
                                             <option value="">{t('products.category')}</option>
                                             {categories.map(cat => (
-                                                <option key={cat.id} value={cat.name}>{cat.name}</option>
+                                                <option key={cat.id} value={cat.id}>{cat.nameAr || cat.name}</option>
                                             ))}
                                         </select>
                                         <ChevronDown size={16} className="select-icon" />
@@ -1184,7 +1353,7 @@ const ProductManager = () => {
                                 <label>{t('products.image')}</label>
                                 <div className="image-upload-box" onClick={() => document.getElementById('imageInput').click()}>
                                     {imagePreview ? (
-                                        <img src={imagePreview} alt="Preview" className="preview-img" />
+                                        <img src={imagePreview || null} alt="Preview" className="preview-img" />
                                     ) : (
                                         <div className="upload-placeholder">
                                             <Upload size={32} />
@@ -1221,14 +1390,19 @@ const ProductManager = () => {
                             />
 
                             <ExtrasSection
-                                formData={formData}
+                                extraGroupIds={formData.extraGroupIds}
+                                extraGroupConfigs={formData.extraGroupConfigs}
+                                selectedExtras={formData.extras}
+                                onGroupChange={handleGroupChange}
+                                onGroupConfigChange={handleGroupConfigChange}
+
                                 extraGroups={extraGroups}
                                 globalExtras={globalExtras}
                                 isExtrasExpanded={isExtrasExpanded}
                                 setIsExtrasExpanded={setIsExtrasExpanded}
-                                setFormData={setFormData}
-                                toggleExtraSelection={handleToggleExtraSelection}
-                                updateExtraOverride={handleUpdateExtraOverride}
+                                toggleExtraConfig={toggleExtraConfig}
+                                expandedConfigGroups={expandedConfigGroups}
+                                toggleConfigGroup={toggleConfigGroup}
                                 t={t}
                             />
 
