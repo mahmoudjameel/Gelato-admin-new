@@ -1,0 +1,116 @@
+.zone-map-container {
+    padding: 1rem;
+    background: var(--card, #fff);
+    border-radius: 16px;
+    border: 1px solid var(--border, #eee);
+    margin-top: 1rem;
+}
+
+.map-wrapper {
+    height: 400px;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid var(--border, #eee);
+}
+
+.map-controls {
+    margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: center;
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 12px;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.control-group label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.radius-slider {
+    width: 200px;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.radius-value {
+    font-weight: bold;
+    color: #A62B82;
+    min-width: 60px;
+}
+
+.coords-display {
+    font-family: monospace;
+    font-size: 0.875rem;
+    color: #475569;
+}
+
+.map-helper {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.map-search-bar {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    z-index: 1000;
+    display: flex;
+    gap: 8px;
+    background: white;
+    padding: 8px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.map-search-bar input {
+    flex: 1;
+    border: 1px solid #e2e8f0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    outline: none;
+}
+
+.map-search-bar input:focus {
+    border-color: #A62B82;
+}
+
+.map-search-bar button {
+    background: #A62B82;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.map-search-bar button:hover {
+    opacity: 0.9;
+}
+
+.map-search-bar button:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+}

@@ -11,12 +11,15 @@
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
+    "@types/leaflet": "^1.9.21",
     "firebase": "^12.8.0",
     "i18next": "^25.7.4",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.562.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-i18next": "^16.5.3",
+    "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.12.0"
   },
   "devDependencies": {

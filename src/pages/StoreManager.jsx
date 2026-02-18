@@ -15,6 +15,7 @@ import {
     Trophy
 } from 'lucide-react';
 import { db, storage } from '../firebase/config';
+import ZoneMap from '../components/ZoneMap';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useTranslation } from 'react-i18next';
@@ -68,7 +69,10 @@ const StoreManager = () => {
         location: { lat: 0, lng: 0 },
         deliveryZones: [],
         deliveryCityFees: [],
-        paymentMethodsEnabled: { cash: true, card: true }
+        paymentMethodsEnabled: { cash: true, card: true },
+        isManualClosed: false,
+        pickupHours: {},
+        deliveryHours: {}
     });
 
     const [loyaltyData, setLoyaltyData] = useState({
@@ -84,6 +88,7 @@ const StoreManager = () => {
 
     const [geocodeLoadingIndex, setGeocodeLoadingIndex] = useState(null);
     const [geocodeResultsByZone, setGeocodeResultsByZone] = useState({});
+    const [activeMapIndex, setActiveMapIndex] = useState(null);
 
     const fetchCoordsForZone = async (index) => {
         const zones = [...(storeData.deliveryZones || [])];
@@ -117,22 +122,26 @@ const StoreManager = () => {
     };
 
     const applyGeocodeResult = (zoneIndex, result) => {
-        const bbox = result.boundingbox;
-        const latMin = parseFloat(bbox[0]);
-        const latMax = parseFloat(bbox[1]);
-        const lngMin = parseFloat(bbox[2]);
-        const lngMax = parseFloat(bbox[3]);
         const zones = [...(storeData.deliveryZones || [])];
+        const newLat = parseFloat(result.lat);
+        const newLng = parseFloat(result.lon);
+
         zones[zoneIndex] = {
             ...zones[zoneIndex],
             name: result.display_name || zones[zoneIndex].name,
-            latMin,
-            latMax,
-            lngMin,
-            lngMax
+            lat: newLat,
+            lng: newLng,
+            // Keep bounding box for compatibility if needed, though we use circles now
+            latMin: parseFloat(result.boundingbox[0]),
+            latMax: parseFloat(result.boundingbox[1]),
+            lngMin: parseFloat(result.boundingbox[2]),
+            lngMax: parseFloat(result.boundingbox[3])
         };
+
         setStoreData(prev => ({ ...prev, deliveryZones: zones }));
         setGeocodeResultsByZone(prev => ({ ...prev, [zoneIndex]: [] }));
+        // Automatically open the map for this zone
+        setActiveMapIndex(zoneIndex);
     };
 
     const dayLabels = {
@@ -178,7 +187,10 @@ const StoreManager = () => {
                         : (prev.location || { lat: 0, lng: 0 }),
                     paymentMethodsEnabled: data.paymentMethodsEnabled && typeof data.paymentMethodsEnabled.cash === 'boolean' && typeof data.paymentMethodsEnabled.card === 'boolean'
                         ? data.paymentMethodsEnabled
-                        : (prev.paymentMethodsEnabled || { cash: true, card: true })
+                        : (prev.paymentMethodsEnabled || { cash: true, card: true }),
+                    isManualClosed: data.isManualClosed || false,
+                    pickupHours: data.pickupHours || data.workingHoursWeekly || {},
+                    deliveryHours: data.deliveryHours || data.workingHoursWeekly || {}
                 }));
             }
 
@@ -206,12 +218,13 @@ const StoreManager = () => {
         }
     };
 
-    const handleWeeklyHoursChange = (day, field, value) => {
+    const handleWeeklyHoursChange = (type, day, field, value) => {
+        const hoursKey = type === 'pickup' ? 'pickupHours' : 'deliveryHours';
         setStoreData(prev => ({
             ...prev,
-            workingHoursWeekly: {
-                ...prev.workingHoursWeekly,
-                [day]: { ...prev.workingHoursWeekly[day], [field]: value }
+            [hoursKey]: {
+                ...prev[hoursKey],
+                [day]: { ...prev[hoursKey][day], [field]: value }
             }
         }));
     };
@@ -531,39 +544,88 @@ const StoreManager = () => {
 
                 {activeTab === 'hours' && (
                     <div className="form-section glass">
-                        <h2><Clock size={20} /> {t('store.detailedWorkingHours')}</h2>
-                        <div className="weekly-hours-grid">
-                            {Object.keys(storeData.workingHoursWeekly || {}).sort((a, b) => {
-                                const order = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-                                return order.indexOf(a) - order.indexOf(b);
-                            }).map(day => (
-                                <div className="day-row-container" key={day}>
-                                    <div className="day-row">
-                                        <span className="day-name">{dayLabels[day]}</span>
-                                        <div className="time-inputs-12h">
-                                            <TimeInput12h
-                                                value={storeData.workingHoursWeekly[day].open}
-                                                onChange={(val) => handleWeeklyHoursChange(day, 'open', val)}
-                                                disabled={storeData.workingHoursWeekly[day].closed}
-                                            />
-                                            <span className="to-label">{t('store.to')}</span>
-                                            <TimeInput12h
-                                                value={storeData.workingHoursWeekly[day].close}
-                                                onChange={(val) => handleWeeklyHoursChange(day, 'close', val)}
-                                                disabled={storeData.workingHoursWeekly[day].closed}
-                                            />
-                                            <label className="closed-toggle">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={storeData.workingHoursWeekly[day].closed}
-                                                    onChange={(e) => handleWeeklyHoursChange(day, 'closed', e.target.checked)}
-                                                />
-                                                {t('store.closed')}
-                                            </label>
-                                        </div>
-                                    </div>
+                        <div className="section-header-row">
+                            <h2><Clock size={20} /> {t('store.detailedWorkingHours')}</h2>
+                            <div className="manual-toggles-container">
+                                <div className="manual-close-toggle">
+                                    <label className="switch-label">
+                                        <input
+                                            type="checkbox"
+                                            checked={storeData.isManualClosed}
+                                            onChange={(e) => setStoreData(prev => ({ ...prev, isManualClosed: e.target.checked }))}
+                                        />
+                                        <span className="switch-slider"></span>
+                                        <span className="switch-text">{t('store.manualClose', 'Close Store (Total)')}</span>
+                                    </label>
                                 </div>
-                            ))}
+                                <div className="manual-close-toggle">
+                                    <label className="switch-label">
+                                        <input
+                                            type="checkbox"
+                                            checked={storeData.isDeliveryManualClosed}
+                                            onChange={(e) => setStoreData(prev => ({ ...prev, isDeliveryManualClosed: e.target.checked }))}
+                                        />
+                                        <span className="switch-slider"></span>
+                                        <span className="switch-text">{t('store.manualDeliveryClose', 'Close Delivery (Only)')}</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="hours-type-tabs">
+                            <button
+                                className={`type-tab ${!storeData._hoursType || storeData._hoursType === 'pickup' ? 'active' : ''}`}
+                                onClick={() => setStoreData(prev => ({ ...prev, _hoursType: 'pickup' }))}
+                            >
+                                {t('store.pickupHours', 'Pickup Hours')}
+                            </button>
+                            <button
+                                className={`type-tab ${storeData._hoursType === 'delivery' ? 'active' : ''}`}
+                                onClick={() => setStoreData(prev => ({ ...prev, _hoursType: 'delivery' }))}
+                            >
+                                {t('store.deliveryHours', 'Delivery Hours')}
+                            </button>
+                        </div>
+
+                        <div className="weekly-hours-grid">
+                            {(() => {
+                                const type = storeData._hoursType || 'pickup';
+                                const hoursKey = type === 'pickup' ? 'pickupHours' : 'deliveryHours';
+                                const hours = storeData[hoursKey] || {};
+                                const daysOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+                                return daysOrder.map(day => {
+                                    const dayInfo = hours[day] || { open: '10:00', close: '22:00', closed: false };
+                                    return (
+                                        <div className="day-row-container" key={day}>
+                                            <div className="day-row">
+                                                <span className="day-name">{dayLabels[day]}</span>
+                                                <div className="time-inputs-12h">
+                                                    <TimeInput12h
+                                                        value={dayInfo.open}
+                                                        onChange={(val) => handleWeeklyHoursChange(type, day, 'open', val)}
+                                                        disabled={dayInfo.closed}
+                                                    />
+                                                    <span className="to-label">{t('store.to')}</span>
+                                                    <TimeInput12h
+                                                        value={dayInfo.close}
+                                                        onChange={(val) => handleWeeklyHoursChange(type, day, 'close', val)}
+                                                        disabled={dayInfo.closed}
+                                                    />
+                                                    <label className="closed-toggle">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={dayInfo.closed}
+                                                            onChange={(e) => handleWeeklyHoursChange(type, day, 'closed', e.target.checked)}
+                                                        />
+                                                        {t('store.closed')}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                });
+                            })()}
                         </div>
                     </div>
                 )}
@@ -735,6 +797,46 @@ const StoreManager = () => {
                                                 }}
                                             />
                                         </div>
+
+                                        <div className="rate-field" style={{ flex: '0 1 100px' }}>
+                                            <label>{t('store.latitude')}</label>
+                                            <input
+                                                type="number"
+                                                step="any"
+                                                value={zone.lat ?? ''}
+                                                onChange={(e) => {
+                                                    const arr = [...(storeData.deliveryZones || [])];
+                                                    arr[index] = { ...arr[index], lat: parseFloat(e.target.value) || 0 };
+                                                    setStoreData(prev => ({ ...prev, deliveryZones: arr }));
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="rate-field" style={{ flex: '0 1 100px' }}>
+                                            <label>{t('store.longitude')}</label>
+                                            <input
+                                                type="number"
+                                                step="any"
+                                                value={zone.lng ?? ''}
+                                                onChange={(e) => {
+                                                    const arr = [...(storeData.deliveryZones || [])];
+                                                    arr[index] = { ...arr[index], lng: parseFloat(e.target.value) || 0 };
+                                                    setStoreData(prev => ({ ...prev, deliveryZones: arr }));
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="rate-field" style={{ flex: '0 1 100px' }}>
+                                            <label>{t('store.zoneRadius')} (m)</label>
+                                            <input
+                                                type="number"
+                                                step="1"
+                                                value={zone.radius ?? ''}
+                                                onChange={(e) => {
+                                                    const arr = [...(storeData.deliveryZones || [])];
+                                                    arr[index] = { ...arr[index], radius: parseInt(e.target.value) || 0 };
+                                                    setStoreData(prev => ({ ...prev, deliveryZones: arr }));
+                                                }}
+                                            />
+                                        </div>
                                         <div className="rate-field" style={{ flex: '0 0 36px', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '10px' }}>
                                             <label className="switch-label">
                                                 <input
@@ -748,6 +850,23 @@ const StoreManager = () => {
                                                 />
                                             </label>
                                         </div>
+                                        <button
+                                            type="button"
+                                            className="btn-secondary"
+                                            onClick={() => setActiveMapIndex(activeMapIndex === index ? null : index)}
+                                            style={{
+                                                flex: '0 0 auto',
+                                                padding: '6px 12px',
+                                                borderRadius: '8px',
+                                                backgroundColor: activeMapIndex === index ? '#A62B82' : '#F3F4F6',
+                                                color: activeMapIndex === index ? 'white' : '#A62B82',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 600,
+                                                border: '1px solid #A62B82'
+                                            }}
+                                        >
+                                            {activeMapIndex === index ? t('store.closeMap') : t('store.editOnMap')}
+                                        </button>
                                         <button
                                             type="button"
                                             className="remove-rate-btn"
@@ -799,6 +918,27 @@ const StoreManager = () => {
                                                 </div>
                                             </div>
                                         </div>
+
+                                        {activeMapIndex === index && (
+                                            <div style={{ width: '100%', marginTop: '1rem' }}>
+                                                <ZoneMap
+                                                    center={{ lat: zone.lat || 31.7683, lng: zone.lng || 35.2137 }}
+                                                    radius={zone.radius || 1000}
+                                                    otherZones={(storeData.deliveryZones || []).filter((_, i) => i !== index)}
+                                                    onUpdate={(data) => {
+                                                        const arr = [...(storeData.deliveryZones || [])];
+                                                        arr[index] = {
+                                                            ...arr[index],
+                                                            lat: data.lat,
+                                                            lng: data.lng,
+                                                            radius: data.radius
+                                                        };
+                                                        setStoreData(prev => ({ ...prev, deliveryZones: arr }));
+                                                    }}
+                                                    t={t}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                                 <button

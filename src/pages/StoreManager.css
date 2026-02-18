@@ -581,3 +581,103 @@
         transform: rotate(360deg);
     }
 }
+
+/* New Store Management Styles */
+.manual-toggles-container {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.section-header-row h2 {
+    margin-bottom: 0 !important;
+}
+
+.manual-close-toggle .switch-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.manual-close-toggle input {
+    display: none;
+}
+
+.switch-slider {
+    position: relative;
+    width: 48px;
+    height: 24px;
+    background-color: var(--border);
+    border-radius: 24px;
+    transition: 0.3s;
+}
+
+.switch-slider:before {
+    content: "";
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+.manual-close-toggle input:checked+.switch-slider {
+    background-color: #EF4444;
+}
+
+.manual-close-toggle input:checked+.switch-slider:before {
+    transform: translateX(24px);
+}
+
+.switch-text {
+    font-size: 0.95rem;
+    color: var(--foreground);
+}
+
+.hours-type-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    background: var(--muted);
+    padding: 0.4rem;
+    border-radius: 12px;
+    width: fit-content;
+}
+
+.type-tab {
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.type-tab.active {
+    background: var(--card);
+    color: var(--gelato-pink);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+@media (max-width: 768px) {
+    .section-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .hours-type-tabs {
+        width: 100%;
+    }
+
+    .type-tab {
+        flex: 1;
+        text-align: center;
+    }
+}
