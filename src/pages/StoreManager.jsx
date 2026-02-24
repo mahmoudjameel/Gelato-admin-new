@@ -12,7 +12,8 @@ import {
     Save,
     Loader,
     BadgeDollarSign,
-    Trophy
+    Trophy,
+    Crosshair
 } from 'lucide-react';
 import { db, storage } from '../firebase/config';
 import ZoneMap from '../components/ZoneMap';
@@ -298,13 +299,46 @@ const StoreManager = () => {
         return v.startsWith('http://') || v.startsWith('https://') || v.startsWith('waze://') || v.startsWith('geo:');
     };
 
-    const generateMapLinksFromCoords = () => {
-        const lat = storeData.location?.lat;
-        const lng = storeData.location?.lng;
-        if (typeof lat !== 'number' || typeof lng !== 'number' || Number.isNaN(lat) || Number.isNaN(lng)) {
-            alert(t('store.enterCoordsFirst'));
-            return;
+    const generateMapLinksFromCoords = async () => {
+        let lat = storeData.location?.lat;
+        let lng = storeData.location?.lng;
+
+        // If coordinates are missing, try to geocode the address first
+        if (!lat || !lng || lat === 0 || lng === 0) {
+            const address = storeData.addressAr || storeData.addressHe;
+            if (!address) {
+                alert(t('store.enterAddressOrCoordsFirst', 'Please enter store address or coordinates first'));
+                return;
+            }
+
+            try {
+                setSaving(true);
+                const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&countrycodes=il`;
+                const res = await fetch(url, { headers: { 'User-Agent': 'GelatoHouse-Admin/1.0' } });
+                const data = await res.json();
+
+                if (data && data.length > 0) {
+                    lat = parseFloat(data[0].lat);
+                    lng = parseFloat(data[0].lon);
+                    setStoreData(prev => ({
+                        ...prev,
+                        location: { lat, lng }
+                    }));
+                } else {
+                    alert(t('store.addressNotFound', 'Could not find coordinates for this address. Please enter them manually.'));
+                    setSaving(false);
+                    return;
+                }
+            } catch (err) {
+                console.error(err);
+                alert(t('store.geocodingError', 'Error fetching coordinates.'));
+                setSaving(false);
+                return;
+            } finally {
+                setSaving(false);
+            }
         }
+
         setStoreData(prev => ({
             ...prev,
             googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
@@ -346,6 +380,34 @@ const StoreManager = () => {
             setSaving(false);
             alert(t('store.errorSave'));
         }
+    };
+
+    const handleGetCurrentLocation = () => {
+        if (!navigator.geolocation) {
+            alert(t('store.geolocationNotSupported', 'Geolocation is not supported by your browser.'));
+            return;
+        }
+
+        setSaving(true);
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                setStoreData(prev => ({
+                    ...prev,
+                    location: {
+                        lat: parseFloat(latitude.toFixed(7)),
+                        lng: parseFloat(longitude.toFixed(7))
+                    }
+                }));
+                setSaving(false);
+            },
+            (error) => {
+                console.error('Geolocation error:', error);
+                alert(t('store.geolocationError', 'Error getting your current location. Please check browser permissions.'));
+                setSaving(false);
+            },
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
     };
 
     if (loading) return <div className="loading-screen">{t('store.loading')}</div>;
@@ -538,6 +600,25 @@ const StoreManager = () => {
                             <a href="https://www.google.com/maps" target="_blank" rel="noreferrer" style={{ color: '#E11D48', fontSize: '0.9rem', display: 'block', marginTop: '0.5rem' }}>
                                 {t('store.openMaps')}
                             </a>
+                            <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={handleGetCurrentLocation}
+                                style={{
+                                    marginTop: '1rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem',
+                                    width: '100%',
+                                    backgroundColor: '#A62B82',
+                                    color: 'white',
+                                    borderColor: '#A62B82'
+                                }}
+                            >
+                                <Crosshair size={18} />
+                                {t('store.getCurrentLocation')}
+                            </button>
                         </div>
                     </>
                 )}

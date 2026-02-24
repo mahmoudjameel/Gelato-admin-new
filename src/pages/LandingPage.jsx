@@ -250,14 +250,14 @@ const LandingPage = () => {
                         </p>
 
                         <div className="app-buttons">
-                            <a href="#" className="store-btn apple">
+                            <a href="https://apps.apple.com/il/app/gelato-house/id6758620113" target="_blank" rel="noopener noreferrer" className="store-btn apple">
                                 <AppleIcon size={32} />
                                 <div className="btn-content">
                                     <span className="small-text">{i18n.language === 'ar' ? 'حمّل من' : 'הורד מ'}</span>
                                     <span className="big-text">App Store</span>
                                 </div>
                             </a>
-                            <a href="#" className="store-btn google">
+                            <a href="https://play.google.com/store/apps/details?id=com.GelatoHouse.app" target="_blank" rel="noopener noreferrer" className="store-btn google">
                                 <GooglePlayIcon size={32} />
                                 <div className="btn-content">
                                     <span className="small-text">{i18n.language === 'ar' ? 'احصل عليه من' : 'קבל מ'}</span>
@@ -362,14 +362,14 @@ const LandingPage = () => {
                         <h2>{i18n.language === 'ar' ? 'جاهز لتجربة الطعم الرائع؟' : 'מוכנים לטעום את הקסם?'}</h2>
                         <p>{i18n.language === 'ar' ? 'حمّل التطبيق الآن وانضم لآلاف العملاء السعداء. ابدأ رحلتك مع Gelato House اليوم!' : 'הורידו את האפליקציה עכשיו והצטרפו לאלפי לקוחות מרוצים. התחילו את המסע שלכם עם Gelato House היום!'}</p>
                         <div className="app-buttons scale-down app-buttons-row">
-                            <a href="#" className="store-btn apple dark-mode-btn">
+                            <a href="https://apps.apple.com/il/app/gelato-house/id6758620113" target="_blank" rel="noopener noreferrer" className="store-btn apple dark-mode-btn">
                                 <AppleIcon size={28} />
                                 <div className="btn-content store-name-en" dir="ltr">
                                     <span className="small-text">{i18n.language === 'ar' ? 'حمّل من' : 'הורד מ'}</span>
                                     <span className="big-text">App Store</span>
                                 </div>
                             </a>
-                            <a href="#" className="store-btn google dark-mode-btn">
+                            <a href="https://play.google.com/store/apps/details?id=com.GelatoHouse.app" target="_blank" rel="noopener noreferrer" className="store-btn google dark-mode-btn">
                                 <GooglePlayIcon size={28} />
                                 <div className="btn-content store-name-en" dir="ltr">
                                     <span className="small-text">{i18n.language === 'ar' ? 'احصل عليه من' : 'קבל מ'}</span>
