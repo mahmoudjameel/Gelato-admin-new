@@ -337,3 +337,397 @@
 [dir="rtl"] .web-checkout-container .input-group input {
     padding-left: 56px;
 }
+
+/* Store hours card */
+.checkout-hours-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: inherit;
+    color: var(--foreground);
+    border-radius: 12px;
+}
+.checkout-hours-card:hover {
+    background: var(--muted);
+}
+.hours-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.hours-icon.open {
+    background: rgba(34, 197, 94, 0.15);
+    color: #16a34a;
+}
+.hours-icon.closed {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+.hours-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.hours-status {
+    font-weight: 600;
+    font-size: 15px;
+}
+.hours-delivery {
+    font-size: 13px;
+    color: var(--muted-foreground);
+}
+
+/* Schedule for later */
+.schedule-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+.schedule-title {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--foreground);
+}
+.schedule-sub {
+    font-size: 13px;
+    color: var(--muted-foreground);
+    margin-top: 2px;
+}
+.toggle-switch {
+    width: 52px;
+    height: 28px;
+    border-radius: 14px;
+    background: var(--border);
+    border: none;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+.toggle-switch.on {
+    background: #9FD6C7;
+}
+.toggle-dot {
+    position: absolute;
+    top: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+}
+[dir="ltr"] .toggle-switch .toggle-dot {
+    left: 4px;
+}
+[dir="ltr"] .toggle-switch.on .toggle-dot {
+    transform: translateX(24px);
+}
+[dir="rtl"] .toggle-switch .toggle-dot {
+    right: 4px;
+}
+[dir="rtl"] .toggle-switch.on .toggle-dot {
+    transform: translateX(-24px);
+}
+.schedule-picker {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+.schedule-date-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.schedule-date-tabs button {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--muted);
+    color: var(--foreground);
+    font-weight: 600;
+    cursor: pointer;
+}
+.schedule-date-tabs button.active {
+    background: #9FD6C7;
+    border-color: #9FD6C7;
+    color: #fff;
+}
+.schedule-label {
+    display: block;
+    font-size: 13px;
+    color: var(--muted-foreground);
+    margin-bottom: 6px;
+}
+.schedule-summary {
+    font-size: 13px;
+    color: var(--primary);
+    margin-top: 10px;
+    font-weight: 500;
+}
+
+/* Promo */
+.promo-applied {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(159, 214, 199, 0.15);
+    border: 1px solid rgba(159, 214, 199, 0.3);
+    border-radius: 12px;
+}
+.promo-applied span {
+    flex: 1;
+    font-weight: 600;
+    color: var(--foreground);
+}
+.promo-remove {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--muted-foreground);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.promo-remove:hover {
+    color: #ef4444;
+}
+.promo-input-row {
+    display: flex;
+    gap: 8px;
+}
+.promo-input {
+    flex: 1;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--muted);
+    font-size: 15px;
+    color: var(--foreground);
+    outline: none;
+}
+.promo-input:focus {
+    border-color: #9FD6C7;
+}
+.promo-apply-btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 10px;
+    background: #9FD6C7;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 90px;
+}
+.promo-apply-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.promo-message {
+    font-size: 13px;
+    margin-top: 8px;
+}
+.promo-message.success {
+    color: #16a34a;
+}
+.promo-message.error {
+    color: #ef4444;
+}
+
+/* Zone offer card — مثل تطبيق العميل */
+.checkout-zone-offer-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f0fdf4;
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    border-radius: 16px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+}
+.zone-offer-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #15803d;
+    flex-shrink: 0;
+}
+.zone-offer-body {
+    flex: 1;
+    min-width: 0;
+}
+.checkout-zone-offer-card .zone-offer-text {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--foreground);
+    display: block;
+}
+.checkout-zone-offer-card .zone-offer-hint {
+    font-size: 12px;
+    color: var(--muted-foreground);
+    display: block;
+    margin-top: 4px;
+}
+
+/* Delivery zones list (modal) */
+.checkout-zones-sub {
+    font-size: 13px;
+    color: var(--muted-foreground);
+    margin: 0 0 16px 0;
+}
+.checkout-zones-list {
+    list-style: none;
+    margin: 0 0 16px 0;
+    padding: 0;
+}
+.checkout-zone-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+}
+.checkout-zone-row:last-child {
+    border-bottom: none;
+}
+.checkout-zone-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.checkout-zone-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--foreground);
+}
+.checkout-zone-offer-text {
+    font-size: 12px;
+    color: #15803d;
+}
+.checkout-zone-fee {
+    font-weight: 600;
+    color: #16a34a;
+    flex-shrink: 0;
+}
+.hours-icon.zones-icon {
+    background: rgba(34, 197, 94, 0.15);
+    color: #16a34a;
+}
+
+/* Summary discount row */
+.summary-row.discount {
+    color: #16a34a;
+}
+
+/* Hints */
+.checkout-closed-hint,
+.checkout-scheduled-hint {
+    font-size: 13px;
+    text-align: center;
+    margin-bottom: 8px;
+}
+.checkout-closed-hint {
+    color: #ef4444;
+}
+.checkout-scheduled-hint {
+    color: var(--primary);
+}
+
+/* Hours modal */
+.checkout-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+}
+.checkout-modal {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 400px;
+    width: 100%;
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+.checkout-modal h3 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--foreground);
+}
+.checkout-hours-list {
+    list-style: none;
+    margin: 0 0 16px 0;
+    padding: 0;
+}
+.checkout-hours-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    color: var(--foreground);
+}
+.checkout-hours-row:last-child {
+    border-bottom: none;
+}
+.checkout-hours-day {
+    font-weight: 600;
+    min-width: 0;
+}
+.checkout-hours-time {
+    color: var(--muted-foreground);
+    flex-shrink: 0;
+    text-align: end;
+}
+[dir="rtl"] .checkout-hours-time {
+    text-align: start;
+}
+.checkout-hours-delivery {
+    font-size: 13px;
+    color: var(--muted-foreground);
+    margin: 0 0 20px 0;
+}
+.checkout-modal-close {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--muted);
+    color: var(--foreground);
+    font-weight: 600;
+    cursor: pointer;
+}
+.checkout-modal-close:hover {
+    background: var(--border);
+}

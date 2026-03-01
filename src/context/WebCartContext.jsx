@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
 const WebCartContext = createContext();
 
@@ -89,8 +91,14 @@ export const WebCartProvider = ({ children }) => {
 
     const clearCart = () => {
         setCartItems([]);
+        setPromoCode(null);
+        setDiscountAmount(0);
         localStorage.removeItem('webCartItems');
     };
+
+    // Promo Code State
+    const [promoCode, setPromoCode] = useState(null);
+    const [discountAmount, setDiscountAmount] = useState(0);
 
     // Delivery State
     const [deliveryFee, setDeliveryFee] = useState(0);
@@ -196,8 +204,85 @@ export const WebCartProvider = ({ children }) => {
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    const cartTotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
     const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
+
+    // Recalculate discount when subtotal or promoCode changes
+    useEffect(() => {
+        if (!promoCode) {
+            setDiscountAmount(0);
+            return;
+        }
+        const value = promoCode.appliedValue ?? promoCode.value ?? 0;
+        const type = promoCode.appliedType ?? promoCode.type;
+        let calculated = type === 'fixed' ? value : (subtotal * value) / 100;
+        if (calculated > subtotal) calculated = subtotal;
+        setDiscountAmount(calculated);
+    }, [subtotal, promoCode]);
+
+    const effectiveDeliveryFee = (zoneOffer?.freeDeliveryAbove != null && subtotal >= zoneOffer.freeDeliveryAbove) ? 0 : deliveryFee;
+
+    const removePromoCode = () => {
+        setPromoCode(null);
+        setDiscountAmount(0);
+    };
+
+    const applyPromoCode = async (code, userId) => {
+        try {
+            if (!(code && String(code).trim())) return { success: false, message: 'pleaseEnterCode' };
+            if (!userId) return { success: false, message: 'loginFirst' };
+            const codeTrimmed = String(code).trim();
+            const q = query(
+                collection(db, 'promo_codes'),
+                where('code', '==', codeTrimmed),
+                where('isActive', '==', true)
+            );
+            const snapshot = await getDocs(q);
+            if (snapshot.empty) return { success: false, message: 'invalidCode' };
+
+            const docSnap = snapshot.docs[0];
+            const data = docSnap.data();
+
+            if (data.expiryDate && data.expiryDate.toDate() < new Date()) {
+                return { success: false, message: 'codeExpired' };
+            }
+
+            const ordersQuery = query(
+                collection(db, 'orders'),
+                where('userId', '==', userId),
+                where('promoCode', '==', data.code)
+            );
+            const ordersSnap = await getDocs(ordersQuery);
+            const userUsageCount = ordersSnap.size;
+            if (data.maxUsesPerUser != null && userUsageCount >= data.maxUsesPerUser) {
+                return { success: false, message: 'usageLimitExceeded' };
+            }
+
+            let appliedValue = 0;
+            let appliedType = data.type;
+            if (data.type === 'tiered') {
+                const tiers = data.tiers || [];
+                appliedValue = userUsageCount < tiers.length ? tiers[userUsageCount] : (data.subsequentValue || 0);
+                appliedType = 'percentage';
+                if (appliedValue <= 0) return { success: false, message: 'noDiscount' };
+            } else {
+                appliedValue = data.value;
+            }
+
+            setPromoCode({
+                id: docSnap.id,
+                code: data.code,
+                type: data.type,
+                value: data.value,
+                appliedValue,
+                appliedType
+            });
+            return { success: true, message: 'discountApplied' };
+        } catch (err) {
+            console.error('Promo error:', err);
+            return { success: false, message: 'errorCheckingCode' };
+        }
+    };
 
     return (
         <WebCartContext.Provider value={{
@@ -206,9 +291,15 @@ export const WebCartProvider = ({ children }) => {
             removeFromCart,
             updateQuantity,
             clearCart,
-            cartTotal,
+            cartTotal: subtotal,
+            subtotal,
             cartCount,
+            promoCode,
+            discountAmount,
+            removePromoCode,
+            applyPromoCode,
             deliveryFee,
+            effectiveDeliveryFee,
             deliveryFeeSource,
             zoneOffer,
             validateDeliveryLocation

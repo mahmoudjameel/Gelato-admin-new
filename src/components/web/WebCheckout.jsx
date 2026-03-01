@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useWebCart } from '../../context/WebCartContext';
 import { useWebAuth } from '../../context/WebAuthContext';
@@ -6,16 +6,32 @@ import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { db } from '../../firebase/config';
 import { useWebStoreData } from '../../hooks/useWebStoreData';
-import { ArrowLeft, ArrowRight, MapPin, Loader2, CheckCircle, CreditCard, Banknote } from 'lucide-react';
+import { getStoreStatus, formatTo12Hour, getWorkingHoursRows, generateSlotsForDay } from '../../utils/storeStatus';
+import { ArrowLeft, ArrowRight, MapPin, Loader2, CheckCircle, CreditCard, Banknote, Clock, Tag, X, MapPinned } from 'lucide-react';
 import './WebCheckout.css';
+
+const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
 const WebCheckout = ({ onClose }) => {
     const { t, i18n } = useTranslation();
-    const { cartItems, cartTotal, clearCart } = useWebCart();
+    const {
+        cartItems,
+        subtotal,
+        discountAmount,
+        effectiveDeliveryFee,
+        promoCode,
+        applyPromoCode,
+        removePromoCode,
+        clearCart,
+        validateDeliveryLocation,
+        deliveryFee,
+        deliveryFeeSource,
+        zoneOffer
+    } = useWebCart();
     const { currentUser, userData, updateUserProfileLocation } = useWebAuth();
     const { storeInfo } = useWebStoreData();
 
-    const [deliveryType, setDeliveryType] = useState('delivery'); // 'delivery' or 'pickup'
+    const [deliveryType, setDeliveryType] = useState('delivery');
     const [addressTitle, setAddressTitle] = useState('');
     const [selectedCity, setSelectedCity] = useState(userData?.city || '');
     const [addressDetails, setAddressDetails] = useState('');
@@ -32,12 +48,89 @@ const WebCheckout = ({ onClose }) => {
     const [isSuccess, setIsSuccess] = useState(false);
     const [error, setError] = useState('');
 
-    const [paymentParams, setPaymentParams] = useState(null); // htmlFor Tranzila
+    const [paymentParams, setPaymentParams] = useState(null);
     const [paymentBaseUrl, setPaymentBaseUrl] = useState('');
 
-    const isRtl = i18n.language === 'ar' || i18n.language === 'he';
+    const [scheduleForLater, setScheduleForLater] = useState(false);
+    const [scheduledDate, setScheduledDate] = useState('today');
+    const [scheduledTime, setScheduledTime] = useState('09:00');
+    const [hoursModalVisible, setHoursModalVisible] = useState(false);
+    const [zonesModalVisible, setZonesModalVisible] = useState(false);
+    const [promoInput, setPromoInput] = useState('');
+    const [applyingPromo, setApplyingPromo] = useState(false);
+    const [promoMessage, setPromoMessage] = useState('');
 
-    const { validateDeliveryLocation, deliveryFee, zoneOffer } = useWebCart();
+    const isRtl = i18n.language === 'ar' || i18n.language === 'he';
+    const lang = i18n.language || 'ar';
+
+    const tWeb = (key) => t(`web.${key}`);
+
+    const weeklyHours = storeInfo?.workingHoursWeekly || {};
+    const todayKey = DAY_KEYS[new Date().getDay()];
+    const tomorrowKey = DAY_KEYS[(new Date().getDay() + 1) % 7];
+    const storeStatus = getStoreStatus(storeInfo, (k) => tWeb(k), deliveryType);
+    const isStoreOpenNow = storeStatus.status === 'open' || storeStatus.status === 'closing_soon';
+    const deliveryTimeText = storeInfo?.deliveryTime?.trim() || (lang === 'he' ? "30-45 דק'" : '30-45 دقيقة');
+
+    const todaySlots = generateSlotsForDay(weeklyHours[todayKey]);
+    const tomorrowSlots = generateSlotsForDay(weeklyHours[tomorrowKey]);
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const availableTimesToday = todaySlots.filter(s => {
+        const slotDate = new Date(todayStart.getTime() + s.offsetMins * 60000);
+        return slotDate.getTime() > now.getTime() + 30 * 60000;
+    });
+    const timeSlotsForPicker = scheduledDate === 'today' ? availableTimesToday : tomorrowSlots;
+
+    useEffect(() => {
+        if (scheduledDate === 'today' && availableTimesToday.length > 0) {
+            setScheduledTime(availableTimesToday[0].time);
+        }
+    }, [scheduledDate]);
+
+    const getScheduledForAndLabel = () => {
+        if (!scheduleForLater || !scheduledTime) return { scheduledFor: null, scheduledForLabel: '', scheduledPeriod: null };
+        const currentDaySlots = scheduledDate === 'today' ? todaySlots : tomorrowSlots;
+        const matchedSlot = currentDaySlots.find(s => s.time === scheduledTime);
+        if (!matchedSlot) return { scheduledFor: null, scheduledForLabel: '', scheduledPeriod: null };
+        const offset = matchedSlot.offsetMins;
+        const d = scheduledDate === 'tomorrow'
+            ? new Date(todayStart.getTime() + 24 * 3600000 + offset * 60000)
+            : new Date(todayStart.getTime() + offset * 60000);
+        if (d.getTime() <= now.getTime() + 29 * 60000) return { scheduledFor: null, scheduledForLabel: '', scheduledPeriod: null };
+        const dateLabel = scheduledDate === 'tomorrow' ? tWeb('tomorrow') : tWeb('today');
+        const hours = Math.floor(offset / 60);
+        const periodLabel = hours < 12 ? tWeb('timeMorning') : tWeb('timeEvening');
+        const formattedTime = formatTo12Hour(scheduledTime, (k) => t(k));
+        const scheduledForLabel = `${dateLabel} - ${periodLabel} ${formattedTime}`;
+        const scheduledPeriod = hours < 12 ? 'morning' : 'evening';
+        return { scheduledFor: d, scheduledForLabel, scheduledPeriod };
+    };
+    const { scheduledFor, scheduledForLabel, scheduledPeriod } = getScheduledForAndLabel();
+
+    const totalAmount = Math.max(0, Number(subtotal) - Number(discountAmount) + (deliveryType === 'delivery' ? Number(effectiveDeliveryFee) : 0));
+    const canSubmit = isStoreOpenNow || scheduleForLater;
+    const scheduleValid = !scheduleForLater || (scheduleForLater && scheduledFor);
+
+    const reverseGeocode = async (lat, lng) => {
+        try {
+            const res = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
+                {
+                    headers: {
+                        'Accept-Language': i18n.language === 'he' ? 'he' : 'ar',
+                        'User-Agent': 'CoolTreatHub-WebCheckout/1.0'
+                    }
+                }
+            );
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data?.display_name || null;
+        } catch (e) {
+            console.warn('Reverse geocode failed:', e);
+            return null;
+        }
+    };
 
     const handleGetLocation = () => {
         if (!navigator.geolocation) {
@@ -49,12 +142,13 @@ const WebCheckout = ({ onClose }) => {
         setError('');
 
         navigator.geolocation.getCurrentPosition(
-            (position) => {
+            async (position) => {
                 const { latitude, longitude } = position.coords;
                 setCoords({ lat: latitude, lng: longitude });
-                setIsLocating(false);
-                // Trigger validation
                 validateDeliveryLocation(latitude, longitude, selectedCity, storeInfo);
+                const address = await reverseGeocode(latitude, longitude);
+                if (address) setAddressDetails(address);
+                setIsLocating(false);
             },
             (err) => {
                 console.error("Geolocation error:", err);
@@ -83,17 +177,24 @@ const WebCheckout = ({ onClose }) => {
         }
     }, [userData, currentUser]);
 
-    // Update fee when city changes manually
-    React.useEffect(() => {
-        if (selectedCity || coords.lat) {
+    useEffect(() => {
+        if (deliveryType === 'delivery' && (selectedCity || coords.lat)) {
             validateDeliveryLocation(coords.lat, coords.lng, selectedCity, storeInfo);
         }
-    }, [selectedCity]);
+    }, [selectedCity, coords.lat, coords.lng, deliveryType, storeInfo]);
+
+    const handleApplyPromo = async () => {
+        setPromoMessage('');
+        setApplyingPromo(true);
+        const res = await applyPromoCode(promoInput.trim(), currentUser?.uid);
+        setApplyingPromo(false);
+        const msg = t(`web.${res.message}`);
+        setPromoMessage(msg);
+        if (res.success) setPromoInput('');
+    };
 
     const deliveryCities = storeInfo?.deliveryCityFees?.filter(c => c.isActive !== false) || [];
     const hasCities = deliveryCities.length > 0;
-
-    const totalAmount = Number(cartTotal) + Number(deliveryFee);
 
     const handlePlaceOrder = async (e) => {
         e.preventDefault();
@@ -111,8 +212,16 @@ const WebCheckout = ({ onClose }) => {
         }
 
         const minOrder = Number(storeInfo?.minOrder || 0);
-        if (cartTotal < minOrder) {
+        if (subtotal < minOrder) {
             setError(t('web.minOrderError', { min: minOrder }));
+            return;
+        }
+        if (!canSubmit) {
+            setError(tWeb('closed'));
+            return;
+        }
+        if (scheduleForLater && !scheduledFor) {
+            setError(tWeb('selectTime'));
             return;
         }
 
@@ -178,15 +287,15 @@ const WebCheckout = ({ onClose }) => {
                     classification: null
                 })),
                 totalAmount: totalAmount.toString(),
-                subtotal: cartTotal.toFixed(2),
-                discountAmount: '0',
-                promoCode: null,
+                subtotal: subtotal.toFixed(2),
+                discountAmount: String(discountAmount.toFixed(2)),
+                promoCode: promoCode?.code || null,
                 membershipDiscount: '0',
                 pointsDiscount: '0',
                 pointsRedeemed: 0,
                 rewardPointsTotal: 0,
                 cashbackRedeemedPoints: 0,
-                deliveryFee: deliveryFee,
+                deliveryFee: deliveryType === 'delivery' ? effectiveDeliveryFee : 0,
                 deliveryType: deliveryType,
                 paymentMethod: paymentMethod,
                 status: 'pending',
@@ -207,10 +316,10 @@ const WebCheckout = ({ onClose }) => {
                     latitude: coords.lat,
                     longitude: coords.lng,
                 } : t('web.pickupFromBranch'),
-                scheduledFor: null,
-                scheduledForLabel: null,
-                scheduledPeriod: null,
-                source: 'web' // Additional flag for tracking
+                scheduledFor: scheduledFor ? Timestamp.fromDate(scheduledFor) : null,
+                scheduledForLabel: scheduledForLabel || null,
+                scheduledPeriod: scheduledPeriod || null,
+                source: 'web'
             };
 
             const docRef = await addDoc(collection(db, 'orders'), orderData);
@@ -247,6 +356,9 @@ const WebCheckout = ({ onClose }) => {
             }
 
             setIsSuccess(true);
+            setScheduleForLater(false);
+            setScheduledDate('today');
+            setScheduledTime('09:00');
             setTimeout(() => {
                 clearCart();
                 onClose();
@@ -395,6 +507,117 @@ const WebCheckout = ({ onClose }) => {
                     </div>
                 )}
 
+                {/* نطاقات التوصيل — يظهر عند التوصيل فقط */}
+                {deliveryType === 'delivery' && (storeInfo?.deliveryZones?.filter(z => z.isActive !== false).length > 0) && (
+                    <div className="checkout-section">
+                        <button
+                            type="button"
+                            className="checkout-hours-card"
+                            onClick={() => setZonesModalVisible(true)}
+                        >
+                            <span className="hours-icon zones-icon">
+                                <MapPinned size={20} />
+                            </span>
+                            <div className="hours-text">
+                                <span className="hours-status">{tWeb('deliveryZonesTitle')}</span>
+                                <span className="hours-delivery">{tWeb('deliveryZonesSub')}</span>
+                            </div>
+                        </button>
+                    </div>
+                )}
+
+                {/* أوقات العمل والتوصيل */}
+                <div className="checkout-section">
+                    <button
+                        type="button"
+                        className="checkout-hours-card"
+                        onClick={() => setHoursModalVisible(true)}
+                    >
+                        <span className={`hours-icon ${isStoreOpenNow ? 'open' : 'closed'}`}>
+                            <Clock size={20} />
+                        </span>
+                        <div className="hours-text">
+                            <span className="hours-status">
+                                {isStoreOpenNow ? tWeb('open') : tWeb('closed')} ({tWeb('storeWorkingHours')})
+                            </span>
+                            <span className="hours-delivery">{tWeb('deliveryTimeLabel')}: {deliveryTimeText}</span>
+                        </div>
+                    </button>
+                </div>
+
+                {/* تحديد وقت لاحق */}
+                <div className="checkout-section">
+                    <div className="schedule-row">
+                        <div>
+                            <div className="schedule-title">{tWeb('scheduleForLater')}</div>
+                            <div className="schedule-sub">{tWeb('enableToChooseTime')}</div>
+                        </div>
+                        <button
+                            type="button"
+                            className={`toggle-switch ${scheduleForLater ? 'on' : ''}`}
+                            onClick={() => setScheduleForLater(!scheduleForLater)}
+                            aria-pressed={scheduleForLater}
+                        >
+                            <span className="toggle-dot" />
+                        </button>
+                    </div>
+                    {scheduleForLater && (
+                        <div className="schedule-picker">
+                            <div className="schedule-date-tabs">
+                                <button type="button" className={scheduledDate === 'today' ? 'active' : ''} onClick={() => setScheduledDate('today')}>{tWeb('today')}</button>
+                                <button type="button" className={scheduledDate === 'tomorrow' ? 'active' : ''} onClick={() => setScheduledDate('tomorrow')}>{tWeb('tomorrow')}</button>
+                            </div>
+                            <div className="input-group">
+                                <label className="schedule-label">{tWeb('selectTime')}</label>
+                                <select
+                                    className="city-select"
+                                    value={timeSlotsForPicker.some(s => s.time === scheduledTime) ? scheduledTime : (timeSlotsForPicker[0]?.time || '')}
+                                    onChange={(e) => setScheduledTime(e.target.value)}
+                                >
+                                    {timeSlotsForPicker.length === 0 ? (
+                                        <option value="">—</option>
+                                    ) : (
+                                        timeSlotsForPicker.map((s) => (
+                                            <option key={s.time} value={s.time}>{formatTo12Hour(s.time, (k) => t(k))}</option>
+                                        ))
+                                    )}
+                                </select>
+                            </div>
+                            {scheduledForLabel && <p className="schedule-summary">{scheduledForLabel}</p>}
+                        </div>
+                    )}
+                </div>
+
+                {/* كوبون الخصم */}
+                <div className="checkout-section">
+                    <h3>{t('promos.promoCodeLabel')}</h3>
+                    {promoCode ? (
+                        <div className="promo-applied">
+                            <Tag size={18} />
+                            <span>{promoCode.code} (-{discountAmount.toFixed(2)} ₪)</span>
+                            <button type="button" className="promo-remove" onClick={removePromoCode} title={tWeb('removePromo')}>
+                                <X size={16} />
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="promo-input-row">
+                                <input
+                                    type="text"
+                                    placeholder={tWeb('promoCodePlaceholder')}
+                                    value={promoInput}
+                                    onChange={(e) => { setPromoInput(e.target.value); setPromoMessage(''); }}
+                                    className="promo-input"
+                                />
+                                <button type="button" className="promo-apply-btn" onClick={handleApplyPromo} disabled={applyingPromo || !promoInput.trim()}>
+                                    {applyingPromo ? <Loader2 className="spinner" size={18} /> : tWeb('applyPromo')}
+                                </button>
+                            </div>
+                            {promoMessage && <p className={`promo-message ${promoMessage.includes('تم') || promoMessage.includes('הוחלה') ? 'success' : 'error'}`}>{promoMessage}</p>}
+                        </>
+                    )}
+                </div>
+
                 <div className="checkout-section">
                     <h3>{t('web.paymentMethod')}</h3>
                     <div className="payment-options">
@@ -427,15 +650,41 @@ const WebCheckout = ({ onClose }) => {
                     </div>
                 </div>
 
+                {/* كارد عرض التوصيل — يظهر فقط عندما يكون موقع العميل داخل نطاق توصيل عليه عرض */}
+                {deliveryType === 'delivery' && deliveryFeeSource === 'zone' && zoneOffer && (zoneOffer.offerLabelAr || zoneOffer.offerLabelHe) && (
+                    <div className="checkout-zone-offer-card">
+                        <span className="zone-offer-icon">
+                            <Tag size={20} />
+                        </span>
+                        <div className="zone-offer-body">
+                            <span className="zone-offer-text">
+                                {isRtl ? (zoneOffer.offerLabelHe || zoneOffer.offerLabelAr) : (zoneOffer.offerLabelAr || zoneOffer.offerLabelHe)}
+                                {zoneOffer.freeDeliveryAbove != null ? ` ${Math.ceil(zoneOffer.freeDeliveryAbove)} ₪` : ''}
+                            </span>
+                            {zoneOffer.freeDeliveryAbove != null && subtotal < zoneOffer.freeDeliveryAbove && (
+                                <span className="zone-offer-hint">
+                                    {tWeb('addForFreeDelivery', { amount: Math.max(0, Math.ceil(zoneOffer.freeDeliveryAbove - subtotal)) })}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 <div className="checkout-summary">
                     <div className="summary-row">
                         <span>{t('web.subtotal')}</span>
-                        <span>{cartTotal.toFixed(2)} ₪</span>
+                        <span>{subtotal.toFixed(2)} ₪</span>
                     </div>
+                    {discountAmount > 0 && (
+                        <div className="summary-row discount">
+                            <span>{tWeb('discountLabel')}</span>
+                            <span>- {discountAmount.toFixed(2)} ₪</span>
+                        </div>
+                    )}
                     {deliveryType === 'delivery' && (
                         <div className="summary-row">
                             <span>{t('web.deliveryFeeLabel')}</span>
-                            <span style={{ color: '#10B981' }}>{deliveryFee === 0 ? t('web.free') : `+${deliveryFee} ₪`}</span>
+                            <span style={{ color: '#10B981' }}>{effectiveDeliveryFee === 0 ? t('web.free') : `+${effectiveDeliveryFee} ₪`}</span>
                         </div>
                     )}
                     <div className="summary-row total">
@@ -445,7 +694,9 @@ const WebCheckout = ({ onClose }) => {
                 </div>
 
                 <div className="checkout-footer">
-                    <button type="submit" className="submit-order-btn" disabled={loading}>
+                    {!canSubmit && <p className="checkout-closed-hint">{tWeb('closed')}</p>}
+                    {scheduleForLater && scheduledForLabel && <p className="checkout-scheduled-hint">{scheduledForLabel}</p>}
+                    <button type="submit" className="submit-order-btn" disabled={loading || !canSubmit || !scheduleValid}>
                         {loading ? <Loader2 className="spinner" size={24} /> : t('web.confirmOrder')}
                     </button>
                     <p className="terms-text">
@@ -453,6 +704,65 @@ const WebCheckout = ({ onClose }) => {
                     </p>
                 </div>
             </form>
+
+            {hoursModalVisible && (
+                <div className="checkout-modal-overlay" onClick={() => setHoursModalVisible(false)}>
+                    <div className="checkout-modal" onClick={e => e.stopPropagation()}>
+                        <h3>{tWeb('storeWorkingHours')}</h3>
+                        <ul className="checkout-hours-list">
+                            {(() => {
+                                const rows = getWorkingHoursRows(weeklyHours, (k) => t(k));
+                                if (rows.length === 0) return <li className="checkout-hours-row"><span>—</span></li>;
+                                return rows.map((row, idx) => (
+                                    <li key={idx} className="checkout-hours-row">
+                                        <span className="checkout-hours-day">{row.dayLabel}</span>
+                                        <span className="checkout-hours-time">{row.hoursText}</span>
+                                    </li>
+                                ));
+                            })()}
+                        </ul>
+                        <p className="checkout-hours-delivery">{tWeb('deliveryTimeLabel')}: {deliveryTimeText}</p>
+                        <button type="button" className="checkout-modal-close" onClick={() => setHoursModalVisible(false)}>
+                            {t('promos.cancel')}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {zonesModalVisible && (
+                <div className="checkout-modal-overlay" onClick={() => setZonesModalVisible(false)}>
+                    <div className="checkout-modal" onClick={e => e.stopPropagation()}>
+                        <h3>{tWeb('deliveryZonesTitle')}</h3>
+                        <p className="checkout-zones-sub">{tWeb('deliveryZonesSub')}</p>
+                        <ul className="checkout-zones-list">
+                            {(storeInfo?.deliveryZones || []).filter(z => z.isActive !== false).map((zone, idx) => {
+                                const name = isRtl ? (zone.nameAr || zone.nameHe || zone.name) : (zone.nameHe || zone.nameAr || zone.name);
+                                const fee = Number(zone.fee) || 0;
+                                const hasOffer = zone.freeDeliveryAbove != null || zone.offerLabelAr || zone.offerLabelHe;
+                                const offerText = isRtl ? (zone.offerLabelHe || zone.offerLabelAr) : (zone.offerLabelAr || zone.offerLabelHe);
+                                return (
+                                    <li key={idx} className="checkout-zone-row">
+                                        <div className="checkout-zone-info">
+                                            <span className="checkout-zone-name">{name || t('store.zoneNamePlaceholder')}</span>
+                                            {hasOffer && offerText && (
+                                                <span className="checkout-zone-offer-text">
+                                                    {offerText}{zone.freeDeliveryAbove != null ? ` ${Math.ceil(zone.freeDeliveryAbove)} ₪` : ''}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span className="checkout-zone-fee">
+                                            {fee === 0 ? tWeb('free') : `${fee} ₪`}
+                                        </span>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                        <button type="button" className="checkout-modal-close" onClick={() => setZonesModalVisible(false)}>
+                            {t('promos.cancel')}
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

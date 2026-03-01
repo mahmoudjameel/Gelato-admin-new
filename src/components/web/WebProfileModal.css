@@ -163,6 +163,31 @@
     flex: 1;
 }
 
+.profile-age-display {
+    margin: 4px 0 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary, #6b7280);
+}
+
+.profile-city-select {
+    width: 100%;
+    padding: 12px 44px 12px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    background-color: var(--input-bg, #fff);
+    font-size: 0.95rem;
+    appearance: auto;
+    cursor: pointer;
+}
+
+[dir="rtl"] .profile-city-select {
+    padding: 12px 16px 12px 44px;
+}
+
+.input-with-icon .profile-city-select + .input-icon {
+    pointer-events: none;
+}
+
 .save-profile-btn {
     background-color: #9FD6C7;
     color: white;
