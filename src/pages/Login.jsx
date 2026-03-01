@@ -26,14 +26,16 @@ const Login = () => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        console.log("Login: Attempting login for", email);
         setLoading(true);
         setError('');
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            const credential = await signInWithEmailAndPassword(auth, email, password);
+            console.log("Login: Success!", { uid: credential.user.uid });
             navigate('/dashboard');
         } catch (err) {
+            console.error("Login: Failed", err);
             setError(t('login.error'));
-            console.error(err);
         } finally {
             setLoading(false);
         }

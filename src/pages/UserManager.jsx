@@ -20,6 +20,7 @@ const UserManager = () => {
     const [userOrderCount, setUserOrderCount] = useState(0);
     const [isSavingPoints, setIsSavingPoints] = useState(false);
     const [loyaltySettings, setLoyaltySettings] = useState(null);
+    const [cities, setCitiesList] = useState([]);
 
     // Add User State
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -39,6 +40,7 @@ const UserManager = () => {
     useEffect(() => {
         fetchUsers();
         fetchLoyaltySettings();
+        fetchCities();
     }, []);
 
     const fetchLoyaltySettings = async () => {
@@ -59,6 +61,16 @@ const UserManager = () => {
             setFilteredUsers(users.filter(user => (user.role || 'customer') === roleFilter));
         }
     }, [users, roleFilter]);
+
+    const fetchCities = async () => {
+        try {
+            const snapshot = await getDocs(collection(db, 'cities'));
+            const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setCitiesList(list);
+        } catch (error) {
+            console.error("Error fetching cities:", error);
+        }
+    };
 
     const fetchUsers = async () => {
         try {
@@ -541,6 +553,22 @@ const UserManager = () => {
                             <div className="info-group">
                                 <label><Clock size={16} /> {t('users.lastSeen')}</label>
                                 <p>{selectedUser.lastLoginAt ? `${formatDate(selectedUser.lastLoginAt)} ${formatTime(selectedUser.lastLoginAt)}` : '-'}</p>
+                            </div>
+
+                            <div className="info-group">
+                                <label><Calendar size={16} /> {i18n.language === 'ar' ? 'تاريخ الميلاد' : 'תאריך לידה'}</label>
+                                <p>{selectedUser.birthDate || '-'}</p>
+                            </div>
+
+                            <div className="info-group">
+                                <label><MapPin size={16} /> {i18n.language === 'ar' ? 'المدينة/البلد' : 'עיר/יישוב'}</label>
+                                <p>
+                                    {selectedUser.city ? (
+                                        cities.find(c => c.id === selectedUser.city)
+                                            ? (i18n.language === 'ar' ? cities.find(c => c.id === selectedUser.city).ar : cities.find(c => c.id === selectedUser.city).he)
+                                            : selectedUser.city
+                                    ) : '-'}
+                                </p>
                             </div>
 
                             <div className="loyalty-stats-section">

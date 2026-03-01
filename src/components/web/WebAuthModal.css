@@ -1,0 +1,206 @@
+.web-auth-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.web-auth-modal {
+    background: var(--card);
+    width: 90%;
+    max-width: 420px;
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 32px 24px;
+    position: relative;
+    box-shadow: var(--shadow);
+    animation: slideUpFadeIn 0.3s ease-out;
+}
+
+@keyframes slideUpFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9CA3AF;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.close-btn:hover {
+    background: var(--muted);
+    color: var(--foreground);
+}
+
+[dir="rtl"] .close-btn {
+    right: auto;
+    left: 16px;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.auth-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--foreground);
+    margin: 0 0 8px 0;
+}
+
+.auth-header p {
+    font-size: 14px;
+    color: var(--muted-foreground);
+    margin: 0;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    background: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    height: 54px;
+    padding: 0 16px;
+    transition: all 0.2s ease;
+}
+
+.input-group:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(159, 214, 199, 0.2);
+    background: var(--card);
+}
+
+.input-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+    margin: 0 8px;
+}
+
+.input-group input {
+    flex: 1;
+    border: none;
+    background: none;
+    outline: none;
+    font-size: 16px;
+    color: var(--foreground);
+    font-family: inherit;
+    width: 100%;
+}
+
+.input-icon {
+    margin: 0 8px;
+}
+
+[dir="rtl"] .input-icon {
+    margin-right: 0;
+    margin-left: 8px;
+}
+
+.primary-btn {
+    height: 54px;
+    border-radius: 12px;
+    border: none;
+    color: #FFFFFF;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 8px;
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+.primary-btn:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.primary-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.auth-error {
+    background: rgba(220, 38, 38, 0.1);
+    color: #EF4444;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    text-align: center;
+    border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.otp-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: -8px;
+}
+
+.text-btn {
+    background: none;
+    border: none;
+    color: #9FD6C7;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.text-btn:hover {
+    text-decoration: underline;
+}
+
+.row-inputs {
+    display: flex;
+    gap: 12px;
+}
+
+.row-inputs .half {
+    flex: 1;
+}
+
+/* Fix ReCaptcha popup */
+#recaptcha-container {
+    margin: 0 auto;
+}

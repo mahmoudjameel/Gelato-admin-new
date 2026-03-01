@@ -159,6 +159,9 @@ const LandingPage = () => {
                         <Link to="/" className="nav-link">
                             {i18n.language === 'ar' ? 'الرئيسية' : 'בית'}
                         </Link>
+                        <Link to="/menu" className="nav-link order-now-nav-btn">
+                            {i18n.language === 'ar' ? 'اطلب الآن' : 'הזמן עכשיו'}
+                        </Link>
                         <Link to="/contact" className="nav-link">
                             {i18n.language === 'ar' ? 'اتصل بنا' : 'צור קשר'}
                         </Link>
@@ -199,6 +202,9 @@ const LandingPage = () => {
                     <nav className="drawer-nav">
                         <Link to="/" className="drawer-link" onClick={() => setIsMenuOpen(false)}>
                             {i18n.language === 'ar' ? 'الرئيسية' : 'בית'}
+                        </Link>
+                        <Link to="/menu" className="drawer-link order-now-drawer-btn" onClick={() => setIsMenuOpen(false)}>
+                            {i18n.language === 'ar' ? 'اطلب الآن' : 'הזמן עכשיו'}
                         </Link>
                         <Link to="/contact" className="drawer-link" onClick={() => setIsMenuOpen(false)}>
                             {i18n.language === 'ar' ? 'اتصل بنا' : 'צור קשר'}
@@ -250,6 +256,13 @@ const LandingPage = () => {
                         </p>
 
                         <div className="app-buttons">
+                            <button onClick={() => navigate('/menu')} className="store-btn web-order">
+                                <ShoppingBag size={32} />
+                                <div className="btn-content">
+                                    <span className="small-text">{i18n.language === 'ar' ? 'اطلب بسرعة وسهولة' : 'הזמן בקלות'}</span>
+                                    <span className="big-text">{i18n.language === 'ar' ? 'الطلب عبر الويب' : 'הזמנה ברשת'}</span>
+                                </div>
+                            </button>
                             <a href="https://apps.apple.com/il/app/gelato-house/id6758620113" target="_blank" rel="noopener noreferrer" className="store-btn apple">
                                 <AppleIcon size={32} />
                                 <div className="btn-content">

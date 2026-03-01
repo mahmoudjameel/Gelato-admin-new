@@ -56,13 +56,19 @@ const ProductRow = React.memo(({
     handlePermanentDelete,
     i18n // Assuming i18n is passed down from the parent component
 }) => {
-    const categoryName = useMemo(() => {
-        const cat = categories.find(c => c.id === product.category);
-        if (!cat) return product.category; // Fallback to raw value (names for old seeded data)
-        const currentLang = i18n.language;
-        if (currentLang === 'he') return cat.nameHe || cat.nameAr || cat.name;
-        return cat.nameAr || cat.name;
-    }, [product.category, categories, i18n.language]);
+    const categoryNames = useMemo(() => {
+        // Support both single category (legacy) and multi-category (new)
+        const catIds = product.categoryIds || (product.category ? [product.category] : []);
+        if (catIds.length === 0) return t('web.all');
+
+        return catIds.map(id => {
+            const cat = categories.find(c => c.id === id);
+            if (!cat) return id; // Fallback to raw value
+            const currentLang = i18n.language;
+            if (currentLang === 'he') return cat.nameHe || cat.nameAr || cat.name;
+            return cat.nameAr || cat.name;
+        }).join(', ');
+    }, [product.category, product.categoryIds, categories, i18n.language]);
 
     return (
         <tr>
@@ -73,7 +79,9 @@ const ProductRow = React.memo(({
                 </div>
             </td>
             <td>{product.classification && <span className={`badge-classification badge-${product.classification.toLowerCase()}`}>{product.classification}</span>}</td>
-            <td><span className="badge-category">{categoryName}</span></td>
+            <td><span className="badge-category" style={{ display: 'inline-block', maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={categoryNames}>
+                {categoryNames}
+            </span></td>
             <td><span className="price-tag">{product.price} ₪</span></td>
             <td>⭐ {product.rating}</td>
             <td>
@@ -708,6 +716,7 @@ const ProductManager = () => {
                 ...formData,
                 name: formData.nameAr, // Compat
                 description: formData.descriptionAr, // Compat
+                category: formData.categoryIds && formData.categoryIds.length > 0 ? formData.categoryIds[0] : '', // Backward compatibility
                 image: imageUrl,
                 price: parseFloat(formData.price),
                 loyaltyPointsPrice: formData.loyaltyPointsPrice ? parseInt(formData.loyaltyPointsPrice) : null,
@@ -820,7 +829,7 @@ const ProductManager = () => {
             descriptionAr: '',
             descriptionHe: '',
             price: '',
-            category: '',
+            categoryIds: [],
             classification: '',
             image: '',
             rating: '4.5',
@@ -850,6 +859,7 @@ const ProductManager = () => {
                 descriptionHe: product.descriptionHe || '',
                 price: product.price.toString(),
                 classification: product.classification || '',
+                categoryIds: product.categoryIds || (product.category ? [product.category] : []),
                 sizes: product.sizes || [],
                 flavors: product.flavors || [],
                 extras: product.extras || [],
@@ -874,7 +884,7 @@ const ProductManager = () => {
             descriptionAr: product.descriptionAr || product.description || '',
             descriptionHe: product.descriptionHe || '',
             price: product.price != null ? String(product.price) : '',
-            category: product.category || '',
+            categoryIds: product.categoryIds || (product.category ? [product.category] : []),
             classification: product.classification || '',
             image: product.image || '',
             rating: product.rating != null ? String(product.rating) : '4.5',
@@ -981,8 +991,7 @@ const ProductManager = () => {
 
     const filteredProducts = useMemo(() => {
         return products.filter(p =>
-            (p.nameAr || p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (p.category || '').toLowerCase().includes(searchTerm.toLowerCase())
+            (p.nameAr || p.name || '').toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [products, searchTerm]);
 
@@ -1287,18 +1296,66 @@ const ProductManager = () => {
                             <div className="form-row">
                                 <div className="form-group flex-1">
                                     <label>{t('products.category')}</label>
-                                    <div className="select-container">
-                                        <select
-                                            value={formData.category}
-                                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                            required
-                                        >
-                                            <option value="">{t('products.category')}</option>
-                                            {categories.map(cat => (
-                                                <option key={cat.id} value={cat.id}>{cat.nameAr || cat.name}</option>
-                                            ))}
-                                        </select>
-                                        <ChevronDown size={16} className="select-icon" />
+                                    <div className="categories-multi-select" style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                                        gap: '8px',
+                                        background: 'var(--secondary)',
+                                        padding: '12px',
+                                        borderRadius: '12px',
+                                        border: '1px solid var(--border)',
+                                        maxHeight: '150px',
+                                        overflowY: 'auto'
+                                    }}>
+                                        {categories.map((cat) => {
+                                            const isChecked = (formData.categoryIds || []).includes(cat.id);
+                                            return (
+                                                <label key={cat.id} className={`group-check-item ${isChecked ? 'checked' : ''}`} style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    padding: '8px 10px',
+                                                    background: isChecked ? 'rgba(143, 211, 196, 0.1)' : 'var(--card)',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid',
+                                                    borderColor: isChecked ? 'var(--primary)' : 'var(--border)',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s',
+                                                    margin: 0
+                                                }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isChecked}
+                                                        onChange={(e) => {
+                                                            const currentIds = formData.categoryIds || [];
+                                                            const nextIds = isChecked
+                                                                ? currentIds.filter(id => id !== cat.id)
+                                                                : [...currentIds, cat.id];
+                                                            setFormData({ ...formData, categoryIds: nextIds });
+                                                        }}
+                                                        style={{ display: 'none' }}
+                                                    />
+                                                    <div className="check-box-ui" style={{
+                                                        width: '16px',
+                                                        height: '16px',
+                                                        borderRadius: '4px',
+                                                        border: '2px solid',
+                                                        borderColor: isChecked ? 'var(--primary)' : '#D1D5DB',
+                                                        background: isChecked ? 'var(--primary)' : 'transparent',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        color: 'white',
+                                                        flexShrink: 0
+                                                    }}>
+                                                        {isChecked && <Check size={10} strokeWidth={3} />}
+                                                    </div>
+                                                    <span style={{ fontSize: '0.85rem', fontWeight: isChecked ? '700' : '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                        {i18n.language === 'he' ? (cat.nameHe || cat.nameAr || cat.name) : (cat.nameAr || cat.name)}
+                                                    </span>
+                                                </label>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                                 <div className="form-group flex-1">
