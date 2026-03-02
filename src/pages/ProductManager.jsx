@@ -20,8 +20,10 @@ import {
     Calendar,
     AlertTriangle,
     ArrowUp,
-    ArrowDown
+    ArrowDown,
+    GripVertical
 } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
 import { db, storage } from '../firebase/config';
 import {
@@ -184,13 +186,11 @@ const FlavorsSection = React.memo(({ flavors, t, addFlavor, updateFlavor, remove
 ));
 
 const ExtrasSection = React.memo(({
-    // Granular props to prevent re-renders on name/price change
     extraGroupIds,
     extraGroupConfigs,
     selectedExtras,
     onGroupChange,
     onGroupConfigChange,
-
     extraGroups,
     globalExtras,
     isExtrasExpanded,
@@ -198,8 +198,19 @@ const ExtrasSection = React.memo(({
     toggleExtraConfig,
     expandedConfigGroups,
     toggleConfigGroup,
+    extrasOrderByGroup,
+    onReorderExtras,
     t
-}) => (
+}) => {
+    const handleDragEnd = (result) => {
+        if (!result.destination) return;
+        const groupId = result.source.droppableId;
+        if (result.source.index !== result.destination.index) {
+            onReorderExtras(groupId, result.source.index, result.destination.index);
+        }
+    };
+
+    return (
     <div className="dynamic-section">
         <div
             className="section-header-modal clickable-header"
@@ -370,125 +381,139 @@ const ExtrasSection = React.memo(({
                         )}
                     </div>
                 )}
-                {/* Group Details Configuration */}
+                {/* Group Details Configuration — ترتيب الإضافات بالسحب */}
                 {extraGroupIds && extraGroupIds.length > 0 && (
-                    <div style={{ marginTop: '24px' }}>
-                        <h4 style={{ marginBottom: '12px', fontSize: '1rem', fontWeight: 'bold' }}>{t('products.extrasConfiguration')}</h4>
-                        <p className="help-text" style={{ fontSize: '0.8rem', color: '#666', marginBottom: '16px' }}>
-                            قم بتخصيص الإضافات داخل المجموعات لهذا المنتج (السعر، الافتراضي، الإخفاء). الإضافات غير المعدلة ستظهر بسعرها الأصلي.
-                        </p>
+                    <DragDropContext onDragEnd={handleDragEnd}>
+                        <div style={{ marginTop: '24px' }}>
+                            <h4 style={{ marginBottom: '12px', fontSize: '1rem', fontWeight: 'bold' }}>{t('products.extrasConfiguration')}</h4>
+                            <p className="help-text" style={{ fontSize: '0.8rem', color: '#666', marginBottom: '16px' }}>
+                                قم بتخصيص الإضافات (السعر، الافتراضي، الإخفاء). اسحب الصف من أيقونة القبضة لترتيب ظهور الإضافات.
+                            </p>
 
-                        {extraGroupIds.map(groupId => {
-                            const group = extraGroups.find(g => g.id === groupId);
-                            if (!group) return null;
+                            {extraGroupIds.map(groupId => {
+                                const group = extraGroups.find(g => g.id === groupId);
+                                if (!group) return null;
 
-                            // Get extras for this group
-                            const groupExtras = globalExtras.filter(ex => (group.extraIds || []).includes(ex.id));
+                                const rawGroupExtras = globalExtras.filter(ex => (group.extraIds || []).includes(ex.id));
+                                if (rawGroupExtras.length === 0) return null;
 
-                            if (groupExtras.length === 0) return null;
+                                const orderIds = (extrasOrderByGroup || {})[groupId] || (group.extraIds || []);
+                                const groupExtras = [...rawGroupExtras].sort((a, b) => {
+                                    const i = orderIds.indexOf(a.id);
+                                    const j = orderIds.indexOf(b.id);
+                                    if (i === -1 && j === -1) return 0;
+                                    if (i === -1) return 1;
+                                    if (j === -1) return -1;
+                                    return i - j;
+                                });
 
-                            const isExpanded = expandedConfigGroups ? !!expandedConfigGroups[groupId] : false;
+                                const isExpanded = expandedConfigGroups ? !!expandedConfigGroups[groupId] : false;
+                                const total = groupExtras.length;
 
-                            return (
-                                <div key={groupId} style={{ marginBottom: '12px', background: '#fff', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden' }}>
-                                    <div
-                                        onClick={() => toggleConfigGroup(groupId)}
-                                        style={{
-                                            padding: '12px 16px',
-                                            background: 'var(--muted)',
-                                            borderBottom: isExpanded ? '1px solid var(--border)' : 'none',
-                                            fontWeight: 'bold',
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            cursor: 'pointer',
-                                            userSelect: 'none'
-                                        }}
-                                    >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <ChevronDown size={16} style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
-                                            <span>{group.nameAr}</span>
+                                return (
+                                    <div key={groupId} style={{ marginBottom: '12px', background: '#fff', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                                        <div
+                                            onClick={() => toggleConfigGroup(groupId)}
+                                            style={{
+                                                padding: '12px 16px',
+                                                background: 'var(--muted)',
+                                                borderBottom: isExpanded ? '1px solid var(--border)' : 'none',
+                                                fontWeight: 'bold',
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                cursor: 'pointer',
+                                                userSelect: 'none'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <ChevronDown size={16} style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
+                                                <span>{group.nameAr}</span>
+                                            </div>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 'normal', color: 'var(--muted-foreground)' }}>{total} إضافات</span>
                                         </div>
-                                        <span style={{ fontSize: '0.8rem', fontWeight: 'normal', color: 'var(--muted-foreground)' }}>{groupExtras.length} إضافات</span>
+
+                                        {isExpanded && (
+                                            <div className="group-extras-table" style={{ overflowX: 'auto' }}>
+                                                <div style={{ display: 'table', width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                                    <div style={{ display: 'table-header-group' }}>
+                                                        <div style={{ display: 'table-row', borderBottom: '1px solid var(--border)', background: 'var(--secondary-bg)' }}>
+                                                            <div style={{ display: 'table-cell', width: '44px', padding: '10px', verticalAlign: 'middle' }} />
+                                                            <div style={{ display: 'table-cell', padding: '10px', textAlign: 'right' }}>الإضافة</div>
+                                                            <div style={{ display: 'table-cell', width: '100px', padding: '10px', textAlign: 'center' }}>السعر الأساسي</div>
+                                                            <div style={{ display: 'table-cell', width: '120px', padding: '10px', textAlign: 'center' }}>تعديل السعر</div>
+                                                            <div style={{ display: 'table-cell', width: '80px', padding: '10px', textAlign: 'center' }}>افتراضي</div>
+                                                            <div style={{ display: 'table-cell', width: '80px', padding: '10px', textAlign: 'center' }}>إخفاء</div>
+                                                        </div>
+                                                    </div>
+                                                    <Droppable droppableId={groupId}>
+                                                        {(provided) => (
+                                                            <div ref={provided.innerRef} {...provided.droppableProps} style={{ display: 'table-row-group' }}>
+                                                                {groupExtras.map((extra, index) => {
+                                                                    const config = (selectedExtras || []).find(e => e.id === extra.id) || {};
+                                                                    return (
+                                                                        <Draggable key={extra.id} draggableId={String(extra.id)} index={index}>
+                                                                            {(providedRow) => (
+                                                                                <div
+                                                                                    ref={providedRow.innerRef}
+                                                                                    {...providedRow.draggableProps}
+                                                                                    style={{
+                                                                                        ...providedRow.draggableProps.style,
+                                                                                        display: 'table-row',
+                                                                                        borderBottom: '1px solid var(--border)',
+                                                                                        background: 'var(--card)'
+                                                                                    }}
+                                                                                >
+                                                                                    <div {...providedRow.dragHandleProps} style={{ display: 'table-cell', padding: '10px', cursor: 'grab', verticalAlign: 'middle', color: 'var(--muted-foreground)' }}>
+                                                                                        <GripVertical size={18} />
+                                                                                    </div>
+                                                                                    <div style={{ display: 'table-cell', padding: '10px', verticalAlign: 'middle' }}>
+                                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                                            <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: '#f3f4f6', overflow: 'hidden' }}>
+                                                                                                {extra.image ? <img src={extra.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <ImageIcon size={16} color="#ccc" />}
+                                                                                            </div>
+                                                                                            <span>{extra.nameAr}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div style={{ display: 'table-cell', padding: '10px', textAlign: 'center', verticalAlign: 'middle', color: '#666' }}>{extra.price}</div>
+                                                                                    <div style={{ display: 'table-cell', padding: '10px', textAlign: 'center', verticalAlign: 'middle' }}>
+                                                                                        <input
+                                                                                            type="number"
+                                                                                            placeholder={extra.price}
+                                                                                            value={config.price !== undefined ? config.price : ''}
+                                                                                            onChange={(e) => toggleExtraConfig(extra, 'price', e.target.value)}
+                                                                                            style={{ width: '80px', padding: '6px', borderRadius: '6px', border: '1px solid var(--border)', textAlign: 'center', background: 'var(--background)', color: 'var(--foreground)' }}
+                                                                                        />
+                                                                                    </div>
+                                                                                    <div style={{ display: 'table-cell', padding: '10px', textAlign: 'center', verticalAlign: 'middle' }}>
+                                                                                        <input type="checkbox" checked={!!config.isDefault} onChange={(e) => toggleExtraConfig(extra, 'isDefault', e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+                                                                                    </div>
+                                                                                    <div style={{ display: 'table-cell', padding: '10px', textAlign: 'center', verticalAlign: 'middle' }}>
+                                                                                        <input type="checkbox" checked={!!config.isHidden} onChange={(e) => toggleExtraConfig(extra, 'isHidden', e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#ef4444' }} />
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+                                                                        </Draggable>
+                                                                    );
+                                                                })}
+                                                                {provided.placeholder}
+                                                            </div>
+                                                        )}
+                                                    </Droppable>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-
-                                    {isExpanded && (
-                                        <div className="group-extras-table" style={{ overflowX: 'auto' }}>
-                                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                                                <thead>
-                                                    <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--secondary-bg)' }}>
-                                                        <th style={{ padding: '10px', textAlign: 'right' }}>الإضافة</th>
-                                                        <th style={{ padding: '10px', textAlign: 'center', width: '100px' }}>السعر الأساسي</th>
-                                                        <th style={{ padding: '10px', textAlign: 'center', width: '120px' }}>تعديل السعر</th>
-                                                        <th style={{ padding: '10px', textAlign: 'center', width: '80px' }}>افتراضي</th>
-                                                        <th style={{ padding: '10px', textAlign: 'center', width: '80px' }}>إخفاء</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {groupExtras.map(extra => {
-                                                        // Find if this extra is already configured in selectedExtras
-                                                        const config = (selectedExtras || []).find(e => e.id === extra.id) || {};
-
-                                                        return (
-                                                            <tr key={extra.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                                                <td style={{ padding: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                    <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: '#f3f4f6', overflow: 'hidden' }}>
-                                                                        {extra.image ? <img src={extra.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <ImageIcon size={16} color="#ccc" />}
-                                                                    </div>
-                                                                    <span>{extra.nameAr}</span>
-                                                                </td>
-                                                                <td style={{ padding: '10px', textAlign: 'center', color: '#666' }}>
-                                                                    {extra.price}
-                                                                </td>
-                                                                <td style={{ padding: '10px', textAlign: 'center' }}>
-                                                                    <input
-                                                                        type="number"
-                                                                        placeholder={extra.price}
-                                                                        value={config.price !== undefined ? config.price : ''}
-                                                                        onChange={(e) => toggleExtraConfig(extra, 'price', e.target.value)}
-                                                                        style={{
-                                                                            width: '80px',
-                                                                            padding: '6px',
-                                                                            borderRadius: '6px',
-                                                                            border: '1px solid var(--border)',
-                                                                            textAlign: 'center',
-                                                                            background: 'var(--background)',
-                                                                            color: 'var(--foreground)'
-                                                                        }}
-                                                                    />
-                                                                </td>
-                                                                <td style={{ padding: '10px', textAlign: 'center' }}>
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={!!config.isDefault}
-                                                                        onChange={(e) => toggleExtraConfig(extra, 'isDefault', e.target.checked)}
-                                                                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                                                                    />
-                                                                </td>
-                                                                <td style={{ padding: '10px', textAlign: 'center' }}>
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={!!config.isHidden}
-                                                                        onChange={(e) => toggleExtraConfig(extra, 'isHidden', e.target.checked)}
-                                                                        style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#ef4444' }}
-                                                                    />
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    })}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
+                                );
+                            })}
+                        </div>
+                    </DragDropContext>
                 )}
             </>
         )}
     </div>
-));
+    );
+});
 
 const ProductManager = () => {
     const { t, i18n } = useTranslation();
@@ -526,6 +551,7 @@ const ProductManager = () => {
         extras: [],
         extraGroupIds: [], // مجموعات الإضافات (اختياري)
         extraGroupConfigs: {}, // إعدادات المجموعات (الحد المجاني)
+        extrasOrderByGroup: {}, // ترتيب ظهور الإضافات لكل مجموعة { [groupId]: [extraId1, extraId2, ...] }
         loyaltyPointsPrice: ''
     });
 
@@ -723,6 +749,7 @@ const ProductManager = () => {
                 extras: updatedExtras,
                 extraGroupIds: formData.extraGroupIds || [],
                 extraGroupConfigs: formData.extraGroupConfigs || {},
+                extrasOrderByGroup: formData.extrasOrderByGroup || {},
                 flavors: (formData.flavors || []).filter(f => (f.nameAr && f.nameAr.trim() !== '') || (f.nameHe && f.nameHe.trim() !== '')),
                 sizes: (formData.sizes || []).filter(s => (s.nameAr && s.nameAr.trim() !== '') || (s.nameHe && s.nameHe.trim() !== ''))
             };
@@ -838,6 +865,7 @@ const ProductManager = () => {
             extras: [],
             extraGroupIds: [],
             extraGroupConfigs: {},
+            extrasOrderByGroup: {},
             loyaltyPointsPrice: ''
         });
     };
@@ -865,6 +893,7 @@ const ProductManager = () => {
                 extras: product.extras || [],
                 extraGroupIds: product.extraGroupIds || (product.extraGroupId ? [product.extraGroupId] : []),
                 extraGroupConfigs: product.extraGroupConfigs || {},
+                extrasOrderByGroup: product.extrasOrderByGroup || {},
                 loyaltyPointsPrice: product.loyaltyPointsPrice ? product.loyaltyPointsPrice.toString() : ''
             });
             setImagePreview(product.image);
@@ -893,6 +922,7 @@ const ProductManager = () => {
             extras: Array.isArray(product.extras) ? product.extras.map(e => ({ ...e })) : [],
             extraGroupIds: Array.isArray(product.extraGroupIds) ? [...product.extraGroupIds] : (product.extraGroupId ? [product.extraGroupId] : []),
             extraGroupConfigs: product.extraGroupConfigs ? { ...product.extraGroupConfigs } : {},
+            extrasOrderByGroup: product.extrasOrderByGroup ? { ...product.extrasOrderByGroup } : {},
             loyaltyPointsPrice: product.loyaltyPointsPrice != null ? String(product.loyaltyPointsPrice) : ''
         });
         setImagePreview(product.image || null);
@@ -1074,6 +1104,21 @@ const ProductManager = () => {
             return prev;
         });
     }, [globalExtras]);
+
+    const reorderExtrasInGroup = useCallback((groupId, sourceIndex, destinationIndex) => {
+        if (sourceIndex === destinationIndex) return;
+        setFormData(prev => {
+            const order = prev.extrasOrderByGroup?.[groupId] || [];
+            const group = extraGroups.find(g => g.id === groupId);
+            const ids = order.length > 0 ? [...order] : [...(group?.extraIds || [])];
+            const [removed] = ids.splice(sourceIndex, 1);
+            ids.splice(destinationIndex, 0, removed);
+            return {
+                ...prev,
+                extrasOrderByGroup: { ...(prev.extrasOrderByGroup || {}), [groupId]: [...ids] }
+            };
+        });
+    }, [extraGroups]);
 
     const toggleExtraConfig = useCallback((extra, field, value) => {
         setFormData(prev => {
@@ -1460,6 +1505,8 @@ const ProductManager = () => {
                                 toggleExtraConfig={toggleExtraConfig}
                                 expandedConfigGroups={expandedConfigGroups}
                                 toggleConfigGroup={toggleConfigGroup}
+                                extrasOrderByGroup={formData.extrasOrderByGroup}
+                                onReorderExtras={reorderExtrasInGroup}
                                 t={t}
                             />
 

@@ -377,6 +377,15 @@ const WebProductModal = ({ product, extras: globalExtras, onClose }) => {
                                             group = extraGroups.find(g => g.id === groupId);
                                             if (group) {
                                                 extrasToShow = visibleExtras.filter(e => (group.extraIds || []).includes(e.id || e.name));
+                                                const orderIds = product.extrasOrderByGroup?.[groupId] || (group.extraIds || []);
+                                                extrasToShow = [...extrasToShow].sort((a, b) => {
+                                                    const i = orderIds.indexOf(a.id || a.name);
+                                                    const j = orderIds.indexOf(b.id || b.name);
+                                                    if (i === -1 && j === -1) return 0;
+                                                    if (i === -1) return 1;
+                                                    if (j === -1) return -1;
+                                                    return i - j;
+                                                });
                                                 groupConfig = product.extraGroupConfigs?.[groupId];
                                             }
                                         } else {

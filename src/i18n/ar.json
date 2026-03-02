@@ -158,7 +158,10 @@
         "freezeTomorrow": "تجميد لليوم التالي",
         "freezeScheduled": "تجميد حتى وقت محدد",
         "freezeIndefinite": "تجميد حتى إشعار آخر",
-        "confirmFreeze": "تأكيد التجميد"
+        "confirmFreeze": "تأكيد التجميد",
+        "moveUp": "رفع",
+        "moveDown": "خفض",
+        "extrasConfiguration": "تخصيص الإضافات"
     },
     "categories": {
         "title": "إدارة الأقسام",

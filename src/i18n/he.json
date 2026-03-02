@@ -158,7 +158,10 @@
         "freezeTomorrow": "הקפאה למחר",
         "freezeScheduled": "הקפאה מתוזמנת",
         "freezeIndefinite": "הקפאה עד להודעה חדשה",
-        "confirmFreeze": "אשר הקפאה"
+        "confirmFreeze": "אשר הקפאה",
+        "moveUp": "העלה",
+        "moveDown": "הורד",
+        "extrasConfiguration": "הגדרת תוספות"
     },
     "categories": {
         "title": "ניהול קטגוריות",
