@@ -194,9 +194,14 @@
         "nameHe": "اسم المجموعة (عبري)",
         "nameHePlaceholder": "שוקולד",
         "selectExtras": "الإضافات في هذه المجموعة",
-        "selectExtrasHelp": "اختر الإضافات التي تظهر عند اختيار هذه المجموعة للمنتج.",
+        "selectExtrasHelp": "أضف الإضافات الخاصة بهذه المجموعة (اسم، سعر). ستظهر هذه الإضافات عند ربط المجموعة بالمنتج.",
+        "extraNameArPlaceholder": "اسم الإضافة (عربي)",
+        "extraNameHePlaceholder": "اسم الإضافة (عبري)",
+        "extraPricePlaceholder": "السعر (₪)",
+        "extraImageLabel": "صورة الإضافة",
+        "addInnerExtra": "إضافة سطر لإضافة جديدة",
         "extrasCount": "إضافة",
-        "noExtrasYet": "لا توجد إضافات. أضف إضافات من صفحة «الإضافات» أولاً.",
+        "noExtrasYet": "لا توجد إضافات. أضف الإضافات الخاصة بهذه المجموعة.",
         "deleteConfirm": "هل أنت متأكد من حذف هذه المجموعة؟"
     },
     "users": {

@@ -323,11 +323,11 @@
     overflow-y: auto;
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 10px;
+    padding: 12px;
     background: var(--muted);
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 8px;
 }
 
 .extra-check-item {
@@ -376,6 +376,96 @@
     text-align: center;
     color: var(--muted-foreground, #6B7280);
     font-size: 0.9rem;
+}
+
+/* Inline editor for extras inside the group */
+.extra-inline-row {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr minmax(80px, 110px) auto;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 10px;
+    padding: 8px 10px;
+}
+
+.extra-inline-row .extra-image-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.extra-inline-row .extra-thumb {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: #E5E7EB;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #9CA3AF;
+}
+
+.extra-inline-row .extra-thumb.placeholder {
+    border: 1px dashed #D1D5DB;
+}
+
+.extra-inline-row .extra-image-cell input[type="file"] {
+    width: 80px;
+    font-size: 0.7rem;
+}
+
+.extra-inline-row .extra-input {
+    width: 100%;
+    padding: 0.55rem 0.6rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--background);
+    font-size: 0.85rem;
+}
+
+.extra-inline-row .extra-input.price {
+    text-align: center;
+}
+
+.extra-inline-row .icon-btn {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: none;
+    background: rgba(239, 68, 68, 0.06);
+    color: #DC2626;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.extra-inline-row .icon-btn:hover {
+    background: rgba(239, 68, 68, 0.12);
+}
+
+.add-inner-extra-btn {
+    margin-top: 6px;
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    border: 1px dashed var(--gelato-mint, #10B981);
+    background: transparent;
+    color: var(--gelato-mint, #10B981);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.add-inner-extra-btn:hover {
+    background: rgba(16, 185, 129, 0.05);
 }
 
 .extra-groups-manager .loading,

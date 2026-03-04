@@ -230,45 +230,34 @@ const StoreManager = () => {
         }));
     };
 
-    const TimeInput12h = ({ value, onChange, disabled }) => {
-        const hours = Array.from({ length: 12 }, (_, i) => i + 1);
+    const TimeInput24h = ({ value, onChange, disabled }) => {
+        const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
         const minutes = ['00', '15', '30', '45'];
-        const periods = [t('store.am'), t('store.pm')];
 
         const parseValue = (val) => {
-            if (!val) return { h: '10', m: '00', p: t('store.am') };
-            const [h24, m] = val.split(':');
-            let h = parseInt(h24, 10);
-            const p = h >= 12 ? t('store.pm') : t('store.am');
-            h = h % 12 || 12;
-            return { h: h.toString(), m, p };
+            if (!val) return { h: '10', m: '00' };
+            const [h24, m = '00'] = val.split(':');
+            const h = Math.max(0, Math.min(23, parseInt(h24 || '0', 10))).toString().padStart(2, '0');
+            const mNorm = (m || '00').padStart(2, '0');
+            return { h, m: mNorm };
         };
 
-        const { h, m, p } = parseValue(value);
+        const { h, m } = parseValue(value);
 
         const handleChange = (part, newVal) => {
-            let newH = part === 'h' ? newVal : h;
-            let newM = part === 'm' ? newVal : m;
-            let newP = part === 'p' ? newVal : p;
-
-            let h24 = parseInt(newH, 10);
-            if (newP === t('store.pm') && h24 !== 12) h24 += 12;
-            if (newP === t('store.am') && h24 === 12) h24 = 0;
-
-            const finalValue = `${h24.toString().padStart(2, '0')}:${newM}`;
-            onChange(finalValue);
+            const newH = part === 'h' ? newVal : h;
+            const newM = part === 'm' ? newVal : m;
+            onChange(`${newH}:${newM}`);
         };
 
         return (
-            <div className={`time-picker-12h ${disabled ? 'disabled' : ''}`}>
+            <div className={`time-picker-24h ${disabled ? 'disabled' : ''}`}>
                 <select value={h} onChange={(e) => handleChange('h', e.target.value)} disabled={disabled}>
                     {hours.map(val => <option key={val} value={val}>{val}</option>)}
                 </select>
+                <span className="time-sep">:</span>
                 <select value={m} onChange={(e) => handleChange('m', e.target.value)} disabled={disabled}>
                     {minutes.map(val => <option key={val} value={val}>{val}</option>)}
-                </select>
-                <select value={p} onChange={(e) => handleChange('p', e.target.value)} disabled={disabled}>
-                    {periods.map(val => <option key={val} value={val}>{val}</option>)}
                 </select>
             </div>
         );
@@ -681,14 +670,14 @@ const StoreManager = () => {
                                         <div className="day-row-container" key={day}>
                                             <div className="day-row">
                                                 <span className="day-name">{dayLabels[day]}</span>
-                                                <div className="time-inputs-12h">
-                                                    <TimeInput12h
+                                                <div className="time-inputs-24h">
+                                                    <TimeInput24h
                                                         value={dayInfo.open}
                                                         onChange={(val) => handleWeeklyHoursChange(type, day, 'open', val)}
                                                         disabled={dayInfo.closed}
                                                     />
                                                     <span className="to-label">{t('store.to')}</span>
-                                                    <TimeInput12h
+                                                    <TimeInput24h
                                                         value={dayInfo.close}
                                                         onChange={(val) => handleWeeklyHoursChange(type, day, 'close', val)}
                                                         disabled={dayInfo.closed}

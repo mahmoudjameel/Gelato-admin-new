@@ -66,7 +66,7 @@ export function getStoreStatus(storeProfile, t, orderType = 'pickup') {
         }
         return {
             status: 'open',
-            message: `${t('web.openUntil')} ${formatTo12Hour(hours.close, t)}`,
+            message: `${t('web.openUntil')} ${formatTo24Hour(hours.close)}`,
             nextTime: hours.close
         };
     }
@@ -74,15 +74,18 @@ export function getStoreStatus(storeProfile, t, orderType = 'pickup') {
     return { status: 'closed', message: t('web.closed') };
 }
 
-export function formatTo12Hour(timeStr, t) {
+/** Format time as 24h HH:mm for admin and app display. */
+export function formatTo24Hour(timeStr) {
     if (!timeStr) return '';
-    const [hStr, mStr] = timeStr.split(':');
-    let h = parseInt(hStr, 10);
-    const m = mStr || '00';
-    const ampm = h >= 12 ? t('web.pm') : t('web.am');
-    h = h % 12;
-    h = h || 12;
-    return `${h}:${m} ${ampm}`;
+    const [hStr, mStr = '00'] = timeStr.split(':');
+    const h = Math.max(0, Math.min(23, parseInt(hStr || '0', 10)));
+    const m = Math.max(0, Math.min(59, parseInt(mStr || '0', 10)));
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+}
+
+/** @deprecated Use formatTo24Hour. Kept for compatibility; now returns 24h format. */
+export function formatTo12Hour(timeStr) {
+    return formatTo24Hour(timeStr);
 }
 
 const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -96,7 +99,7 @@ export function formatWorkingHoursForDisplay(workingHoursWeekly, t) {
             const s = workingHoursWeekly[day];
             const dayLabel = t(`store.days.${day}`);
             if (!s || s.closed) return `${dayLabel}: ${t('web.closed')}`;
-            return `${dayLabel}: ${formatTo12Hour(s.open, t)} - ${formatTo12Hour(s.close, t)}`;
+            return `${dayLabel}: ${formatTo24Hour(s.open)} - ${formatTo24Hour(s.close)}`;
         })
         .join('\n');
 }

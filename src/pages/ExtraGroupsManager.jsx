@@ -10,7 +10,7 @@ import {
     Check
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { db } from '../firebase/config';
+import { db, storage } from '../firebase/config';
 import {
     collection,
     addDoc,
@@ -21,6 +21,7 @@ import {
     query,
     orderBy
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import './ExtraGroupsManager.css';
 
 const ExtraGroupsManager = () => {
@@ -37,6 +38,10 @@ const ExtraGroupsManager = () => {
         nameHe: '',
         extraIds: []
     });
+    // Extras defined inside the group (manually created for this group)
+    const [groupExtras, setGroupExtras] = useState([
+        { id: null, nameAr: '', nameHe: '', price: '', image: '', file: null }
+    ]);
 
     useEffect(() => {
         fetchData();
@@ -58,20 +63,88 @@ const ExtraGroupsManager = () => {
         }
     };
 
+    const uploadImage = async (file) => {
+        const storageRef = ref(storage, `extras/${Date.now()}_${file.name}`);
+        await uploadBytes(storageRef, file);
+        return await getDownloadURL(storageRef);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!formData.nameAr.trim()) return;
+
         setUploading(true);
         try {
-            const payload = {
+            const basePayload = {
                 nameAr: formData.nameAr.trim(),
-                nameHe: formData.nameHe.trim(),
-                extraIds: formData.extraIds || []
+                nameHe: formData.nameHe.trim()
             };
-            if (editingGroup) {
-                await updateDoc(doc(db, 'extraGroups', editingGroup.id), payload);
+
+            // 1) Create or update group (without extras for now)
+            let groupId = editingGroup?.id || null;
+            if (groupId) {
+                await updateDoc(doc(db, 'extraGroups', groupId), basePayload);
             } else {
-                await addDoc(collection(db, 'extraGroups'), payload);
+                const groupRef = await addDoc(collection(db, 'extraGroups'), {
+                    ...basePayload,
+                    extraIds: []
+                });
+                groupId = groupRef.id;
             }
+
+            // 2) Create / update extras that belong to this group
+            const validExtras = (groupExtras || []).filter(
+                (ex) => ex.nameAr && String(ex.nameAr).trim() !== ''
+            );
+
+            const extraIds = [];
+            const embeddedExtras = [];
+
+            for (const ex of validExtras) {
+                let imageUrl = ex.image || '';
+                if (ex.file) {
+                    try {
+                        imageUrl = await uploadImage(ex.file);
+                    } catch (err) {
+                        console.error('Error uploading extra image:', err);
+                    }
+                }
+
+                const payload = {
+                    nameAr: ex.nameAr.trim(),
+                    nameHe: (ex.nameHe || '').trim(),
+                    price: parseFloat(ex.price) || 0,
+                    image: imageUrl || '',
+                    groupId
+                };
+
+                let extraId;
+                if (ex.id) {
+                    await updateDoc(doc(db, 'extras', ex.id), payload);
+                    extraId = ex.id;
+                } else {
+                    const extraRef = await addDoc(collection(db, 'extras'), payload);
+                    extraId = extraRef.id;
+                }
+
+                extraIds.push(extraId);
+                embeddedExtras.push({
+                    id: extraId,
+                    nameAr: payload.nameAr,
+                    nameHe: payload.nameHe,
+                    price: payload.price,
+                    image: payload.image
+                });
+            }
+
+            // 3) Update group with its extras
+            if (groupId) {
+                await updateDoc(doc(db, 'extraGroups', groupId), {
+                    extraIds,
+                    extras: embeddedExtras
+                });
+            }
+
             handleCloseModal();
             fetchData();
         } catch (error) {
@@ -92,9 +165,10 @@ const ExtraGroupsManager = () => {
     };
 
     const handleCloseModal = () => {
-        setIsModalOpen(false);
-        setEditingGroup(null);
-        setFormData({ nameAr: '', nameHe: '', extraIds: [] });
+            setIsModalOpen(false);
+            setEditingGroup(null);
+            setFormData({ nameAr: '', nameHe: '', extraIds: [] });
+            setGroupExtras([{ id: null, nameAr: '', nameHe: '', price: '', image: '', file: null }]);
     };
 
     const openModal = (group = null) => {
@@ -105,19 +179,69 @@ const ExtraGroupsManager = () => {
                 nameHe: group.nameHe || '',
                 extraIds: Array.isArray(group.extraIds) ? [...group.extraIds] : []
             });
+
+            // Build editable extras for this group
+            let initialExtras = [];
+            if (Array.isArray(group.extras) && group.extras.length > 0) {
+                initialExtras = group.extras.map((ex) => ({
+                    id: ex.id || null,
+                    nameAr: ex.nameAr || '',
+                    nameHe: ex.nameHe || '',
+                    price: ex.price != null ? String(ex.price) : '',
+                    image: ex.image || '',
+                    file: null
+                }));
+            } else if (Array.isArray(group.extraIds) && group.extraIds.length > 0) {
+                initialExtras = group.extraIds
+                    .map((id) => extras.find((e) => e.id === id))
+                    .filter(Boolean)
+                    .map((ex) => ({
+                        id: ex.id,
+                        nameAr: ex.nameAr || '',
+                        nameHe: ex.nameHe || '',
+                        price: ex.price != null ? String(ex.price) : '',
+                        image: ex.image || '',
+                        file: null
+                    }));
+            }
+
+            if (initialExtras.length === 0) {
+                initialExtras = [{ id: null, nameAr: '', nameHe: '', price: '', image: '', file: null }];
+            }
+            setGroupExtras(initialExtras);
         } else {
             setEditingGroup(null);
             setFormData({ nameAr: '', nameHe: '', extraIds: [] });
+            setGroupExtras([{ id: null, nameAr: '', nameHe: '', price: '', image: '', file: null }]);
         }
         setIsModalOpen(true);
     };
 
-    const toggleExtraInGroup = (extraId) => {
-        const current = formData.extraIds || [];
-        const next = current.includes(extraId)
-            ? current.filter(id => id !== extraId)
-            : [...current, extraId];
-        setFormData({ ...formData, extraIds: next });
+    // Handlers for extras defined inside the group
+    const updateGroupExtraField = (index, field, value) => {
+        setGroupExtras(prev => {
+            const copy = [...prev];
+            copy[index] = { ...copy[index], [field]: value };
+            return copy;
+        });
+    };
+
+    const addExtraRow = () => {
+        setGroupExtras(prev => [...prev, { id: null, nameAr: '', nameHe: '', price: '', image: '', file: null }]);
+    };
+
+    const removeExtraRow = (index) => {
+        setGroupExtras(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleExtraImageChange = (index, file) => {
+        if (!file) return;
+        const previewUrl = URL.createObjectURL(file);
+        setGroupExtras(prev => {
+            const copy = [...prev];
+            copy[index] = { ...copy[index], file, image: previewUrl };
+            return copy;
+        });
     };
 
     const filteredGroups = groups.filter(g =>
@@ -221,22 +345,60 @@ const ExtraGroupsManager = () => {
                                 <label>{t('extraGroups.selectExtras')}</label>
                                 <p className="help-text">{t('extraGroups.selectExtrasHelp')}</p>
                                 <div className="extras-checkbox-list">
-                                    {extras.map((extra) => {
-                                        const checked = (formData.extraIds || []).includes(extra.id);
-                                        return (
-                                            <label key={extra.id} className={`extra-check-item ${checked ? 'checked' : ''}`}>
+                                    {groupExtras.map((ex, index) => (
+                                        <div key={ex.id || index} className="extra-inline-row">
+                                            <div className="extra-image-cell">
+                                                {ex.image ? (
+                                                    <img src={ex.image} alt={ex.nameAr || 'extra'} className="extra-thumb" />
+                                                ) : (
+                                                    <span className="extra-thumb placeholder">+</span>
+                                                )}
                                                 <input
-                                                    type="checkbox"
-                                                    checked={checked}
-                                                    onChange={() => toggleExtraInGroup(extra.id)}
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={(e) => handleExtraImageChange(index, e.target.files?.[0])}
                                                 />
-                                                <span className="extra-name">{extra.nameAr}</span>
-                                                <span className="extra-price">{extra.price} ₪</span>
-                                            </label>
-                                        );
-                                    })}
+                                            </div>
+                                            <input
+                                                type="text"
+                                                className="extra-input name-ar"
+                                                placeholder={t('extraGroups.extraNameArPlaceholder')}
+                                                value={ex.nameAr}
+                                                onChange={(e) => updateGroupExtraField(index, 'nameAr', e.target.value)}
+                                            />
+                                            <input
+                                                type="text"
+                                                className="extra-input name-he"
+                                                placeholder={t('extraGroups.extraNameHePlaceholder')}
+                                                value={ex.nameHe}
+                                                onChange={(e) => updateGroupExtraField(index, 'nameHe', e.target.value)}
+                                            />
+                                            <input
+                                                type="number"
+                                                className="extra-input price"
+                                                placeholder={t('extraGroups.extraPricePlaceholder')}
+                                                value={ex.price}
+                                                onChange={(e) => updateGroupExtraField(index, 'price', e.target.value)}
+                                            />
+                                            <button
+                                                type="button"
+                                                className="icon-btn"
+                                                onClick={() => removeExtraRow(index)}
+                                                title={t('common.delete')}
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        className="add-inner-extra-btn"
+                                        onClick={addExtraRow}
+                                    >
+                                        <Plus size={16} />
+                                        <span>{t('extraGroups.addInnerExtra')}</span>
+                                    </button>
                                 </div>
-                                {extras.length === 0 && <p className="no-extras-msg">{t('extraGroups.noExtrasYet')}</p>}
                             </div>
                             <div className="modal-footer">
                                 <button type="button" className="cancel-btn" onClick={handleCloseModal}>{t('common.cancel')}</button>
